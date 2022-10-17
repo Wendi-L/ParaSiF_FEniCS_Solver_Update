@@ -43,10 +43,10 @@ Slone, A. K., C. Bailey, and M. Cross. "Dynamic solid mechanics using finite vol
 
 There are two sub-folders: 
 
-** dummyOF/
+	* dummyOF/
 It contains a simple C++ script as a dummy fluid solver. It's function is to pass the node forces to the structure domain.  
 
-** structureDomain/
+	* structureDomain/
 It contains the input files of FEniCS solver, includes the main file (structureDomainRun.py), BCs, SubDomains and control parameters. A new subfolder "structureResults" will be generated to collect the results from the FEniCS solver. 
 
 ## Install
