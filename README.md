@@ -102,4 +102,4 @@ To clean-up the results from previous run, execute the clean script before run
 
 * Step Four: Check results. 
 
-Once the simulation finished, there will be a PNG file generated in the root of this benchmark case. Open it to check the results compared with published results from Slone et al. 2003.
+Once the simulation finished, there will be a PNG file (result_compare.png) generated in the root of this benchmark case. Open it to check the results compared with published results from Slone et al. 2003.
