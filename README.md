@@ -2,6 +2,8 @@
 
 ## Updates
 
+17th October 2022: Start working on code clean-up/optimisation in FEniCS-v2019 branch.
+
 17th October 2022: Created FEniCS-v2019 branch.
 
 17th October 2022: Created main branch.
