@@ -1,0 +1,11 @@
+# Python cache file
+*__pycache__*
+
+# EXE file
+*PUSHER_FETCHER_1
+
+# FEniCS Results folder
+*structureResults*
+
+# Plots
+*.png

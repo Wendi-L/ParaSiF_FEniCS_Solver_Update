@@ -1,0 +1,14 @@
+#!/bin/sh
+
+domainFluid=${PWD}/dummyOF
+domainStructure=${PWD}/structureDomain
+
+cd ${domainFluid}
+make clean
+cd ${domainStructure}
+rm -r structureResults*
+rm -r structureFSISetup/__pycache__
+cd ..
+rm result_compare.png
+
+# ----------------------------------------------------------------- end-of-file
