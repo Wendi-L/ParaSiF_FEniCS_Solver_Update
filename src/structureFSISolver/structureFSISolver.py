@@ -77,8 +77,8 @@ class StructureFSISolver:
         #%% Obtain files and instances
         #===========================================
 
-        # Obtain configure file
-        self.configure = Configure
+        # Obtain cfg file
+        self.cfg = Configure
         # Obtain fixed sub-domain instances
         self.fixedSDomain = FixedSubdomain
         # Obtain flex sub-domain instances
@@ -93,275 +93,275 @@ class StructureFSISolver:
         #===========================================
 
         # F-Switch off the debug level codes (if any); T-Switch on the debug level codes (if any).
-        self.iDebug = self.configure['LOGGING'].getboolean('iDebug')
+        self.iDebug = self.cfg['LOGGING'].getboolean('iDebug')
         # F-Switch off the Quiet; T-Switch on the Quiet.
-        self.iQuiet = self.configure['LOGGING'].getboolean('iQuiet')
+        self.iQuiet = self.cfg['LOGGING'].getboolean('iQuiet')
 
         #===========================================
         #%% MUI switches & parameters 
         #===========================================
         # F-Switch off the MUI coupling function; T-Switch on the MUI coupling function.
-        self.iMUICoupling = self.configure['MUI'].getboolean('iMUICoupling')
+        self.iMUICoupling = self.cfg['MUI'].getboolean('iMUICoupling')
         # F-Switch off the MUI Multidomain function; T-Switch on the MUI Multidomain function.
-        self.iMultidomain = self.configure['MUI'].getboolean('iMultidomain')
+        self.iMultidomain = self.cfg['MUI'].getboolean('iMultidomain')
         # F-Switch off the MUI Fetch Moment; T-Switch on the MUI Fetch Moment.
-        self.iMUIFetchMoment = self.configure['MUI'].getboolean('iMUIFetchMoment')
+        self.iMUIFetchMoment = self.cfg['MUI'].getboolean('iMUIFetchMoment')
         # F-Switch off the MUI Fetch; T-Switch on the MUI Fetch.
-        self.iMUIFetchValue = self.configure['MUI'].getboolean('iMUIFetchValue')
+        self.iMUIFetchValue = self.cfg['MUI'].getboolean('iMUIFetchValue')
         # F-Use normal fetch function; T-Use fetch_many function.
-        self.iMUIFetchMany = self.configure['MUI'].getboolean('iMUIFetchMany')
+        self.iMUIFetchMany = self.cfg['MUI'].getboolean('iMUIFetchMany')
         # F-Use Fetch Traction function; T-Use Fetch Force function.
-        self.iMUIFetchForce = self.configure['MUI'].getboolean('iMUIFetchForce')
+        self.iMUIFetchForce = self.cfg['MUI'].getboolean('iMUIFetchForce')
         # F-Use nearest neighbout spatial sampler; T-Use RBF spatial sampler.
-        self.iUseRBF = self.configure['MUI'].getboolean('iUseRBF')
+        self.iUseRBF = self.cfg['MUI'].getboolean('iUseRBF')
         # F-The mesh is not evenly spaced; T-The mesh is evenly spaced.
-        self.iLoadAreaList = self.configure['MUI'].getboolean('iLoadAreaList')
+        self.iLoadAreaList = self.cfg['MUI'].getboolean('iLoadAreaList')
         # Factor for area list calculation (float)
-        self.areaListFactor = float(self.configure['MUI']['areaListFactor'])
+        self.areaListFactor = float(self.cfg['MUI']['areaListFactor'])
         # F-Use normal push function; T-Use push_many function.
-        self.iMUIPushMany = self.configure['MUI'].getboolean('iMUIPushMany')
+        self.iMUIPushMany = self.cfg['MUI'].getboolean('iMUIPushMany')
         # F-Not push X; T-Push X.
-        self.iPushX = self.configure['MUI'].getboolean('iPushX')
+        self.iPushX = self.cfg['MUI'].getboolean('iPushX')
         # F-Not push Y; T-Push Y.
-        self.iPushY = self.configure['MUI'].getboolean('iPushY')
+        self.iPushY = self.cfg['MUI'].getboolean('iPushY')
         # F-Not push Z; T-Push Z.
-        self.iPushZ = self.configure['MUI'].getboolean('iPushZ')
+        self.iPushZ = self.cfg['MUI'].getboolean('iPushZ')
         # Spatial sampler search radius (float)
-        self.rMUIFetcher = float(self.configure['MUI']['rMUIFetcher'])
+        self.rMUIFetcher = float(self.cfg['MUI']['rMUIFetcher'])
         # F-Use RBF spatial sampler consistent mode; T-Use RBF spatial sampler conservative mode.
-        self.iConservative = self.configure['MUI'].getboolean('iConservative')
+        self.iConservative = self.cfg['MUI'].getboolean('iConservative')
         # RBF spatial sampler cutoff value (float)
-        self.cutoffRBF = float(self.configure['MUI']['cutoffRBF'])
+        self.cutoffRBF = float(self.cfg['MUI']['cutoffRBF'])
         # F-The RBF matrix will write to file; T-The RBF matrix will read from file.
-        self.iReadMatrix = self.configure['MUI'].getboolean('iReadMatrix')
+        self.iReadMatrix = self.cfg['MUI'].getboolean('iReadMatrix')
         # RBF fetch area extend values (float)
-        self.fetchExtendRBF = float(self.configure['MUI']['fetchExtendRBF'])
+        self.fetchExtendRBF = float(self.cfg['MUI']['fetchExtendRBF'])
         # F-Switch off the RBF spatial sampler polynomial terms; T-Switch on the RBF spatial sampler polynomial terms.
-        self.iPolynomial = self.configure['MUI'].getboolean('iPolynomial')
+        self.iPolynomial = self.cfg['MUI'].getboolean('iPolynomial')
         # Select of basis functions of the RBF spatial sampler (integer)
-        self.basisFunc = int(self.configure['MUI']['basisFunc'])
+        self.basisFunc = int(self.cfg['MUI']['basisFunc'])
         # F-Switch off the RBF spatial sampler smooth function; T-Switch on the RBF spatial sampler smooth function.
-        self.iSmoothFunc = self.configure['MUI'].getboolean('iSmoothFunc')
+        self.iSmoothFunc = self.cfg['MUI'].getboolean('iSmoothFunc')
         # Numbers of time steps to forget for MUI push (integer)
-        self.forgetTStepsMUI = int(self.configure['MUI']['forgetTStepsMUI'])
+        self.forgetTStepsMUI = int(self.cfg['MUI']['forgetTStepsMUI'])
         # ipushLimitMUI
-        self.ipushLimitMUI = self.configure['MUI'].getboolean('ipushLimitMUI')
+        self.ipushLimitMUI = self.cfg['MUI'].getboolean('ipushLimitMUI')
         # F-Serial FSI coupling mode; T-Parallel FSI coupling mode.
-        self.iparallelFSICoupling = self.configure['MUI'].getboolean('iparallelFSICoupling')
+        self.iparallelFSICoupling = self.cfg['MUI'].getboolean('iparallelFSICoupling')
         # Initial under relaxation factor for IQNILS (float)
-        self.initUndRelxCpl = float(self.configure['MUI']['initUndRelxCpl'])
+        self.initUndRelxCpl = float(self.cfg['MUI']['initUndRelxCpl'])
         # Maximum under relaxation factor for IQNILS (float)
-        self.undRelxCplMax = float(self.configure['MUI']['undRelxCplMax'])
+        self.undRelxCplMax = float(self.cfg['MUI']['undRelxCplMax'])
         # Iterations for Aitken cycles for IQNILS (integer)
-        self.aitkenIterationN = int(self.configure['MUI']['aitkenIterationN'])
+        self.aitkenIterationN = int(self.cfg['MUI']['aitkenIterationN'])
         # F-Using local Alpha for IQNILS; T-Using global Alpha for IQNILS.
-        self.globalAlphaInput = self.configure['MUI'].getboolean('globalAlphaInput')
+        self.globalAlphaInput = self.cfg['MUI'].getboolean('globalAlphaInput')
 
         #===========================================
         #%% Global solver define
         #===========================================
 
         # define the solving Method; "STVK" "MCK"
-        self.solving_method = self.configure['SOLVER']['solving_method']
+        self.solving_method = self.cfg['SOLVER']['solving_method']
         # define the linear solver; "LU" "LinearVariational"
-        self.linear_solver = self.configure['SOLVER']['linear_solver']
+        self.linear_solver = self.cfg['SOLVER']['linear_solver']
         # define the non-linear solver; "snes" "newton"
-        self.nonlinear_solver = self.configure['SOLVER']['nonlinear_solver']
+        self.nonlinear_solver = self.cfg['SOLVER']['nonlinear_solver']
         # define the linear solver for the problem
-        self.prbsolver = self.configure['SOLVER']['prbsolver']
+        self.prbsolver = self.cfg['SOLVER']['prbsolver']
         # define the solver for project between domains
-        self.prjsolver = self.configure['SOLVER']['prjsolver']
+        self.prjsolver = self.cfg['SOLVER']['prjsolver']
         # define the pre-conditioner for the problem
-        self.prbpreconditioner = self.configure['SOLVER']['prbpreconditioner']
+        self.prbpreconditioner = self.cfg['SOLVER']['prbpreconditioner']
         # define the line search for the snes solver
-        self.lineSearch = self.configure['SOLVER']['lineSearch']
+        self.lineSearch = self.cfg['SOLVER']['lineSearch']
         # define the relative tolerance for the problem
-        self.prbRelative_tolerance = float(self.configure['SOLVER']['prbRelative_tolerance'])
+        self.prbRelative_tolerance = float(self.cfg['SOLVER']['prbRelative_tolerance'])
         # define the absolute tolerance for the problem
-        self.prbAbsolute_tolerance = float(self.configure['SOLVER']['prbAbsolute_tolerance'])
+        self.prbAbsolute_tolerance = float(self.cfg['SOLVER']['prbAbsolute_tolerance'])
         # define the maximum iterations for the problem
-        self.prbMaximum_iterations = int(self.configure['SOLVER']['prbMaximum_iterations'])
+        self.prbMaximum_iterations = int(self.cfg['SOLVER']['prbMaximum_iterations'])
         # define the relaxation parameter for the problem
-        self.prbRelaxation_parameter = float(self.configure['SOLVER']['prbRelaxation_parameter'])
+        self.prbRelaxation_parameter = float(self.cfg['SOLVER']['prbRelaxation_parameter'])
         # define the representation of the compiler
-        self.compRepresentation = self.configure['SOLVER']['compRepresentation']
+        self.compRepresentation = self.cfg['SOLVER']['compRepresentation']
         # switch on the C++ code optimization
-        self.cppOptimize = self.configure['SOLVER'].getboolean('cppOptimize')
+        self.cppOptimize = self.cfg['SOLVER'].getboolean('cppOptimize')
         # switch on optimization of the compiler
-        self.optimize = self.configure['SOLVER'].getboolean('optimize')
+        self.optimize = self.cfg['SOLVER'].getboolean('optimize')
         # switch on extrapolation WARRING: Please set it 'FALSE' for Parallel Interpolation
-        self.allow_extrapolation = self.configure['SOLVER'].getboolean('allow_extrapolation')
+        self.allow_extrapolation = self.cfg['SOLVER'].getboolean('allow_extrapolation')
         # Ghost cell mode: "shared_facet"; "shared_vertex"; "none"
-        self.ghost_mode = self.configure['SOLVER']['ghost_mode']
+        self.ghost_mode = self.cfg['SOLVER']['ghost_mode']
         # switch on error of non convergence
-        self.error_on_nonconvergence = self.configure['SOLVER'].getboolean('error_on_nonconvergence')
+        self.error_on_nonconvergence = self.cfg['SOLVER'].getboolean('error_on_nonconvergence')
         # define the maximum iterations for the krylov solver
-        self.krylov_maximum_iterations = int(self.configure['SOLVER']['krylov_maximum_iterations'])
+        self.krylov_maximum_iterations = int(self.cfg['SOLVER']['krylov_maximum_iterations'])
         # define the relative tolerance for the krylov solver
-        self.krylov_prbRelative_tolerance = float(self.configure['SOLVER']['krylov_prbRelative_tolerance'])
+        self.krylov_prbRelative_tolerance = float(self.cfg['SOLVER']['krylov_prbRelative_tolerance'])
         # define the absolute tolerance for the krylov solver
-        self.krylov_prbAbsolute_tolerance = float(self.configure['SOLVER']['krylov_prbAbsolute_tolerance'])
+        self.krylov_prbAbsolute_tolerance = float(self.cfg['SOLVER']['krylov_prbAbsolute_tolerance'])
         # switch on monitor convergence for the krylov solver
-        self.monitor_convergence = self.configure['SOLVER'].getboolean('monitor_convergence')
+        self.monitor_convergence = self.cfg['SOLVER'].getboolean('monitor_convergence')
         # switch on nonzero initial guess for the krylov solver
-        self.nonzero_initial_guess = self.configure['SOLVER'].getboolean('nonzero_initial_guess')
+        self.nonzero_initial_guess = self.cfg['SOLVER'].getboolean('nonzero_initial_guess')
         # switch on report for the krylov solver
-        self.show_report = self.configure['SOLVER'].getboolean('show_report')
+        self.show_report = self.cfg['SOLVER'].getboolean('show_report')
 
         #===========================================
         #%% Global degree orders
         #===========================================
 
         # Function space degree order
-        self.deg_fun_spc = int(self.configure['ORDER']['deg_fun_spc'])
+        self.deg_fun_spc = int(self.cfg['ORDER']['deg_fun_spc'])
         # Expression degree (if any)
-        self.deg_exp = int(self.configure['ORDER']['deg_exp'])
+        self.deg_exp = int(self.cfg['ORDER']['deg_exp'])
 
         #===========================================
         #%% Target folder input
         #===========================================
 
         # F-Input/output folder directories are relative paths; T-Input/output folder directories are absolute paths.
-        self.iAbspath = self.configure['FOLDER'].getboolean('iAbspath')
-        self.outputFolderName = self.configure['FOLDER']['outputFolderName']
-        self.inputFolderName = self.configure['FOLDER']['inputFolderName']
+        self.iAbspath = self.cfg['FOLDER'].getboolean('iAbspath')
+        self.outputFolderName = self.cfg['FOLDER']['outputFolderName']
+        self.inputFolderName = self.cfg['FOLDER']['inputFolderName']
 
         #===========================================
         #%% Solid mechanical parameters input
         #===========================================
 
         # Density of solid [kg/m^3]
-        self.rho_s = float(self.configure['MECHANICAL']['rho_s'])
+        self.rho_s = float(self.cfg['MECHANICAL']['rho_s'])
         # Poisson ratio [-]
-        self.nu_s = float(self.configure['MECHANICAL']['nu_s'])
+        self.nu_s = float(self.cfg['MECHANICAL']['nu_s'])
 
         #===========================================
         #%% Solid body external forces input
         #===========================================
 
         # Body external forces in x-axis direction [N/m^3]
-        self.bForExtX = float(self.configure['EXTFORCE']['bForExtX'])
+        self.bForExtX = float(self.cfg['EXTFORCE']['bForExtX'])
         # Body external forces in y-axis direction [N/m^3]
-        self.bForExtY = float(self.configure['EXTFORCE']['bForExtY'])
+        self.bForExtY = float(self.cfg['EXTFORCE']['bForExtY'])
         # Body external forces in z-axis direction [N/m^3]
-        self.bForExtZ = float(self.configure['EXTFORCE']['bForExtZ'])
+        self.bForExtZ = float(self.cfg['EXTFORCE']['bForExtZ'])
 
         #===========================================
         #%% Time marching parameter input
         #===========================================
 
         # End time [s]
-        self.T = float(self.configure['TIME']['T'])
+        self.T = float(self.cfg['TIME']['T'])
         # Time step size [s]
-        self.dt = float(self.configure['TIME']['dt'])
+        self.dt = float(self.cfg['TIME']['dt'])
         # Numbers of sub-iterations (integer) [-]
-        self.num_sub_iteration = int(self.configure['TIME']['num_sub_iteration'])
+        self.num_sub_iteration = int(self.cfg['TIME']['num_sub_iteration'])
         # F-Run from initial time step; T-Continue run based on previous results.
-        self.iContinueRun = self.configure['TIME'].getboolean('iContinueRun')
+        self.iContinueRun = self.cfg['TIME'].getboolean('iContinueRun')
         # F-Run from initial time; T-Run from a different time.
-        self.iResetStartTime = self.configure['TIME'].getboolean('iResetStartTime')
+        self.iResetStartTime = self.cfg['TIME'].getboolean('iResetStartTime')
         # New start time (when iResetStartTime = True) [s]
-        self.newStartTime = float(self.configure['TIME']['newStartTime'])
+        self.newStartTime = float(self.cfg['TIME']['newStartTime'])
         # F-sub-iteration remains the same; T-change the sub-iteration number.
-        self.iChangeSubIter = self.configure['TIME'].getboolean('iChangeSubIter')
+        self.iChangeSubIter = self.cfg['TIME'].getboolean('iChangeSubIter')
         # Time to change the sub-iteration [s]
-        self.TChangeSubIter = float(self.configure['TIME']['TChangeSubIter'])
+        self.TChangeSubIter = float(self.cfg['TIME']['TChangeSubIter'])
         # New numbers of sub-iterations (integer) [-]
-        self.num_sub_iteration_new = int(self.configure['TIME']['num_sub_iteration_new'])
+        self.num_sub_iteration_new = int(self.cfg['TIME']['num_sub_iteration_new'])
         
         #===========================================
         #%% Time marching accurate control
         #===========================================
 
         # One-step theta value, valid only on STVK solver
-        self.thetaOS = float(self.configure['TIMEMARCHCOEF']['thetaOS'])
+        self.thetaOS = float(self.cfg['TIMEMARCHCOEF']['thetaOS'])
         # Rayleigh damping coefficients, valid only on MCK solver
-        self.alpha_rdc = float(self.configure['TIMEMARCHCOEF']['alpha_rdc'])
-        self.beta_rdc = float(self.configure['TIMEMARCHCOEF']['beta_rdc'])
+        self.alpha_rdc = float(self.cfg['TIMEMARCHCOEF']['alpha_rdc'])
+        self.beta_rdc = float(self.cfg['TIMEMARCHCOEF']['beta_rdc'])
         # Generalized-alpha method parameters, valid only on MCK solver
         # alpha_m_gam <= alpha_f_gam <= 0.5 for a better performance
         # Suggested values for alpha_m_gam: 0.0 or 0.4
         # Suggested values for alpha_f_gam: 0.0 or 0.2
-        self.alpha_m_gam = float(self.configure['TIMEMARCHCOEF']['alpha_m_gam'])
-        self.alpha_f_gam = float(self.configure['TIMEMARCHCOEF']['alpha_f_gam'])
+        self.alpha_m_gam = float(self.cfg['TIMEMARCHCOEF']['alpha_m_gam'])
+        self.alpha_f_gam = float(self.cfg['TIMEMARCHCOEF']['alpha_f_gam'])
 
         #===========================================
         #%% Post-processing parameter input
         #===========================================
 
         # Output file intervals (integer) [-]
-        self.output_interval = int(self.configure['POSTPROCESS']['output_interval'])
+        self.output_interval = int(self.cfg['POSTPROCESS']['output_interval'])
         # X-axis coordinate of the monitoring point [m]
-        self.pointMoniX = float(self.configure['POSTPROCESS']['pointMoniX'])
+        self.pointMoniX = float(self.cfg['POSTPROCESS']['pointMoniX'])
         # Y-axis coordinate of the monitoring point [m]
-        self.pointMoniY = float(self.configure['POSTPROCESS']['pointMoniY'])
+        self.pointMoniY = float(self.cfg['POSTPROCESS']['pointMoniY'])
         # Z-axis coordinate of the monitoring point [m]
-        self.pointMoniZ = float(self.configure['POSTPROCESS']['pointMoniZ'])
+        self.pointMoniZ = float(self.cfg['POSTPROCESS']['pointMoniZ'])
         # X-axis coordinate of the monitoring point [m]
-        self.pointMoniXb = float(self.configure['POSTPROCESS']['pointMoniXb'])
+        self.pointMoniXb = float(self.cfg['POSTPROCESS']['pointMoniXb'])
         # Y-axis coordinate of the monitoring point [m]
-        self.pointMoniYb = float(self.configure['POSTPROCESS']['pointMoniYb'])
+        self.pointMoniYb = float(self.cfg['POSTPROCESS']['pointMoniYb'])
         # Z-axis coordinate of the monitoring point [m]
-        self.pointMoniZb = float(self.configure['POSTPROCESS']['pointMoniZb'])
+        self.pointMoniZb = float(self.cfg['POSTPROCESS']['pointMoniZb'])
 
         #===========================================
         #%% Solid Model dimension input
         #===========================================
 
         # x coordinate of the original point of the beam [m]
-        self.OBeamX = float(self.configure['GEOMETRY']['OBeamX'])
+        self.OBeamX = float(self.cfg['GEOMETRY']['OBeamX'])
         # y coordinate of the original point of the beam [m]
-        self.OBeamY = float(self.configure['GEOMETRY']['OBeamY'])
+        self.OBeamY = float(self.cfg['GEOMETRY']['OBeamY'])
         # z coordinate of the original point of the beam [m]
-        self.OBeamZ = float(self.configure['GEOMETRY']['OBeamZ'])
+        self.OBeamZ = float(self.cfg['GEOMETRY']['OBeamZ'])
         # length of the beam [m]
-        self.XBeam = float(self.configure['GEOMETRY']['XBeam'])
+        self.XBeam = float(self.cfg['GEOMETRY']['XBeam'])
         # width of the beam [m]
-        self.YBeam = float(self.configure['GEOMETRY']['YBeam'])
+        self.YBeam = float(self.cfg['GEOMETRY']['YBeam'])
         # thick of the beam [m]
-        self.ZBeam = float(self.configure['GEOMETRY']['ZBeam'])
+        self.ZBeam = float(self.cfg['GEOMETRY']['ZBeam'])
 
         #===========================================
         #%% Solid calculation selection
         #===========================================
 
         # F-Generate mesh; T-Load mesh from file.
-        self.iMeshLoad = self.configure['CALMODE'].getboolean('iMeshLoad')
+        self.iMeshLoad = self.cfg['CALMODE'].getboolean('iMeshLoad')
         # F-Linear Hooke's law; T-Non-linear St. Vernant-Kirchhoff material model.
-        self.iNonLinearMethod = self.configure['CALMODE'].getboolean('iNonLinearMethod')
+        self.iNonLinearMethod = self.cfg['CALMODE'].getboolean('iNonLinearMethod')
         # F-The HDF5 File Export function closed; T-The HDF5 File Export function opened.
-        self.iHDF5FileExport = self.configure['CALMODE'].getboolean('iHDF5FileExport')
+        self.iHDF5FileExport = self.cfg['CALMODE'].getboolean('iHDF5FileExport')
         # F-Load mesh from HDF5 file; T-Load mesh from XML file (when iMeshLoad = T).
-        self.iLoadXML = self.configure['CALMODE'].getboolean('iLoadXML')
+        self.iLoadXML = self.cfg['CALMODE'].getboolean('iLoadXML')
         # F-Do not show the generated mesh; T-Show the generated mesh interactively.
-        self.iInteractiveMeshShow = self.configure['CALMODE'].getboolean('iInteractiveMeshShow')
+        self.iInteractiveMeshShow = self.cfg['CALMODE'].getboolean('iInteractiveMeshShow')
         # F-The HDF5 Mesh Export function closed; T-The HDF5 Mesh Export function opened (when iHDF5FileExport = T).
-        self.iHDF5MeshExport = self.configure['CALMODE'].getboolean('iHDF5MeshExport')
+        self.iHDF5MeshExport = self.cfg['CALMODE'].getboolean('iHDF5MeshExport')
         # F-The HDF5 Subdomains Export function closed; T-The HDF5 Subdomains Export function opened (when iHDF5FileExport = T).
-        self.iHDF5SubdomainsExport = self.configure['CALMODE'].getboolean('iHDF5SubdomainsExport')
+        self.iHDF5SubdomainsExport = self.cfg['CALMODE'].getboolean('iHDF5SubdomainsExport')
         # F-The HDF5 Boundaries Export function closed; T-The HDF5 Boundaries Export function opened (when iHDF5FileExport = T).
-        self.iHDF5BoundariesExport = self.configure['CALMODE'].getboolean('iHDF5BoundariesExport')
+        self.iHDF5BoundariesExport = self.cfg['CALMODE'].getboolean('iHDF5BoundariesExport')
         # F-The Subdomains Import function closed; T-The Subdomains Import function opened.
-        self.iSubdomainsImport = self.configure['CALMODE'].getboolean('iSubdomainsImport')
+        self.iSubdomainsImport = self.cfg['CALMODE'].getboolean('iSubdomainsImport')
         # F-The Boundaries Import function closed; T-The Boundaries Import function opened.
-        self.iBoundariesImport = self.configure['CALMODE'].getboolean('iBoundariesImport')
+        self.iBoundariesImport = self.cfg['CALMODE'].getboolean('iBoundariesImport')
         # F-The txt export of time list and max displacement closed; T-The txt export of time list and max displacement opened.
-        self.iExporttxt = self.configure['CALMODE'].getboolean('iExporttxt')
+        self.iExporttxt = self.cfg['CALMODE'].getboolean('iExporttxt')
         # F-Apply uniform traction force; T-Apply non-uniform traction force.
-        self.iNonUniTraction = self.configure['CALMODE'].getboolean('iNonUniTraction')
+        self.iNonUniTraction = self.cfg['CALMODE'].getboolean('iNonUniTraction')
         # F-The gravitational force not included; T-The gravitational force included.
-        self.iGravForce = self.configure['CALMODE'].getboolean('iGravForce')
+        self.iGravForce = self.cfg['CALMODE'].getboolean('iGravForce')
 
         #===========================================
         #%% Solid Mesh numbers input
         #===========================================
 
         # cell numbers along the length of the beam, valid when iMeshLoad=False (integer) [-]
-        self.XMesh = int(self.configure['MESH']['XMesh'])
+        self.XMesh = int(self.cfg['MESH']['XMesh'])
         # cell numbers along the width of the beam, valid when iMeshLoad=False (integer) [-]
-        self.YMesh = int(self.configure['MESH']['YMesh'])
+        self.YMesh = int(self.cfg['MESH']['YMesh'])
         # cell numbers along the thick of the beam, valid when iMeshLoad=False (integer) [-]
-        self.ZMesh = int(self.configure['MESH']['ZMesh'])
+        self.ZMesh = int(self.cfg['MESH']['ZMesh'])
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Initialize MPI by mpi4py/MUI for parallelized computation
@@ -2896,7 +2896,7 @@ class StructureFSISolver:
 
     # Define the Lamé's second parameter(shear modulus)
     def mu_s (self):
-        return (float(self.configure['MECHANICAL']['E_s'])/(2.0*(1.0 + self.nu_s)))
+        return (float(self.cfg['MECHANICAL']['E_s'])/(2.0*(1.0 + self.nu_s)))
 
     # Define the Lamé's first parameter
     def lamda_s (self):
@@ -3105,7 +3105,7 @@ class StructureFSISolver:
             print ("\n")
 
             print ("{FENICS} Input parameters: ")
-            print ("{FENICS} E: ", float(self.configure['MECHANICAL']['E_s']), "[Pa]")
+            print ("{FENICS} E: ", float(self.cfg['MECHANICAL']['E_s']), "[Pa]")
             print ("{FENICS} rho: ", self.rho_s, "[kg/m^3]")
             print ("{FENICS} nu: ", self.nu_s, "[-]")
             print ("\n")
