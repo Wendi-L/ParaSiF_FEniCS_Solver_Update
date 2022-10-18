@@ -57,12 +57,15 @@ import sys
 import structureFSISolver
 #import cfsil4py
 import mui4py
+
+import structureFSISolver.cfgPrsFn
+
 #_________________________________________________________________________________________
 #
 #%% Main Structure Solver Class
 #_________________________________________________________________________________________
     
-class StructureFSISolver:
+class StructureFSISolver(structureFSISolver.cfgPrsFn.readData):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solver initialize
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -362,10 +365,6 @@ class StructureFSISolver:
         self.YMesh = int(self.cfg['MESH']['YMesh'])
         # cell numbers along the thick of the beam, valid when iMeshLoad=False (integer) [-]
         self.ZMesh = int(self.cfg['MESH']['ZMesh'])
-
-    def E_s (self):
-        # Young's Modulus [Pa] (5.0e5) (1.4e6) (1.0e4)
-        return float(self.cfg['MECHANICAL']['E_s'])
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Initialize MPI by mpi4py/MUI for parallelized computation
