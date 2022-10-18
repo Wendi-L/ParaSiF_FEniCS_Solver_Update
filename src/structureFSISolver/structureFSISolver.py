@@ -59,13 +59,15 @@ import structureFSISolver
 import mui4py
 
 import structureFSISolver.cfgPrsFn
+import structureFSISolver.lameParm
 
 #_________________________________________________________________________________________
 #
 #%% Main Structure Solver Class
 #_________________________________________________________________________________________
     
-class StructureFSISolver(structureFSISolver.cfgPrsFn.readData):
+class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
+                         structureFSISolver.lameParm.lameParm):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solver initialize
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2896,10 +2898,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define Lame parameters
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    # Define the Lamé's second parameter(shear modulus)
-    def mu_s (self):
-        return (self.E_s()/(2.0*(1.0 + self.nu_s)))
 
     # Define the Lamé's first parameter
     def lamda_s (self):
