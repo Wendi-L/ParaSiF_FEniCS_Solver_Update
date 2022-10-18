@@ -77,7 +77,7 @@ class StructureFSISolver:
         #%% Obtain files and instances
         #===========================================
 
-        # Obtain cfg file
+        # Obtain configure file
         self.cfg = Configure
         # Obtain fixed sub-domain instances
         self.fixedSDomain = FixedSubdomain
@@ -362,6 +362,10 @@ class StructureFSISolver:
         self.YMesh = int(self.cfg['MESH']['YMesh'])
         # cell numbers along the thick of the beam, valid when iMeshLoad=False (integer) [-]
         self.ZMesh = int(self.cfg['MESH']['ZMesh'])
+
+    def E_s (self):
+        # Young's Modulus [Pa] (5.0e5) (1.4e6) (1.0e4)
+        return float(self.cfg['MECHANICAL']['E_s'])
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Initialize MPI by mpi4py/MUI for parallelized computation
@@ -2896,7 +2900,7 @@ class StructureFSISolver:
 
     # Define the Lamé's second parameter(shear modulus)
     def mu_s (self):
-        return (float(self.cfg['MECHANICAL']['E_s'])/(2.0*(1.0 + self.nu_s)))
+        return (self.E_s()/(2.0*(1.0 + self.nu_s)))
 
     # Define the Lamé's first parameter
     def lamda_s (self):
@@ -3105,7 +3109,7 @@ class StructureFSISolver:
             print ("\n")
 
             print ("{FENICS} Input parameters: ")
-            print ("{FENICS} E: ", float(self.cfg['MECHANICAL']['E_s']), "[Pa]")
+            print ("{FENICS} E: ", self.E_s(), "[Pa]")
             print ("{FENICS} rho: ", self.rho_s, "[kg/m^3]")
             print ("{FENICS} nu: ", self.nu_s, "[-]")
             print ("\n")
