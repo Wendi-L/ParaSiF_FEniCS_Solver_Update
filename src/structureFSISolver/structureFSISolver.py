@@ -230,8 +230,6 @@ class StructureFSISolver:
         #%% Solid mechanical parameters input
         #===========================================
 
-        # Young's Modulus [Pa] (5.0e5) (1.4e6) (1.0e4)
-        self.E_s = float(self.configure['MECHANICAL']['E_s'])
         # Density of solid [kg/m^3]
         self.rho_s = float(self.configure['MECHANICAL']['rho_s'])
         # Poisson ratio [-]
@@ -2898,7 +2896,7 @@ class StructureFSISolver:
 
     # Define the Lamé's second parameter(shear modulus)
     def mu_s (self):
-        return (self.E_s/(2.0*(1.0 + self.nu_s)))
+        return (float(self.configure['MECHANICAL']['E_s'])/(2.0*(1.0 + self.nu_s)))
 
     # Define the Lamé's first parameter
     def lamda_s (self):
@@ -3107,7 +3105,7 @@ class StructureFSISolver:
             print ("\n")
 
             print ("{FENICS} Input parameters: ")
-            print ("{FENICS} E: ", self.E_s, "[Pa]")
+            print ("{FENICS} E: ", float(self.configure['MECHANICAL']['E_s']), "[Pa]")
             print ("{FENICS} rho: ", self.rho_s, "[kg/m^3]")
             print ("{FENICS} nu: ", self.nu_s, "[-]")
             print ("\n")
