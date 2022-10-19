@@ -43,11 +43,12 @@
 #
 #%% Import packages
 #_________________________________________________________________________________________
-import structureFSISolver
-import os
+
 from dolfin import *
+import os
 import numpy as np
 from mpi4py import MPI
+import structureFSISolver
 
 class linearElastic:
 

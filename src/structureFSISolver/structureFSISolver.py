@@ -60,7 +60,7 @@ import mui4py
 
 import structureFSISolver.cfgPrsFn
 import structureFSISolver.lameParm
-import structureFSISolver.linearElasticSolver
+import structureFSISolver.solvers.linearElasticSolver
 
 #_________________________________________________________________________________________
 #
@@ -69,7 +69,7 @@ import structureFSISolver.linearElasticSolver
     
 class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                          structureFSISolver.lameParm.lameParm,
-                         structureFSISolver.linearElasticSolver.linearElastic):
+                         structureFSISolver.solvers.linearElasticSolver.linearElastic):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solver initialize
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
