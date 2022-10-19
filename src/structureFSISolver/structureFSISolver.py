@@ -3440,7 +3440,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if self.solving_method == 'STVK':
             pass
         elif self.solving_method == 'MCK':
-            structureFSISolver.solvers.linearElasticSolver.linearElastic.linearElasticSolve(self)
+            self.linearElasticSolve()
 
         #===========================================
         #%% Calculate wall time
