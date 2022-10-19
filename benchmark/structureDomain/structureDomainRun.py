@@ -75,7 +75,7 @@ solver = structureFSISolver.structureFSISolver.StructureFSISolver(config, fixed,
 #%% Solving
 #_________________________________________________________________________________________
 
-solver.linearElasticSolve()
+solver.solve()
 
 #_________________________________________________________________________________________
 #

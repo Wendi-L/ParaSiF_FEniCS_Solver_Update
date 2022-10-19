@@ -3386,7 +3386,72 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Solver(self):
+    def solve(self):
+        #===========================================
+        #%% Setup the wall clock
+        #===========================================
+
+        # create an instance of the TicToc wall clock class
+        wallClock = structureFSISolver.tictoc.TicToc()
+        # Starts the wall clock
+        wallClock.tic()
+
+        #===========================================
+        #%% Initialize MPI by mpi4py/MUI for parallelized computation
+        #===========================================
+
+        if self.iMUICoupling:
+            #import mui4py
+            MPI_COMM_WORLD, ifaces3d = self.MPI_Init()
+        else:
+            MPI_COMM_WORLD = self.MPI_Init()
+
+        rank = self.MPI_Get_Rank(MPI_COMM_WORLD)
+        rank_size = self.MPI_Get_Size(MPI_COMM_WORLD)
+
+        #===========================================
+        #%% Set target folder
+        #===========================================
+
+        # Folder directory
+        if self.iAbspath:
+            outputFolderPath = os.path.abspath(self.outputFolderName)
+            self.inputFolderPath = os.path.abspath(self.inputFolderName)
+        else:
+            outputFolderPath = self.outputFolderName
+            self.inputFolderPath = self.inputFolderName
+
+        #===========================================
+        #%% Print log information
+        #===========================================
+
+        self.Pre_Solving_Log(MPI_COMM_WORLD)
+
+        #===========================================
+        #%% Set form compiler options
+        #===========================================
+
+        self.Set_Compiler_Options()
+
+        #===========================================
+        #%% Call solvers
+        #===========================================
+
+        if self.solving_method == 'STVK':
+            pass
+        elif self.solving_method == 'MCK':
+            structureFSISolver.solvers.linearElasticSolver.linearElastic.linearElasticSolve(self, MPI_COMM_WORLD, ifaces3d, outputFolderPath)
+
+        #===========================================
+        #%% Calculate wall time
+        #===========================================
+
+        # Finish the wall clock
+        simtime = wallClock.toc()
+
+        self.Post_Solving_Log(MPI_COMM_WORLD, simtime)
+
+    def Solver_OLD(self):
         #===========================================
         #%% Setup the wall clock
         #===========================================
