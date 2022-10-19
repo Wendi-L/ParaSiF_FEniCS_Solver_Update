@@ -56,30 +56,30 @@ class linearElastic:
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def linearElasticSolve(self, LOCAL_COMM_WORLD, ifaces3d, outputFolderPath):
+    def linearElasticSolve(self):
 
         #===========================================
         #%% Initialize MPI by mpi4py/MUI for parallelized computation
         #===========================================
 
-        rank = self.MPI_Get_Rank(LOCAL_COMM_WORLD)
-        rank_size = self.MPI_Get_Size(LOCAL_COMM_WORLD)
+        rank = self.MPI_Get_Rank(self.LOCAL_COMM_WORLD)
+        rank_size = self.MPI_Get_Size(self.LOCAL_COMM_WORLD)
 
         #===========================================
         #%% Time marching parameters define
         #===========================================
 
         t, t_step, i_sub_it = \
-            self.Time_Marching_Parameters(LOCAL_COMM_WORLD, self.inputFolderPath)
+            self.Time_Marching_Parameters(self.LOCAL_COMM_WORLD, self.inputFolderPath)
 
-        self.Time_Marching_Log(LOCAL_COMM_WORLD, t, t_step)
+        self.Time_Marching_Log(self.LOCAL_COMM_WORLD, t, t_step)
 
         #===========================================
         #%% Solid Mesh input/generation
         #===========================================
 
         mesh, meshOri, gdim, gdimOri, N = \
-            self.Mesh_Generation(LOCAL_COMM_WORLD, self.inputFolderPath, outputFolderPath)
+            self.Mesh_Generation(self.LOCAL_COMM_WORLD, self.inputFolderPath, self.outputFolderPath)
 
         #===========================================
         #%% Define coefficients
@@ -164,7 +164,7 @@ class linearElastic:
         areaf= Function(QOri)             # Function for facet area
 
         if self.iContinueRun:
-            hdf5checkpointDataInTemp = HDF5File(LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
+            hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
             hdf5checkpointDataInTemp.read(u0d0, "/u0d0/vector_0")
             hdf5checkpointDataInTemp.read(d0mck, "/d0mck/vector_0")
             hdf5checkpointDataInTemp.read(u0mck, "/u0mck/vector_0")
@@ -203,14 +203,14 @@ class linearElastic:
         #===========================================
 
         boundaries, boundariesOri, ds = \
-            self.SubDomains_Boundaries_Generation(  LOCAL_COMM_WORLD, 
+            self.SubDomains_Boundaries_Generation(  self.LOCAL_COMM_WORLD, 
                                                     mesh, 
                                                     meshOri, 
                                                     gdim, 
                                                     gdimOri, 
                                                     V, 
                                                     self.inputFolderPath, 
-                                                    outputFolderPath)
+                                                    self.outputFolderPath)
 
         #===========================================
         #%% Define boundary conditions
@@ -271,16 +271,16 @@ class linearElastic:
                 xyz_fetch_list_flat = [item for sublist in xyz_fetch_list for item in sublist]
 
                 # use MPI to get the totals 
-                LOCAL_COMM_WORLD.Reduce(local,total,op = MPI.SUM,root = 0)
-                LOCAL_COMM_WORLD.Bcast(total, root=0)
+                self.LOCAL_COMM_WORLD.Reduce(local,total,op = MPI.SUM,root = 0)
+                self.LOCAL_COMM_WORLD.Bcast(total, root=0)
 
                 xyz_fetch_list_total_flat = np.empty(int(total[0]*3), dtype=np.float64)
 
-                xyz_fetch_list_total = LOCAL_COMM_WORLD.gather(xyz_fetch_list_flat, root = 0)
-                if LOCAL_COMM_WORLD.rank == 0:
+                xyz_fetch_list_total = self.LOCAL_COMM_WORLD.gather(xyz_fetch_list_flat, root = 0)
+                if self.LOCAL_COMM_WORLD.rank == 0:
                     xyz_fetch_list_total_flat = np.asarray([item for sublist in xyz_fetch_list_total for item in sublist])
 
-                LOCAL_COMM_WORLD.Bcast(xyz_fetch_list_total_flat, root=0)
+                self.LOCAL_COMM_WORLD.Bcast(xyz_fetch_list_total_flat, root=0)
                 xyz_fetch_list_total_group = [ xyz_fetch_list_total_flat.tolist()[i:i+3]
                                                     for i in range(0, len(xyz_fetch_list_total_flat.tolist()), 3) ]
 
@@ -290,7 +290,7 @@ class linearElastic:
                 if (not self.iLoadAreaList):
                     if rank == 0: print ("{FENICS} facet area calculating")
 
-                    areaf_vec = self.facets_area_list(  LOCAL_COMM_WORLD,
+                    areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
                                                         meshOri,
                                                         QOri,
                                                         boundariesOri,
@@ -302,15 +302,15 @@ class linearElastic:
                     areaf.vector().set_local(areaf_vec)
                     areaf.vector().apply("insert")
                     if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                        hdfOutTemp = HDF5File(LOCAL_COMM_WORLD, outputFolderPath + "/mesh_boundary_and_values.h5", "a")
+                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
                     else:
-                        hdfOutTemp = HDF5File(LOCAL_COMM_WORLD, outputFolderPath + "/mesh_boundary_and_values.h5", "w")
+                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
                     hdfOutTemp.write(areaf, "/areaf")
                     hdfOutTemp.close()
 
                 else:
 
-                    hdf5meshAreaDataInTemp = HDF5File(LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                    hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
                     hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
                     hdf5meshAreaDataInTemp.close()
 
@@ -318,7 +318,7 @@ class linearElastic:
                 if (not self.iLoadAreaList):
                     if rank == 0: print ("{FENICS} facet area calculating")
 
-                    areaf_vec = self.facets_area_list(  LOCAL_COMM_WORLD,
+                    areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
                                                         meshOri,
                                                         QOri,
                                                         boundariesOri,
@@ -330,15 +330,15 @@ class linearElastic:
                     areaf.vector().set_local(areaf_vec)
                     areaf.vector().apply("insert")
                     if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                        hdfOutTemp = HDF5File(LOCAL_COMM_WORLD, outputFolderPath + "/mesh_boundary_and_values.h5", "a")
+                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
                     else:
-                        hdfOutTemp = HDF5File(LOCAL_COMM_WORLD, outputFolderPath + "/mesh_boundary_and_values.h5", "w")
+                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
                     hdfOutTemp.write(areaf, "/areaf")
                     hdfOutTemp.close()
 
                 else:
 
-                    hdf5meshAreaDataInTemp = HDF5File(LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                    hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
                     hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
                     hdf5meshAreaDataInTemp.close()
 
@@ -348,9 +348,9 @@ class linearElastic:
 
         if rank == 0: print ("{FENICS} Preparing post-process files ...   ", end="", flush=True)
 
-        disp_file = File(LOCAL_COMM_WORLD, outputFolderPath + "/displacement.pvd")
-        stress_file = File(LOCAL_COMM_WORLD, outputFolderPath + "/stress.pvd")
-        traction_file = File(LOCAL_COMM_WORLD, outputFolderPath + "/surface_traction_structure.pvd")
+        disp_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/displacement.pvd")
+        stress_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/stress.pvd")
+        traction_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/surface_traction_structure.pvd")
 
         if rank == 0: print ("Done")
 
@@ -500,8 +500,8 @@ class linearElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output( LOCAL_COMM_WORLD, 
-                                outputFolderPath, 
+        self.Checkpoint_Output( self.LOCAL_COMM_WORLD, 
+                                self.outputFolderPath, 
                                 (t-self.dt), 
                                 mesh, 
                                 meshOri, 
@@ -524,8 +524,8 @@ class linearElastic:
                 if self.iMUIFetchForce:
                     if self.iparallelFSICoupling:
                         t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(LOCAL_COMM_WORLD, 
-                                                    ifaces3d,
+                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
+                                                    self.ifaces3d,
                                                     dofs_fetch_list,
                                                     dofs_to_xyz,
                                                     dofs_push_list,
@@ -534,8 +534,8 @@ class linearElastic:
                                                     t_step)
                     else:
                         t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(LOCAL_COMM_WORLD, 
-                                                    ifaces3d,
+                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
+                                                    self.ifaces3d,
                                                     dofs_fetch_list,
                                                     dofs_to_xyz,
                                                     dofs_push_list,
@@ -545,8 +545,8 @@ class linearElastic:
                 else:
                     if self.iparallelFSICoupling:
                         t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(LOCAL_COMM_WORLD, 
-                                                    ifaces3d,
+                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
+                                                    self.ifaces3d,
                                                     dofs_fetch_list,
                                                     dofs_to_xyz,
                                                     dofs_push_list,
@@ -555,8 +555,8 @@ class linearElastic:
                                                     t_step)
                     else:
                         t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(LOCAL_COMM_WORLD, 
-                                                    ifaces3d,
+                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
+                                                    self.ifaces3d,
                                                     dofs_fetch_list,
                                                     dofs_to_xyz,
                                                     dofs_push_list,
@@ -566,8 +566,8 @@ class linearElastic:
             else:
                 if self.iMUIFetchForce:
                     t_sampler, s_sampler = \
-                            self.MUI_Sampler_Define(LOCAL_COMM_WORLD, 
-                                                    ifaces3d,
+                            self.MUI_Sampler_Define(self.LOCAL_COMM_WORLD, 
+                                                    self.ifaces3d,
                                                     dofs_fetch_list,
                                                     xyz_fetch,
                                                     dofs_push_list,
@@ -575,8 +575,8 @@ class linearElastic:
                                                     t_step)
                 else:
                     t_sampler, s_sampler = \
-                            self.MUI_Sampler_Define(LOCAL_COMM_WORLD, 
-                                                    ifaces3d,
+                            self.MUI_Sampler_Define(self.LOCAL_COMM_WORLD, 
+                                                    self.ifaces3d,
                                                     dofs_fetch_list,
                                                     xyz_fetch,
                                                     dofs_push_list,
@@ -586,7 +586,7 @@ class linearElastic:
         else:
             pass
 
-        if self.iExporttxt: self.Time_Txt_Export_init(LOCAL_COMM_WORLD, outputFolderPath)
+        if self.iExporttxt: self.Time_Txt_Export_init(self.LOCAL_COMM_WORLD, self.outputFolderPath)
 
         # Finish the wall clock on fetch Time
         fetchTime = 0.0
@@ -670,15 +670,15 @@ class linearElastic:
                     if self.iMUICoupling:
                         if self.iMUIFetchForce:
                             # Starts the wall clock
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             wallClockFetchTime.tic()
                             if len(xyz_fetch)!=0:
                                 if self.iparallelFSICoupling:
                                     if self.iUseRBF:
                                         if self.iMUIFetchMoment:
                                             tF_apply_vec, mom_x, mom_y, mom_z = \
-                                                self.MUI_Parallel_FSI_RBF_Fetch( LOCAL_COMM_WORLD,
-                                                                            ifaces3d,
+                                                self.MUI_Parallel_FSI_RBF_Fetch( self.LOCAL_COMM_WORLD,
+                                                                            self.ifaces3d,
                                                                             xyz_fetch,
                                                                             dofs_fetch_list,
                                                                             t_sampler,
@@ -688,11 +688,11 @@ class linearElastic:
                                                                             t_sub_it,
                                                                             tF_apply_vec,
                                                                             areaf_vec,
-                                                                            outputFolderPath)
+                                                                            self.outputFolderPath)
 
                                         else:
-                                            tF_apply_vec = self.MUI_Parallel_FSI_RBF_Fetch(  LOCAL_COMM_WORLD, 
-                                                                            ifaces3d, 
+                                            tF_apply_vec = self.MUI_Parallel_FSI_RBF_Fetch(  self.LOCAL_COMM_WORLD, 
+                                                                            self.ifaces3d, 
                                                                             xyz_fetch, 
                                                                             dofs_fetch_list, 
                                                                             t_sampler, 
@@ -702,7 +702,7 @@ class linearElastic:
                                                                             t_sub_it, 
                                                                             tF_apply_vec, 
                                                                             areaf_vec,
-                                                                            outputFolderPath)
+                                                                            self.outputFolderPath)
                                             if len(dofs_fetch_list) != 0:
                                                 temp_area_pernode = (self.XBeam*self.ZBeam)/len(dofs_fetch_list)
 
@@ -727,8 +727,8 @@ class linearElastic:
                                         #nearest neighbour
                                         if self.iMUIFetchMoment:
                                             tF_apply_vec, mom_x, mom_y, mom_z = \
-                                                self.MUI_Parallel_FSI_Fetch( LOCAL_COMM_WORLD,
-                                                                            ifaces3d,
+                                                self.MUI_Parallel_FSI_Fetch( self.LOCAL_COMM_WORLD,
+                                                                            self.ifaces3d,
                                                                             xyz_fetch,
                                                                             dofs_fetch_list,
                                                                             t_sampler,
@@ -739,11 +739,11 @@ class linearElastic:
                                                                             tF_apply_vec,
                                                                             force_dof_apply_vec,
                                                                             areaf_vec,
-                                                                            outputFolderPath)
+                                                                            self.outputFolderPath)
 
                                         else:
-                                            tF_apply_vec = self.MUI_Parallel_FSI_Fetch(  LOCAL_COMM_WORLD, 
-                                                                            ifaces3d, 
+                                            tF_apply_vec = self.MUI_Parallel_FSI_Fetch(  self.LOCAL_COMM_WORLD, 
+                                                                            self.ifaces3d, 
                                                                             xyz_fetch, 
                                                                             dofs_fetch_list, 
                                                                             t_sampler, 
@@ -754,9 +754,9 @@ class linearElastic:
                                                                             tF_apply_vec, 
                                                                             force_dof_apply_vec, 
                                                                             areaf_vec,
-                                                                            outputFolderPath)
+                                                                            self.outputFolderPath)
 
-                                            #ifaces3d.barrier(float(t_sub_it))
+                                            #self.ifaces3d.barrier(float(t_sub_it))
                                             
                                             if len(dofs_fetch_list) != 0:
                                                 temp_area_pernode = (self.XBeam*self.ZBeam)/len(dofs_fetch_list)
@@ -780,8 +780,8 @@ class linearElastic:
                                 else:
                                     if self.iMUIFetchMoment:
                                         tF_apply_vec, mom_x, mom_y, mom_z = \
-                                            self.MUI_Fetch( LOCAL_COMM_WORLD, 
-                                                            ifaces3d, 
+                                            self.MUI_Fetch( self.LOCAL_COMM_WORLD, 
+                                                            self.ifaces3d, 
                                                             xyz_fetch, 
                                                             dofs_fetch_list, 
                                                             t_sampler, 
@@ -791,8 +791,8 @@ class linearElastic:
                                                             tF_apply_vec, 
                                                             areaf_vec)
                                     else:
-                                        tF_apply_vec = self.MUI_Fetch(  LOCAL_COMM_WORLD, 
-                                                                        ifaces3d, 
+                                        tF_apply_vec = self.MUI_Fetch(  self.LOCAL_COMM_WORLD, 
+                                                                        self.ifaces3d, 
                                                                         xyz_fetch, 
                                                                         dofs_fetch_list, 
                                                                         t_sampler, 
@@ -823,11 +823,11 @@ class linearElastic:
 
                                 
                             # Finish the wall clock on fetch Time
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             fetchTime = wallClockFetchTime.toc()
 
                             # Starts the wall clock
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             wallClockForceVecProj.tic()
                             if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
                                 # Apply traction components. These calls do parallel communication
@@ -844,18 +844,18 @@ class linearElastic:
                                 pass
 
                             # Finish the wall clock on force vector project
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             forceVecProjTime = wallClockForceVecProj.toc()
 
                         else:
                             # Starts the wall clock
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             wallClockFetchTime.tic()
                             if self.iparallelFSICoupling:
                                 if self.iMUIFetchMoment:
                                     tF_apply_vec, mom_x, mom_y, mom_z = \
-                                    self.MUI_Parallel_FSI_Fetch( LOCAL_COMM_WORLD,
-                                                                    ifaces3d,
+                                    self.MUI_Parallel_FSI_Fetch( self.LOCAL_COMM_WORLD,
+                                                                    self.ifaces3d,
                                                                     xyz_fetch,
                                                                     dofs_fetch_list,
                                                                     t_sampler,
@@ -866,10 +866,10 @@ class linearElastic:
                                                                     tF_apply_vec,
                                                                     force_dof_apply_vec,
                                                                     areaf_vec,
-                                                                    outputFolderPath)
+                                                                    self.outputFolderPath)
                                 else:
-                                    tF_apply_vec = self.MUI_Parallel_FSI_Fetch( LOCAL_COMM_WORLD,
-                                                                    ifaces3d,
+                                    tF_apply_vec = self.MUI_Parallel_FSI_Fetch( self.LOCAL_COMM_WORLD,
+                                                                    self.ifaces3d,
                                                                     xyz_fetch,
                                                                     dofs_fetch_list,
                                                                     t_sampler,
@@ -880,12 +880,12 @@ class linearElastic:
                                                                     tF_apply_vec,
                                                                     force_dof_apply_vec,
                                                                     areaf_vec,
-                                                                    outputFolderPath)
+                                                                    self.outputFolderPath)
                             else:
                                 if self.iMUIFetchMoment:
                                     tF_apply_vec, mom_x, mom_y, mom_z = \
-                                        self.MUI_Fetch( LOCAL_COMM_WORLD, 
-                                                        ifaces3d, 
+                                        self.MUI_Fetch( self.LOCAL_COMM_WORLD, 
+                                                        self.ifaces3d, 
                                                         xyz_fetch, 
                                                         dofs_fetch_list, 
                                                         t_sampler, 
@@ -895,8 +895,8 @@ class linearElastic:
                                                         tF_apply_vec, 
                                                         areaf_vec)
                                 else:
-                                    tF_apply_vec = self.MUI_Fetch(  LOCAL_COMM_WORLD, 
-                                                                    ifaces3d, 
+                                    tF_apply_vec = self.MUI_Fetch(  self.LOCAL_COMM_WORLD, 
+                                                                    self.ifaces3d, 
                                                                     xyz_fetch, 
                                                                     dofs_fetch_list, 
                                                                     t_sampler, 
@@ -906,11 +906,11 @@ class linearElastic:
                                                                     tF_apply_vec, 
                                                                     areaf_vec)
                             # Finish the wall clock on fetch Time
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             fetchTime = wallClockFetchTime.toc()
 
                             # Starts the wall clock
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             wallClockForceVecProj.tic()
                             if self.iMUIFetchValue:
                                 # Apply traction components. These calls do parallel communication
@@ -920,7 +920,7 @@ class linearElastic:
                                 # do not apply the fetched value, i.e. one-way coupling
                                 pass
                             # Finish the wall clock on force vector project
-                            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                             forceVecProjTime = wallClockForceVecProj.toc()
 
                     else:
@@ -967,7 +967,7 @@ class linearElastic:
                 if (not ((self.iContinueRun) and (n_steps == 1))):
                     if self.solving_method == 'MCK':
                         # Starts the wall clock
-                        if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                         wallClockLinearAssemble.tic()
                         # Assemble linear form
                         if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
@@ -975,24 +975,24 @@ class linearElastic:
                         else:
                             Linear_Assemble = assemble(Linear_Form)
                         # Finish the wall clock on linear assemble
-                        if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                         linearAssembleTime = wallClockLinearAssemble.toc()
                         #bcs.apply(Linear_Assemble)
                         #!!!!!->
                         # Starts the wall clock
-                        if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                         wallClockBCApply.tic()
                         if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
                             pass
                         else:
                             [bc.apply(Linear_Assemble) for bc in bcs]
                         # Finish the wall clock on bc apply
-                        if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                         bcApplyTime = wallClockBCApply.toc()
                         #!!!!!<-
                     # Solving the structure functions inside the time loop
                     # Starts the wall clock
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     wallClockSolverSolve.tic()
                     if (self.solving_method == 'MCK') and (self.linear_solver == 'LU'):
                         solver.solve(Bilinear_Assemble, dmck.vector(), Linear_Assemble)
@@ -1002,10 +1002,10 @@ class linearElastic:
                         else:
                             solver.solve()
                     # Finish the wall clock on solver solve
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     solverSolveTime = wallClockSolverSolve.toc()
                     # Starts the wall clock
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     wallClockTotalForceCal.tic()
                     if self.solving_method == 'MCK':
                         force_X = dot(tF_apply, self.X_direction_vector())*ds(2)
@@ -1024,7 +1024,7 @@ class linearElastic:
                     print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at rank ", rank)
                     print ("{FENICS} Total Force_Z on structure: ", f_Z_a, " at rank ", rank)
                     # Finish the wall clock on total force calculate
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     totalForceCalTime = wallClockTotalForceCal.toc()
                 else:
                     pass
@@ -1034,12 +1034,12 @@ class linearElastic:
                     u,d = ud.split(True)
 
                     # Compute and print the displacement of monitored point
-                    self.print_Disp (LOCAL_COMM_WORLD, d)
+                    self.print_Disp (self.LOCAL_COMM_WORLD, d)
 
                     # MUI Push internal points and commit current steps
                     if (self.iMUICoupling) and (len(xyz_push)!=0):
-                        self.MUI_Push(  LOCAL_COMM_WORLD, 
-                                        ifaces3d, 
+                        self.MUI_Push(  self.LOCAL_COMM_WORLD, 
+                                        self.ifaces3d, 
                                         xyz_push, 
                                         dofs_push_list, 
                                         d, 
@@ -1049,20 +1049,20 @@ class linearElastic:
 
                 elif self.solving_method == 'MCK':
                     # Starts the wall clock
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     wallClockPrintDisp.tic()
                     # Compute and print the displacement of monitored point
-                    self.print_Disp (LOCAL_COMM_WORLD, dmck)
+                    self.print_Disp (self.LOCAL_COMM_WORLD, dmck)
                     # Finish the wall clock on print disp
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     printDispTime = wallClockPrintDisp.toc()
                     # Starts the wall clock
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     wallClockPush.tic()
                     # MUI Push internal points and commit current steps
                     if (self.iMUICoupling) and (len(xyz_push)!=0):
-                        self.MUI_Push(  LOCAL_COMM_WORLD, 
-                                        ifaces3d, 
+                        self.MUI_Push(  self.LOCAL_COMM_WORLD, 
+                                        self.ifaces3d, 
                                         xyz_push, 
                                         dofs_push_list, 
                                         dmck, 
@@ -1071,12 +1071,12 @@ class linearElastic:
                     else:
                         pass
                     # Finish the wall clock on push
-                    if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     pushTime = wallClockPush.toc()
                 # Finish the wall clock on total sim time Per iter
                 simtimePerIter = wallClockPerIter.toc()
 
-                if self.iExporttxt: self.Time_Txt_Export(LOCAL_COMM_WORLD, 
+                if self.iExporttxt: self.Time_Txt_Export(self.LOCAL_COMM_WORLD, 
                                                         t,
                                                         n_steps,
                                                         i_sub_it,
@@ -1095,7 +1095,7 @@ class linearElastic:
                                                         assignOldFuncSpaceTime,
                                                         simtimePerIter,
                                                         simtimePerStep,
-                                                        outputFolderPath)
+                                                        self.outputFolderPath)
 
                 # Move to the next sub-iteration
                 i_sub_it += 1
@@ -1108,7 +1108,7 @@ class linearElastic:
                 self.Move_Mesh(V, d, d0, mesh)
 
                 if (not (self.iQuiet)):
-                    self.Export_Disp_vtk(   LOCAL_COMM_WORLD, 
+                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD, 
                                             n_steps, 
                                             t, 
                                             mesh, 
@@ -1120,12 +1120,12 @@ class linearElastic:
                                             disp_file, 
                                             traction_file)
 
-                    self.Export_Disp_txt(   LOCAL_COMM_WORLD, 
+                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD, 
                                             d, 
-                                            outputFolderPath)
+                                            self.outputFolderPath)
 
-                    self.Checkpoint_Output( LOCAL_COMM_WORLD, 
-                                            outputFolderPath, 
+                    self.Checkpoint_Output( self.LOCAL_COMM_WORLD, 
+                                            self.outputFolderPath, 
                                             t, 
                                             mesh, 
                                             meshOri, 
@@ -1141,17 +1141,17 @@ class linearElastic:
 
             elif self.solving_method == 'MCK':
                 # Starts the wall clock
-                if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 wallClockMoveMesh.tic()
                 self.Move_Mesh(V, dmck, d0mck, mesh)
                 # Finish the wall clock on move mesh
-                if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 moveMeshTime = wallClockMoveMesh.toc()
                 # Starts the wall clock
-                if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 wallClockDispVTKExp.tic()
                 if (not (self.iQuiet)):
-                    self.Export_Disp_vtk(   LOCAL_COMM_WORLD, 
+                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD, 
                                             n_steps, 
                                             t, 
                                             mesh, 
@@ -1163,24 +1163,24 @@ class linearElastic:
                                             disp_file, 
                                             traction_file)
                 # Finish the wall clock on disp VTK export
-                if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 dispVTKExpTime = wallClockDispVTKExp.toc()
                 # Starts the wall clock
-                if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 wallClockDispTxtExp.tic()
                 if (not (self.iQuiet)):
-                    self.Export_Disp_txt(   LOCAL_COMM_WORLD, 
+                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD, 
                                             dmck, 
-                                            outputFolderPath)
+                                            self.outputFolderPath)
                 # Finish the wall clock on disp txt export
-                if (sync == True): LOCAL_COMM_WORLD.Barrier()
+                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 dispTxtExpTime = wallClockDispTxtExp.toc()
             # Starts the wall clock
-            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
             wallClockCheckpointExp.tic()
             if (not (self.iQuiet)):
-                self.Checkpoint_Output( LOCAL_COMM_WORLD, 
-                                        outputFolderPath, 
+                self.Checkpoint_Output( self.LOCAL_COMM_WORLD, 
+                                        self.outputFolderPath, 
                                         t, 
                                         mesh, 
                                         meshOri, 
@@ -1194,10 +1194,10 @@ class linearElastic:
                                         areaf, 
                                         True)
             # Finish the wall clock on checkpoint export
-            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
             checkpointExpTime = wallClockCheckpointExp.toc()
             # Starts the wall clock
-            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
             wallClockAssignOldFuncSpace.tic()
             # Assign the old function spaces
             if self.solving_method == 'STVK':
@@ -1222,14 +1222,14 @@ class linearElastic:
                     u0mck.vector()[:] = umck
                     d0mck.vector()[:] = dmck.vector()
             # Finish the wall clock on assign old function space
-            if (sync == True): LOCAL_COMM_WORLD.Barrier()
+            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
             assignOldFuncSpaceTime = wallClockAssignOldFuncSpace.toc()
             # Move to next time step
             i_sub_it = 1
             t += self.dt
             # Finish the wall clock
             simtimePerStep = wallClockPerStep.toc()
-            if self.MPI_Get_Rank(LOCAL_COMM_WORLD) == 0:
+            if self.MPI_Get_Rank(self.LOCAL_COMM_WORLD) == 0:
                 print ("\n")
                 print ("{FENICS} Simulation time per step: %g [s] at timestep: %i" % (simtimePerStep, n_steps))
             
@@ -1238,7 +1238,7 @@ class linearElastic:
         #===========================================
 
         # Wait for the other solver
-        ifaces3d["threeDInterface0"].barrier(t_sub_it)
+        self.ifaces3d["threeDInterface0"].barrier(t_sub_it)
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
