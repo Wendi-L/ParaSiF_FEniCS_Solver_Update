@@ -418,9 +418,9 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
  
             return MPI_COMM_WORLD
 
-    def MPI_Get_Rank(self, MPI_COMM_WORLD):
+    def MPI_Get_Rank(self):
         # Define local communicator rank
-        return MPI_COMM_WORLD.Get_rank()
+        return self.LOCAL_COMM_WORLD.Get_rank()
 
     def MPI_Get_Size(self, MPI_COMM_WORLD):
         # Define local communicator size
@@ -471,13 +471,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 # send_max_Z = dofs_to_xyz_push[i][2]
 
         # if (send_max_X < send_min_X):
-            # print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            # print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.MPI_Get_Rank())
 
         # if (send_max_Y < send_min_Y):
-            # print("{** FENICS ERROR **} send_max_Y: ", send_max_Y, " smaller than send_min_Y: ", send_min_Y, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            # print("{** FENICS ERROR **} send_max_Y: ", send_max_Y, " smaller than send_min_Y: ", send_min_Y, " at rank: ", self.MPI_Get_Rank())
 
         # if (send_max_Z < send_min_Z):
-            # print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            # print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.MPI_Get_Rank())
 
         # if (send_min_X == send_max_X):
             # send_min_X -= 0.005
@@ -566,13 +566,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                                     # dofs_to_xyz_fetch[p][2]])
 
         # if (recv_max_X < recv_min_X):
-            # print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            # print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.MPI_Get_Rank())
 
         # if (recv_max_Y < recv_min_Y):
-            # print("{** FENICS ERROR **} recv_max_Y: ", recv_max_Y, " smaller than recv_min_Y: ", recv_min_Y, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            # print("{** FENICS ERROR **} recv_max_Y: ", recv_max_Y, " smaller than recv_min_Y: ", recv_min_Y, " at rank: ", self.MPI_Get_Rank())
 
         # if (recv_max_Z < recv_min_Z):
-            # print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            # print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.MPI_Get_Rank())
 
         # if (recv_min_X == recv_max_X):
             # recv_min_X -= 0.005
@@ -632,7 +632,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 MUI_Interfaces.announce_recv_disable()
 
         # Spatial/temporal samplers
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
+        if self.MPI_Get_Rank(self) == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -655,7 +655,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             MUI_Interfaces["threeDInterface0"].commit(0)
         else:
             MUI_Interfaces.commit(0)
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Commit ZERO step")
+        if self.MPI_Get_Rank(self) == 0: print ("{FENICS} Commit ZERO step")
 
         return Temporal_sampler, Spatial_sampler
 
@@ -702,13 +702,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 send_max_Z = dofs_to_xyz_push[p][2]
 
         if (send_max_X < send_min_X):
-            print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.MPI_Get_Rank())
 
         if (send_max_Y < send_min_Y):
-            print("{** FENICS ERROR **} send_max_Y: ", send_max_Y, " smaller than send_min_Y: ", send_min_Y, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print("{** FENICS ERROR **} send_max_Y: ", send_max_Y, " smaller than send_min_Y: ", send_min_Y, " at rank: ", self.MPI_Get_Rank())
 
         if (send_max_Z < send_min_Z):
-            print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.MPI_Get_Rank())
 
         if (send_min_X == send_max_X):
             send_min_X -= 0.005
@@ -807,13 +807,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             point3dGlobalID.append(point_ID)
 
         if (recv_max_X < recv_min_X):
-            print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.MPI_Get_Rank())
 
         if (recv_max_Y < recv_min_Y):
-            print("{** FENICS ERROR **} recv_max_Y: ", recv_max_Y, " smaller than recv_min_Y: ", recv_min_Y, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print("{** FENICS ERROR **} recv_max_Y: ", recv_max_Y, " smaller than recv_min_Y: ", recv_min_Y, " at rank: ", self.MPI_Get_Rank())
 
         if (recv_max_Z < recv_min_Z):
-            print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.MPI_Get_Rank())
 
         if (recv_min_X == recv_max_X):
             recv_min_X -= 0.005
@@ -855,8 +855,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 MUI_Interfaces.announce_recv_disable()
 
         # Spatial/temporal samplers
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
-        #print ("{FENICS} *** DEBUG HERE 00 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), "\n", end="", flush=True)
+        if self.MPI_Get_Rank() == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
+        #print ("{FENICS} *** DEBUG HERE 00 *** at ", self.MPI_Get_Rank(), "\n", end="", flush=True)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         recv_min_X -= (recv_max_X - recv_min_X)*self.fetchExtendRBF
@@ -887,20 +887,20 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # #print("!!!!!!!!!!!!!!!!!{FENICS}: point3dLists: ",  point3dLists)
 
     # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        print ("{FENICS} before read matrix from ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+        print ("{FENICS} before read matrix from ", self.MPI_Get_Rank())
         if (self.iReadMatrix):
             sourcefileAddress=self.inputFolderName + '/RBFMatrix'
-            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.MPI_Get_Rank(MPI_COMM_WORLD))
+            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.MPI_Get_Rank())
             os.makedirs(fileAddress)
-            print ("{FENICS} before read partitionSize from ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print ("{FENICS} before read partitionSize from ", self.MPI_Get_Rank(MPI_CMM_WORLD))
             # search line number of the pointID
             numberOfFolders = 0
             with open(sourcefileAddress +'/partitionSize.dat', 'r') as f_psr:
-                print ("{FENICS} open partitionSize from ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                print ("{FENICS} open partitionSize from ", self.MPI_Get_Rank())
                 for line in f_psr:
                     numberOfFolders = int(line)
             f_psr.close()
-            print ("{FENICS} Number of RBF subfolders: ", numberOfFolders, " from ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print ("{FENICS} Number of RBF subfolders: ", numberOfFolders, " from ", self.MPI_Get_Rank())
 
             numberOfCols=-99
             for i, point_IDs in enumerate(point3dGlobalID):
@@ -945,18 +945,18 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             f_size.close()
 
         else:
-            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.MPI_Get_Rank(MPI_COMM_WORLD))
+            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.MPI_Get_Rank())
             os.makedirs(fileAddress)
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: 
+            if self.MPI_Get_Rank() == 0: 
                 with open(self.outputFolderName + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
                     f_ps.write("%i\n" % self.MPI_Get_Size(MPI_COMM_WORLD))
 
         # Best practice suggestion: for a better performance on the RBF method, always swotch on the smoothFunc when structure Dofs are more than 
         #                           fluid points; Tune the rMUIFetcher to receive a reasonable totForce_Fetch value; Tune the areaListFactor to 
         #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
-        # print ("{FENICS} *** DEBUG HERE 01 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), "\n", end="", flush=True)
+        # print ("{FENICS} *** DEBUG HERE 01 *** at ", self.MPI_Get_Rank(), "\n", end="", flush=True)
         Temporal_sampler = mui4py.ChronoSamplerExact()
-        # print ("{FENICS} *** DEBUG HERE 02 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), "\n", end="", flush=True)
+        # print ("{FENICS} *** DEBUG HERE 02 *** at ", self.MPI_Get_Rank(), "\n", end="", flush=True)
         MPI_COMM_WORLD.Barrier()
         Spatial_sampler = mui4py.SamplerRbf(self.rMUIFetcher, 
                                                 point3dList, 
@@ -968,8 +968,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                                 fileAddress, 
                                                 self.cutoffRBF)
         MPI_COMM_WORLD.Barrier()
-        # print ("{FENICS} *** DEBUG HERE 03 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), "\n", end="", flush=True)
-        # print ("{FENICS} *** DEBUG HERE after 03 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), self.rMUIFetcher, len(point3dList), self.basisFunc, 
+        # print ("{FENICS} *** DEBUG HERE 03 *** at ", self.MPI_Get_Rank(), "\n", end="", flush=True)
+        # print ("{FENICS} *** DEBUG HERE after 03 *** at ", self.MPI_Get_Rank(), self.rMUIFetcher, len(point3dList), self.basisFunc, 
                                                 # self.iConservative, 
                                                 # self.iPolynomial, 
                                                 # self.iSmoothFunc, 
@@ -979,17 +979,17 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         with open(fileAddress+'/pointID.dat', 'w') as f_pid:
             for pid in point3dGlobalID:
                 f_pid.write("%i\n" % pid)
-        # print ("{FENICS} *** DEBUG HERE 04 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), "\n", end="", flush=True)
+        # print ("{FENICS} *** DEBUG HERE 04 *** at ", self.MPI_Get_Rank(), "\n", end="", flush=True)
         if (self.iparallelFSICoupling):
-            #print ("{FENICS} before Barrier: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            #print ("{FENICS} before Barrier: ", self.MPI_Get_Rank())
             #MPI_COMM_WORLD.Barrier()
-            #print ("{FENICS} after Barrier: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
-            globalRank = self.MPI_Get_Rank(MPI_COMM_WORLD)
+            #print ("{FENICS} after Barrier: ", self.MPI_Get_Rank())
+            globalRank = self.MPI_Get_Rank()
             globalRankList =MPI_COMM_WORLD.allgather(globalRank)
             pointLength=len(point3dList)
             mpiSize=self.MPI_Get_Size(MPI_COMM_WORLD)
-            print ("{FENICS} globalRankList: ", globalRankList, " at Rank ", self.MPI_Get_Rank(MPI_COMM_WORLD))
-            print ("{FENICS} size: ", self.MPI_Get_Size(MPI_COMM_WORLD), " at Rank ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+            print ("{FENICS} globalRankList: ", globalRankList, " at Rank ", self.MPI_Get_Rank())
+            print ("{FENICS} size: ", self.MPI_Get_Size(MPI_COMM_WORLD), " at Rank ", self.MPI_Get_Rank())
             # IQNILS=cfsil4py.muiCouplingIQNILS(pointLength, 
                                               # self.initUndRelxCpl, 
                                               # globalRankList, 
@@ -1009,7 +1009,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                               # self.undRelxCplMax, 
                               # self.aitkenIterationN, 
                               # self.globalAlphaInput)
-        # print ("{FENICS} *** DEBUG HERE 05 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), "\n", end="", flush=True)
+        # print ("{FENICS} *** DEBUG HERE 05 *** at ", self.MPI_Get_Rank(), "\n", end="", flush=True)
         print ("{FENICS} Done")
         MPI_COMM_WORLD.Barrier()
         # Commit ZERO step
@@ -1017,8 +1017,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             MUI_Interfaces["threeDInterface0"].commit(0)
         else:
             MUI_Interfaces.commit(0)
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Commit ZERO step")
-        # print ("{FENICS} *** DEBUG HERE 06 *** at ", self.MPI_Get_Rank(MPI_COMM_WORLD), "\n", end="", flush=True)
+        if self.MPI_Get_Rank() == 0: print ("{FENICS} Commit ZERO step")
+        # print ("{FENICS} *** DEBUG HERE 06 *** at ", self.MPI_Get_Rank(), "\n", end="", flush=True)
         # if (self.iparallelFSICoupling):
             # return Temporal_sampler, Spatial_sampler, IQNILS
         # else:
@@ -1043,22 +1043,22 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 mesh_original = BoxMesh(MPI_COMM_WORLD, Point(0, 0, 0), 
                    Point(1, 1, 1), 
                    10, 10, 10)
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading HDF5 mesh from previous run ...   ")
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading HDF5 mesh from previous run ...   ")
                 hdf5checkpointDataInTemp = HDF5File(MPI_COMM_WORLD, InputFolderPath + "/checkpointData.h5", "r")
                 hdf5checkpointDataInTemp.read(mesh, "/mesh", False)
                 hdf5checkpointDataInTemp.read(mesh_original, "/meshOri", False)
                 hdf5checkpointDataInTemp.close()
                 del hdf5checkpointDataInTemp # Delete HDF5File object, closing file
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Done with loading HDF5 mesh")
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Done with loading HDF5 mesh")
             else:
                 if self.iMeshLoad:
                     # Load mesh from file
                     if self.iLoadXML:
-                        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading XML mesh ...   ")
+                        if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading XML mesh ...   ")
                         mesh = Mesh(MPI_COMM_WORLD, InputFolderPath + "/Structure_FEniCS.xml")
-                        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Done with loading XML mesh")
+                        if self.MPI_Get_Rank() == 0: print ("{FENICS} Done with loading XML mesh")
                     else:
-                        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
+                        if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
                         #mesh = Mesh()
                         mesh = BoxMesh(MPI_COMM_WORLD, Point(0, 0, 0), 
                            Point(1, 1, 1), 
@@ -1069,24 +1069,24 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         hdfInTemp.read(mesh_original, "/meshOri", False)
                         hdfInTemp.close()
                         del hdfInTemp 
-                        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Done with loading HDF5 mesh")
+                        if self.MPI_Get_Rank() == 0: print ("{FENICS} Done with loading HDF5 mesh")
                 else:
                     # Generate mesh
-                    if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Generating mesh ...   ")
+                    if self.MPI_Get_Rank() == 0: print ("{FENICS} Generating mesh ...   ")
                     mesh = BoxMesh(MPI_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ), 
                            Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)), 
                            self.XMesh, self.YMesh, self.ZMesh)
-                    if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Done with generating mesh")
+                    if self.MPI_Get_Rank() == 0: print ("{FENICS} Done with generating mesh")
                     mesh_original = Mesh(mesh)                    # Store original mesh
         else:
             if self.iMeshLoad:
                 # Load mesh from file
                 if self.iLoadXML:
-                    if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading XML mesh ...   ")
+                    if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading XML mesh ...   ")
                     mesh = Mesh(MPI_COMM_WORLD, InputFolderPath + "/Structure_FEniCS.xml")
-                    if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Done with loading XML mesh")
+                    if self.MPI_Get_Rank() == 0: print ("{FENICS} Done with loading XML mesh")
                 else:
-                    if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
+                    if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
                     #mesh = Mesh()
                     mesh = BoxMesh(MPI_COMM_WORLD, Point(0, 0, 0), 
                        Point(1, 1, 1), 
@@ -1095,14 +1095,14 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                     hdfInTemp.read(mesh, "/mesh", False)
                     hdfInTemp.close()
                     del hdfInTemp 
-                    if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Done with loading HDF5 mesh")
+                    if self.MPI_Get_Rank() == 0: print ("{FENICS} Done with loading HDF5 mesh")
             else:
                 # Generate mesh
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Generating mesh ...   ")
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Generating mesh ...   ")
                 mesh = BoxMesh(MPI_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ), 
                        Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)), 
                        self.XMesh, self.YMesh, self.ZMesh)
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Done with generating mesh")
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Done with generating mesh")
 
             mesh_original = Mesh(mesh)                    # Store original mesh
 
@@ -1111,20 +1111,20 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         face_narmal = FacetNormal(mesh)                   # Face normal vector
 
         if self.iHDF5FileExport and self.iHDF5MeshExport:
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Exporting HDF5 mesh ...   ", end="", flush=True)
+            if self.MPI_Get_Rank() == 0: print ("{FENICS} Exporting HDF5 mesh ...   ", end="", flush=True)
             hdfOutTemp = HDF5File(MPI_COMM_WORLD, OutputFolderPath + "/mesh_boundary_and_values.h5", "w")
             hdfOutTemp.write(mesh, "/mesh")
             hdfOutTemp.close()
             del hdfOutTemp               
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         if self.iInteractiveMeshShow:
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Interactive Mesh Show ...", end="", flush=True)
+            if self.MPI_Get_Rank() == 0: print ("{FENICS} Interactive Mesh Show ...", end="", flush=True)
             import matplotlib.pyplot as plt
             plt.figure()
             p = plot(mesh, title = "Mesh plot")        
             plt.show()
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         return mesh, mesh_original, grid_dimension, grid_original_dimension, face_narmal
 
@@ -1148,11 +1148,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         if self.iMeshLoad and self.iSubdomainsImport:
             if self.iLoadXML:
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading XML subdomains ...   ", end="", flush=True)
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading XML subdomains ...   ", end="", flush=True)
                 subdomains = MeshFunction("size_t", mesh, InputFolderPath + "/Structure_FEniCS_physical_region.xml")
                 subdomainsOri = MeshFunction("size_t", mesh_original, InputFolderPath + "/Structure_FEniCS_physical_region.xml")
             else:
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading HDF5 subdomains ...   ", end="", flush=True)
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading HDF5 subdomains ...   ", end="", flush=True)
                 subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
                 subdomainsOri = MeshFunction("size_t", mesh_original, mesh_original.topology().dim())
                 hdfInTemp = HDF5File(MPI_COMM_WORLD, InputFolderPath + "/mesh_boundary_and_values.h5", "r")
@@ -1161,10 +1161,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 hdfInTemp.close()
                 del hdfInTemp
 
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         else:
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Creating subdomains ...   ", end="", flush=True)
+            if self.MPI_Get_Rank() == 0: print ("{FENICS} Creating subdomains ...   ", end="", flush=True)
 
             # Initialize sub-domain instances
             fixed       =  self.fixedSDomain
@@ -1175,16 +1175,16 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             flexOri     =  self.flexSDomain
             symmetryOri =  self.symmetrySDomain
 
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         if self.iHDF5FileExport and self.iHDF5SubdomainsExport:
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Exporting HDF5 subdomains ...   ", end="", flush=True) 
+            if self.MPI_Get_Rank() == 0: print ("{FENICS} Exporting HDF5 subdomains ...   ", end="", flush=True) 
             subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
             hdfOutTemp = HDF5File(MPI_COMM_WORLD, OutputFolderPath + "/mesh_boundary_and_values.h5", "a")
             hdfOutTemp.write(subdomains, "/subdomains")
             hdfOutTemp.close()
             del hdfOutTemp
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         #===========================================
         #%% Define and mark mesh boundaries
@@ -1192,12 +1192,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         if self.iMeshLoad and self.iBoundariesImport:
             if self.iLoadXML:
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading XML boundaries ...   ", end="", flush=True)
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading XML boundaries ...   ", end="", flush=True)
                 boundaries = MeshFunction("size_t", mesh, InputFolderPath + "/Structure_FEniCS_facet_region.xml")
                 boundaries_original = MeshFunction("size_t", mesh_original, 
                                       InputFolderPath + "/Structure_FEniCS_facet_region.xml")
             else:
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Loading HDF5 boundaries ...   ", end="", flush=True)
+                if self.MPI_Get_Rank() == 0: print ("{FENICS} Loading HDF5 boundaries ...   ", end="", flush=True)
                 boundaries = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
                 boundaries_original = MeshFunction("size_t", mesh_original, mesh_original.topology().dim()-1)
                 hdfInTemp = HDF5File(MPI_COMM_WORLD, InputFolderPath + "/mesh_boundary_and_values.h5", "r")
@@ -1205,10 +1205,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 hdfInTemp.read(boundaries_original, "/boundaries")
                 hdfInTemp.close()
                 del hdfInTemp
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         else:
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Creating boundaries ...   ", end="", flush=True)
+            if self.MPI_Get_Rank() == 0: print ("{FENICS} Creating boundaries ...   ", end="", flush=True)
 
             boundaries = MeshFunction("size_t",mesh,grid_dimension-1)
 
@@ -1224,19 +1224,19 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             flexOri.mark(boundaries_original,2)
             symmetryOri.mark(boundaries_original,3)
 
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         if self.iHDF5FileExport and self.iHDF5BoundariesExport: 
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("{FENICS} Exporting HDF5 boundaries ...   ", end="", flush=True)
+            if self.MPI_Get_Rank() == 0: print ("{FENICS} Exporting HDF5 boundaries ...   ", end="", flush=True)
             hdfOutTemp = HDF5File(MPI_COMM_WORLD, OutputFolderPath + "/mesh_boundary_and_values.h5", "a")
             hdfOutTemp.write(boundaries, "/boundaries")
             hdfOutTemp.close()
             del hdfOutTemp
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
 
         ds = Measure("ds", domain=mesh, subdomain_data=boundaries)
 
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: 
+        if self.MPI_Get_Rank() == 0: 
             print ("\n")
             print ("{FENICS} Structure Mesh Info: ")
             print ("{FENICS} Dofs: ",VectorFunctionSpace.dim())
@@ -1379,7 +1379,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         for iii, ppp in enumerate(temp_vec_function):
             areatotal += temp_vec_function[iii]
 
-        if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+        if (self.MPI_Get_Rank() == 0) and self.iDebug:
             print("Total area of MUI fetched surface= ", areatotal, " m^2")
 
         return temp_vec_function
@@ -1445,7 +1445,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 else:
 
                     if self.iDebug:
-                        print("[FEniCE] Fetch Many Switched On, ", len(dofs_to_xyz), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                        print("[FEniCE] Fetch Many Switched On, ", len(dofs_to_xyz), " at rank: ", self.MPI_Get_Rank())
 
                     temp_vec_function[0::3][dofs_fetch_list] = MUI_Interfaces.\
                                 fetch_many("forceX", 
@@ -1474,7 +1474,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                     temp_vec_function[1::3][p] /= facet_area_vec_function[p]
                     temp_vec_function[2::3][p] /= facet_area_vec_function[p]
 
-                print ("{FENICS**} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                print ("{FENICS**} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration), " at rank: ", self.MPI_Get_Rank())
 
             else:
                 if((total_Sub_Iteration-0) >= 0):
@@ -1536,7 +1536,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         # print ("{FENICS*****} facet_traction : ",temp_vec_function[1::3][p])
                         # print ("{FENICS*****} p : ",p)
 
-                    print ("{FENICS**} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                    print ("{FENICS**} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration), " at rank: ", self.MPI_Get_Rank())
                 else:
 
                     pass
@@ -1630,23 +1630,23 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
                     pass
 
-        if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+        if (self.MPI_Get_Rank() == 0) and self.iDebug:
             print ('{FENICS} fetch step: ',total_Sub_Iteration)
         if self.iDebug:
             for i in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == i:
+                if self.MPI_Get_Rank() == i:
                     if (len(dofs_to_xyz) == 0):
                         pass
                     else:
                         pass
-                        #print ('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 
+                        #print ('{FENICS} at rank ', self.MPI_Get_Rank(), 
                                 #'fetch points: ', dofs_to_xyz[dofs_fetch_list] )
 
                     if (len(temp_vec_function[dofs_fetch_list]) == 0):
                         pass
                     else:
                         pass
-                        #print('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 
+                        #print('{FENICS} at rank ', self.MPI_Get_Rank(), 
                                 #'fetch value:', temp_vec_function[dofs_fetch_list] )
 
         # MUI Fetch global moment components
@@ -1732,11 +1732,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                     Spatial_sampler,
                                     Temporal_sampler)
 
-            if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+            if (self.MPI_Get_Rank() == 0) and self.iDebug:
                 print ('{FENICS} fetch name: ', "momentX")
                 print ('{FENICS} fetch step: ',total_Sub_Iteration)
             if self.iDebug:
-                print('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 'fetch value:', moment_x, moment_y, moment_z)
+                print('{FENICS} at rank ', self.MPI_Get_Rank(), 'fetch value:', moment_x, moment_y, moment_z)
             
             return temp_vec_function, moment_x, moment_y, moment_z
         else:
@@ -1795,7 +1795,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                     else:
 
                         if self.iDebug:
-                            print("[FEniCE] Fetch Many Switched On, len(dofs_to_xyz): ", len(dofs_to_xyz), " at ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                            print("[FEniCE] Fetch Many Switched On, len(dofs_to_xyz): ", len(dofs_to_xyz), " at ", self.MPI_Get_Rank())
 
                         # create an instance of the TicToc wall clock class
                         wallClockNPZeroCreate = structureFSISolver.tictoc.TicToc()
@@ -1853,7 +1853,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             totForceFetchX += temp_vec_function_temp[0::3][p]
                             totForceFetchY += temp_vec_function_temp[1::3][p]
                             totForceFetchZ += temp_vec_function_temp[2::3][p]
-                        print ("{FENICS**} totForce Fetch: ", totForceFetchX, "; ",totForceFetchY, "; ",totForceFetchZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                        print ("{FENICS**} totForce Fetch: ", totForceFetchX, "; ",totForceFetchY, "; ",totForceFetchZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
                         # Finish the wall clock on total sim time Per iter
                         timeVectFuncEvlu = wallClockVectFuncEvlu.toc()
 
@@ -1882,7 +1882,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             # temp_vec_function[0::3][p] /= facet_area_vec_function[p]
                             # temp_vec_function[1::3][p] /= facet_area_vec_function[p]
                             # temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-                        # print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                        # print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
                         pass
                     else:
                         for i, p in enumerate(dofs_fetch_list):
@@ -1906,7 +1906,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                     timeFRArg = wallClockFRArg.toc()
 
                     for irank in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-                        if self.MPI_Get_Rank(MPI_COMM_WORLD) == irank:
+                        if self.MPI_Get_Rank() == irank:
                             if ((Current_Time_Step==1) and (i_sub_it==1)):
                                 ftxt_time = open(OutputFolderPath + "/timeFETCH" + str(irank)+ ".txt", "a")
                                 ftxt_time.write("Current_Time_Step,"+
@@ -2001,7 +2001,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             temp_vec_function[0::3][p] /= facet_area_vec_function[p]
                             temp_vec_function[1::3][p] /= facet_area_vec_function[p]
                             temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
 
                     else:
 
@@ -2143,24 +2143,24 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 temp_vec_function[1::3][p] += 0.0
                 temp_vec_function[2::3][p] += 0.0
 
-        if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+        if (self.MPI_Get_Rank() == 0) and self.iDebug:
             # print ('{FENICS} fetch name: ', "tractionX")
             print ('{FENICS} fetch step: ',(total_Sub_Iteration-1))
         if self.iDebug:
             for i in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == i:
+                if self.MPI_Get_Rank() == i:
                     if (len(dofs_to_xyz) == 0):
                         pass
                     else:
                         pass
-                        #print ('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 
+                        #print ('{FENICS} at rank ', self.MPI_Get_Rank(), 
                                 #'fetch points: ', dofs_to_xyz[dofs_fetch_list] )
 
                     if (len(temp_vec_function[dofs_fetch_list]) == 0):
                         pass
                     else:
                         pass
-                        #print('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 
+                        #print('{FENICS} at rank ', self.MPI_Get_Rank(), 
                                 #'fetch value:', temp_vec_function[dofs_fetch_list] )
 
         # MUI Fetch global moment components
@@ -2252,11 +2252,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         moment_y += 0.0
                         moment_z += 0.0
 
-            if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+            if (self.MPI_Get_Rank() == 0) and self.iDebug:
                 print ('{FENICS} fetch name: ', "momentX")
                 print ('{FENICS} fetch step: ',(total_Sub_Iteration-1))
             if self.iDebug:
-                print('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 'fetch value:', moment_x, moment_y, moment_z)
+                print('{FENICS} at rank ', self.MPI_Get_Rank(), 'fetch value:', moment_x, moment_y, moment_z)
             
             return temp_vec_function, moment_x, moment_y, moment_z
         else:
@@ -2317,7 +2317,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                     else:
 
                         if self.iDebug:
-                            print("[FEniCE] Fetch Many Switched On, len(dofs_to_xyz[dofs_fetch_list]): ", len(dofs_to_xyz[dofs_fetch_list]), " at ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                            print("[FEniCE] Fetch Many Switched On, len(dofs_to_xyz[dofs_fetch_list]): ", len(dofs_to_xyz[dofs_fetch_list]), " at ", self.MPI_Get_Rank())
                         total_Sub_IterationB = (( (Current_Time_Step - 1) * self.num_sub_iteration ) + i_sub_it -1)*3
                         # create an instance of the TicToc wall clock class
                         wallClockNPZeroCreate = structureFSISolver.tictoc.TicToc()
@@ -2385,7 +2385,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             force_dof_apply_vec_temp[0::3][p] = fetch_valsX[i]
                             force_dof_apply_vec_temp[1::3][p] = fetch_valsY[i]
                             force_dof_apply_vec_temp[2::3][p] = fetch_valsZ[i]
-                            # print ("{FENICS**} Fetch: ", fetch_valsX[i], "; ",fetch_valsY[i], "; ",fetch_valsZ[i], "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                            # print ("{FENICS**} Fetch: ", fetch_valsX[i], "; ",fetch_valsY[i], "; ",fetch_valsZ[i], "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
 
                             force_dof_apply_vec_temp[0::3][p] = (((0.0133/len(facet_area_vec_function))))
                             force_dof_apply_vec_temp[1::3][p] = (((0.0/len(facet_area_vec_function))))
@@ -2394,7 +2394,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             totForceFetchX += force_dof_apply_vec_temp[0::3][p]
                             totForceFetchY += force_dof_apply_vec_temp[1::3][p]
                             totForceFetchZ += force_dof_apply_vec_temp[2::3][p]
-                        print ("{FENICS**} totForce Fetch: ", totForceFetchX, "; ",totForceFetchY, "; ",totForceFetchZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                        print ("{FENICS**} totForce Fetch: ", totForceFetchX, "; ",totForceFetchY, "; ",totForceFetchZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
                         # Finish the wall clock on total sim time Per iter
                         timeVectFuncEvlu = wallClockVectFuncEvlu.toc()
 
@@ -2419,13 +2419,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             temp_vec_function[0::3][p] =force_dof_apply_vec[0::3][p]/facet_area_vec_function[p]
                             temp_vec_function[1::3][p] =force_dof_apply_vec[1::3][p]/facet_area_vec_function[p]
                             temp_vec_function[2::3][p] =force_dof_apply_vec[2::3][p]/facet_area_vec_function[p]
-                    print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                    print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
 
                     # Finish the wall clock on total sim time Per iter
                     timeFRArg = wallClockFRArg.toc()
 
                     for irank in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-                        if self.MPI_Get_Rank(MPI_COMM_WORLD) == irank:
+                        if self.MPI_Get_Rank() == irank:
                             if ((Current_Time_Step==1) and (i_sub_it==1)):
                                 ftxt_time = open(OutputFolderPath + "/timeFETCH" + str(irank)+ ".txt", "a")
                                 ftxt_time.write("Current_Time_Step,"+
@@ -2508,7 +2508,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             totForceFetchX += temp_vec_function_temp[0::3][p]
                             totForceFetchY += temp_vec_function_temp[1::3][p]
                             totForceFetchZ += temp_vec_function_temp[2::3][p]
-                        print ("{FENICS**} totForce Fetch: ", totForceFetchX, "; ",totForceFetchY, "; ",totForceFetchZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                        print ("{FENICS**} totForce Fetch: ", totForceFetchX, "; ",totForceFetchY, "; ",totForceFetchZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
 
                         for i, p in enumerate(dofs_fetch_list):
                             temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
@@ -2522,7 +2522,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             temp_vec_function[1::3][p] /= facet_area_vec_function[p]
                             temp_vec_function[2::3][p] /= facet_area_vec_function[p]
 
-                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank(MPI_COMM_WORLD))
+                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.MPI_Get_Rank())
 
                     else:
 
@@ -2644,24 +2644,24 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 temp_vec_function[1::3][p] += 0.0
                 temp_vec_function[2::3][p] += 0.0
 
-        if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+        if (self.MPI_Get_Rank() == 0) and self.iDebug:
             # print ('{FENICS} fetch name: ', "tractionX")
             print ('{FENICS} fetch step: ',(total_Sub_Iteration-1))
         if self.iDebug:
             for i in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == i:
+                if self.MPI_Get_Rank() == i:
                     if (len(dofs_to_xyz) == 0):
                         pass
                     else:
                         pass
-                        #print ('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 
+                        #print ('{FENICS} at rank ', self.MPI_Get_Rank(), 
                                 #'fetch points: ', dofs_to_xyz[dofs_fetch_list] )
 
                     if (len(temp_vec_function[dofs_fetch_list]) == 0):
                         pass
                     else:
                         pass
-                        #print('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 
+                        #print('{FENICS} at rank ', self.MPI_Get_Rank(), 
                                 #'fetch value:', temp_vec_function[dofs_fetch_list] )
 
         # MUI Fetch global moment components
@@ -2753,11 +2753,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         moment_y += 0.0
                         moment_z += 0.0
 
-            if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+            if (self.MPI_Get_Rank() == 0) and self.iDebug:
                 print ('{FENICS} fetch name: ', "momentX")
                 print ('{FENICS} fetch step: ',(total_Sub_Iteration-1))
             if self.iDebug:
-                print('{FENICS} at rank ', self.MPI_Get_Rank(MPI_COMM_WORLD), 'fetch value:', moment_x, moment_y, moment_z)
+                print('{FENICS} at rank ', self.MPI_Get_Rank(), 'fetch value:', moment_x, moment_y, moment_z)
             
             return temp_vec_function, moment_x, moment_y, moment_z
         else:
@@ -2800,7 +2800,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 if self.iPushZ:
                     MUI_Interfaces.push_many("dispZ", dofs_to_xyz,(d_vec_z[dofs_push]))
                 a = MUI_Interfaces.commit(total_Sub_Iteration)
-                print ('{FENICS} MUI commit step: ',total_Sub_Iteration, ' with peer numbers: ', a, ' at rank: ', self.MPI_Get_Rank(MPI_COMM_WORLD))
+                print ('{FENICS} MUI commit step: ',total_Sub_Iteration, ' with peer numbers: ', a, ' at rank: ', self.MPI_Get_Rank())
         else:
             
             if self.iMultidomain:
@@ -2852,7 +2852,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         MUI_Interfaces.push("dispZ", dofs_to_xyz[i],  (d_vec_z[p]))
                 a = MUI_Interfaces.commit(total_Sub_Iteration)
 
-        if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+        if (self.MPI_Get_Rank() == 0) and self.iDebug:
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
         if ((total_Sub_Iteration-(self.forgetTStepsMUI)) > 0):
@@ -2862,10 +2862,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 a = MUI_Interfaces.forget((total_Sub_Iteration-(self.forgetTStepsMUI)))
                 #MUI_Interfaces.set_memory(self.forgetTStepsMUI)
                 MUI_Interfaces.set_memory(self.forgetTStepsMUI)
-            if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug:
+            if (self.MPI_Get_Rank() == 0) and self.iDebug:
                 print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-(self.forgetTStepsMUI)))
 
-        if (self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug: print('{FENICS} max displacement_function:', 
+        if (self.MPI_Get_Rank() == 0) and self.iDebug: print('{FENICS} max displacement_function:', 
                                                                             displacement_function.vector()[:].max())
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3071,7 +3071,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
     def Pre_Solving_Log(self, MPI_COMM_WORLD):
 
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: 
+        if self.MPI_Get_Rank() == 0: 
             print ("\n")
             print ("{FENICS} ********** STRUCTURAL-ELASTICITY SIMULATION BEGIN **********")
             print ("\n")
@@ -3119,7 +3119,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             MPI_COMM_WORLD, 
                             current_time, 
                             current_time_step):
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: 
+        if self.MPI_Get_Rank() == 0: 
             print ("\n")
             print ("{FENICS} Total time: ", self.T, " [s]")
             print ("{FENICS} Time step size: ", self.dt, " [s]")
@@ -3132,7 +3132,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                 MPI_COMM_WORLD,
                                 OutputFolderPath):
         for irank in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == irank:
+            if self.MPI_Get_Rank() == irank:
                 ftxt_time = open(OutputFolderPath + "/time" + str(irank)+ ".txt", "a")
                 ftxt_time.write("current_time, "+
                                 "current_time_step, "+
@@ -3177,7 +3177,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         simtimePerStep,
                         OutputFolderPath):
         for irank in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == irank:
+            if self.MPI_Get_Rank() == irank:
                 ftxt_time = open(OutputFolderPath + "/time" + str(irank)+ ".txt", "a")
                 ftxt_time.write(str(current_time)+","+
                                 str(n_steps)+","+
@@ -3210,7 +3210,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                 Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
                                 d_DispSum,op=MPI.SUM,root=0)
         d_Disp = np.divide(d_DispSum,d_tempDenominator)
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: 
+        if self.MPI_Get_Rank() == 0: 
             print ("{FENICS} Monitored point deflection [m]: ", d_Disp)
 
     def Export_Disp_txt(    self, 
@@ -3237,7 +3237,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             pointMoniDisp_b = np.divide(pointMoniDispSum_b,tempDenominator_b)
 
             for irank in range(self.MPI_Get_Size(MPI_COMM_WORLD)):
-                if self.MPI_Get_Rank(MPI_COMM_WORLD) == irank:
+                if self.MPI_Get_Rank() == irank:
                     ftxt_dispX = open(OutputFolderPath + "/tip-displacementX_" + str(irank)+ ".txt", "a")
                     ftxt_dispX.write(str(pointMoniDisp[0]))
                     ftxt_dispX.write("\n")
@@ -3281,14 +3281,14 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             disp_file, 
                             traction_file):
         # Export post-processing files
-        if ((self.MPI_Get_Rank(MPI_COMM_WORLD) == 0) and self.iDebug):
+        if ((self.MPI_Get_Rank() == 0) and self.iDebug):
             print ("\n")
             print ("{FENICS} time steps: ", Current_Time_Step, 
                     " output_interval: ", self.output_interval, 
                     " %: ", (Current_Time_Step % self.output_interval))
 
         if (Current_Time_Step % self.output_interval) == 0:
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: 
+            if self.MPI_Get_Rank() == 0: 
                 print ("\n")
                 print ("{FENICS} Export files at ", current_time, " [s] ...   ", end="", flush=True)
 
@@ -3325,13 +3325,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             # Save traction solution to file
             traction.rename('traction', 'trac')
             traction_file << (traction, float(current_time))
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0: print ("Done")
+            if self.MPI_Get_Rank() == 0: print ("Done")
         else:
             pass
 
     def Post_Solving_Log(self, MPI_COMM_WORLD, simtime):
 
-        if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0:
+        if self.MPI_Get_Rank() == 0:
             print ("\n")
             print ("{FENICS} Current Date and Time: ", datetime.datetime.now())
             print ("\n")
@@ -3361,7 +3361,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         # if File_Exists:
             # import os
-            # if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0:
+            # if self.MPI_Get_Rank() == 0:
                 # os.remove(OutputFolderPath + "/checkpointData_" + current_time +".h5")
             # MPI_COMM_WORLD.Barrier()
         # else:
@@ -3406,7 +3406,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         else:
             self.LOCAL_COMM_WORLD = self.MPI_Init()
 
-        rank = self.MPI_Get_Rank(self.LOCAL_COMM_WORLD)
+        rank = self.MPI_Get_Rank()
         rank_size = self.MPI_Get_Size(self.LOCAL_COMM_WORLD)
 
         #===========================================
@@ -3471,7 +3471,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         else:
             MPI_COMM_WORLD = self.MPI_Init()
 
-        rank = self.MPI_Get_Rank(MPI_COMM_WORLD)
+        rank = self.MPI_Get_Rank()
         rank_size = self.MPI_Get_Size(MPI_COMM_WORLD)
 
         #===========================================
@@ -4662,7 +4662,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             t += self.dt
             # Finish the wall clock
             simtimePerStep = wallClockPerStep.toc()
-            if self.MPI_Get_Rank(MPI_COMM_WORLD) == 0:
+            if self.MPI_Get_Rank() == 0:
                 print ("\n")
                 print ("{FENICS} Simulation time per step: %g [s] at timestep: %i" % (simtimePerStep, n_steps))
             

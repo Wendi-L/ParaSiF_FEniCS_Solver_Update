@@ -62,7 +62,7 @@ class linearElastic:
         #%% Initialize MPI by mpi4py/MUI for parallelized computation
         #===========================================
 
-        rank = self.MPI_Get_Rank(self.LOCAL_COMM_WORLD)
+        rank = self.MPI_Get_Rank()
         rank_size = self.MPI_Get_Size(self.LOCAL_COMM_WORLD)
 
         #===========================================
@@ -1229,7 +1229,7 @@ class linearElastic:
             t += self.dt
             # Finish the wall clock
             simtimePerStep = wallClockPerStep.toc()
-            if self.MPI_Get_Rank(self.LOCAL_COMM_WORLD) == 0:
+            if self.MPI_Get_Rank() == 0:
                 print ("\n")
                 print ("{FENICS} Simulation time per step: %g [s] at timestep: %i" % (simtimePerStep, n_steps))
             
