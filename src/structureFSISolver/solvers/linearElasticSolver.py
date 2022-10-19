@@ -59,13 +59,6 @@ class linearElastic:
     def linearElasticSolve(self):
 
         #===========================================
-        #%% Initialize MPI by mpi4py/MUI for parallelized computation
-        #===========================================
-
-        rank = self.MPI_Get_Rank()
-        rank_size = self.MPI_Get_Size(self.LOCAL_COMM_WORLD)
-
-        #===========================================
         #%% Time marching parameters define
         #===========================================
 
@@ -107,7 +100,7 @@ class linearElastic:
 
         sync = False
 
-        if rank == 0:
+        if self.rank == 0:
             print ("\n")
             print ("{FENICS} One-step theta: ", float(theta))
             print ("\n")
@@ -116,7 +109,7 @@ class linearElastic:
         #%% Define function spaces
         #===========================================
 
-        if rank == 0: print ("{FENICS} Creating function spaces ...   ")
+        if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
 
         V_ele     =     VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc) # Displacement & Velocity Vector element
 
@@ -128,13 +121,13 @@ class linearElastic:
         VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
         T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc)      # Define nth order structure function spaces
 
-        if rank == 0: print ("{FENICS} Done with creating function spaces")
+        if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
         #===========================================
         #%% Define functions, test functions and trail functions
         #===========================================
 
-        if rank == 0: print ("{FENICS} Creating functions, test functions and trail functions ...   ", end="", flush=True)
+        if self.rank == 0: print ("{FENICS} Creating functions, test functions and trail functions ...   ", end="", flush=True)
 
         # Trial functions
         du, dd = TrialFunctions(VV)     # Trial functions for velocity and displacement
@@ -179,14 +172,14 @@ class linearElastic:
         else:
             pass
 
-        if rank == 0: print ("Done")
+        if self.rank == 0: print ("Done")
 
         #===========================================
         #%% Define traction forces
         #===========================================
 
         if self.iNonUniTraction:
-            if rank == 0: print ("{FENICS} Non-uniform traction applied")
+            if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
             tF_apply = Function(V)
             tF_apply_vec = tF_apply.vector().get_local()
 
@@ -194,7 +187,7 @@ class linearElastic:
                 force_dof_apply = Function(V)
                 force_dof_apply_vec = force_dof_apply.vector().get_local()
         else:
-            if rank == 0: print ("{FENICS} Uniform traction applied")
+            if self.rank == 0: print ("{FENICS} Uniform traction applied")
             tF_magnitude = Constant(-(0.0)/(self.YBeam*self.ZBeam))
             tF_apply = tF_magnitude*self.X_direction_vector()
 
@@ -216,7 +209,7 @@ class linearElastic:
         #%% Define boundary conditions
         #===========================================
 
-        if rank == 0: print ("{FENICS} Creating 3D boundary conditions ...   ", end="", flush=True)
+        if self.rank == 0: print ("{FENICS} Creating 3D boundary conditions ...   ", end="", flush=True)
         if self.solving_method == 'STVK':
             bc1,bc2 = self.dirichletBCs.DirichletMixedBCs(VV,boundaries,1)
             #bc1 = self.dirichletBCs.DirichletMixedBCs(VV,boundaries,1)
@@ -235,7 +228,7 @@ class linearElastic:
         #!!!!<-    
             #bcs = [bc1,bc2]
             bcs = [bc1]
-        if rank == 0: print ("Done")
+        if self.rank == 0: print ("Done")
 
         #===========================================
         #%% Define DOFs and Coordinates mapping
@@ -277,7 +270,7 @@ class linearElastic:
                 xyz_fetch_list_total_flat = np.empty(int(total[0]*3), dtype=np.float64)
 
                 xyz_fetch_list_total = self.LOCAL_COMM_WORLD.gather(xyz_fetch_list_flat, root = 0)
-                if self.LOCAL_COMM_WORLD.rank == 0:
+                if self.rank == 0:
                     xyz_fetch_list_total_flat = np.asarray([item for sublist in xyz_fetch_list_total for item in sublist])
 
                 self.LOCAL_COMM_WORLD.Bcast(xyz_fetch_list_total_flat, root=0)
@@ -288,7 +281,7 @@ class linearElastic:
 
             if (not self.iContinueRun):
                 if (not self.iLoadAreaList):
-                    if rank == 0: print ("{FENICS} facet area calculating")
+                    if self.rank == 0: print ("{FENICS} facet area calculating")
 
                     areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
                                                         meshOri,
@@ -316,7 +309,7 @@ class linearElastic:
 
             else:
                 if (not self.iLoadAreaList):
-                    if rank == 0: print ("{FENICS} facet area calculating")
+                    if self.rank == 0: print ("{FENICS} facet area calculating")
 
                     areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
                                                         meshOri,
@@ -346,13 +339,13 @@ class linearElastic:
         #%% Prepare post-process files
         #===========================================
 
-        if rank == 0: print ("{FENICS} Preparing post-process files ...   ", end="", flush=True)
+        if self.rank == 0: print ("{FENICS} Preparing post-process files ...   ", end="", flush=True)
 
         disp_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/displacement.pvd")
         stress_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/stress.pvd")
         traction_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/surface_traction_structure.pvd")
 
-        if rank == 0: print ("Done")
+        if self.rank == 0: print ("Done")
 
         #===========================================
         #%% Define the variational FORM 
@@ -362,7 +355,7 @@ class linearElastic:
 
         if self.solving_method == 'STVK':
 
-            if rank == 0: print ("{FENICS} Defining variational FORM and Jacobin functions ...   ", end="", flush=True)
+            if self.rank == 0: print ("{FENICS} Defining variational FORM and Jacobin functions ...   ", end="", flush=True)
 
             # Define the traction terms of the structure variational form
             tF = dot(self.F_(d,gdim).T, tF_apply)
@@ -374,12 +367,12 @@ class linearElastic:
 
             # Define the stress terms and convection of the structure variational form
             if self.iNonLinearMethod:
-                if rank == 0: print ("{FENICS} [Defining non-linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by the constitutive law of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). Valid for large deformations but small strain] ...   ", end="", flush=True)
+                if self.rank == 0: print ("{FENICS} [Defining non-linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by the constitutive law of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). Valid for large deformations but small strain] ...   ", end="", flush=True)
                 Form_s_SC = inner(theta * self.Piola_Kirchhoff_fst(d,gdim) + (1 - theta) * 
                             self.Piola_Kirchhoff_fst(d0,gdim), grad(psi)) * dx
                 Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
             else:
-                if rank == 0: print ("{FENICS} [Defining linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation). Valid for small-scale deformations only] ...   ", end="", flush=True)
+                if self.rank == 0: print ("{FENICS} [Defining linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation). Valid for small-scale deformations only] ...   ", end="", flush=True)
                 Form_s_SC = inner(theta * self.Hooke_stress(d,gdim) + (1 - theta) * 
                             self.Hooke_stress(d0,gdim), grad(psi)) * dx
                 Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
@@ -400,10 +393,10 @@ class linearElastic:
 
             Jaco = derivative(Form_s, ud) # Define Jacobin functions
 
-            if rank == 0: print ("Done")
+            if self.rank == 0: print ("Done")
 
         elif self.solving_method == 'MCK':
-            if rank == 0: print ("{FENICS} Defining variational FORM functions ...   ", end="", flush=True)
+            if self.rank == 0: print ("{FENICS} Defining variational FORM functions ...   ", end="", flush=True)
             # Define the traction terms of the structure variational form
             tF = dot(chi, tF_apply)
 
@@ -433,7 +426,7 @@ class linearElastic:
             Bilinear_Form = lhs(Form_s)
             Linear_Form   = rhs(Form_s)
 
-            if rank == 0: print ("Done")
+            if self.rank == 0: print ("Done")
 
         #===========================================
         #%% Initialize solver
@@ -621,7 +614,7 @@ class linearElastic:
             times.append(t)
             n_steps = len(times)
 
-            if rank == 0: 
+            if self.rank == 0: 
                 print ("\n")
                 print ("\n")
                 print ("{FENICS} Time: ", t)
@@ -640,7 +633,7 @@ class linearElastic:
 
                 t_sub_it += 1
 
-                if rank == 0: 
+                if self.rank == 0: 
                     print ("\n")
                     print ("{FENICS} sub-iteration: ", i_sub_it)
                     print ("{FENICS} total sub-iterations to now: ", t_sub_it)
@@ -924,7 +917,7 @@ class linearElastic:
                             forceVecProjTime = wallClockForceVecProj.toc()
 
                     else:
-                        if rank == 0: print ("{FENICS} Assigning traction forces at present time step ...   ", 
+                        if self.rank == 0: print ("{FENICS} Assigning traction forces at present time step ...   ", 
                                                 end="", flush=True)
 
                         temp_area_pernode = (self.YBeam*self.ZBeam)/len(dofs_fetch_list)
@@ -954,13 +947,13 @@ class linearElastic:
                         # tF_apply.vector().apply("insert")
 
                 else:
-                    if rank == 0: print ("{FENICS} Assigning traction forces at present time step ...   ", 
+                    if self.rank == 0: print ("{FENICS} Assigning traction forces at present time step ...   ", 
                                             end="", flush=True)
                     if t <= 7.0:
                         tF_magnitude.assign(Constant((t*(-500.0)/7.0)/(self.YBeam*self.ZBeam)))
                     else:
                         tF_magnitude.assign(Constant((0.0)/(self.YBeam*self.ZBeam)))
-                    if rank == 0:
+                    if self.rank == 0:
                         print ("Done")
                         #if self.iDebug: print ("{FENICS} tF_magnitude: ", tF_magnitude(0))
 
@@ -1020,9 +1013,9 @@ class linearElastic:
                     f_Y_a = assemble(force_Y)
                     f_Z_a = assemble(force_Z)
 
-                    print ("{FENICS} Total Force_X on structure: ", f_X_a, " at rank ", rank)
-                    print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at rank ", rank)
-                    print ("{FENICS} Total Force_Z on structure: ", f_Z_a, " at rank ", rank)
+                    print ("{FENICS} Total Force_X on structure: ", f_X_a, " at self.rank ", self.rank)
+                    print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at self.rank ", self.rank)
+                    print ("{FENICS} Total Force_Z on structure: ", f_Z_a, " at self.rank ", self.rank)
                     # Finish the wall clock on total force calculate
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     totalForceCalTime = wallClockTotalForceCal.toc()
@@ -1229,7 +1222,7 @@ class linearElastic:
             t += self.dt
             # Finish the wall clock
             simtimePerStep = wallClockPerStep.toc()
-            if self.MPI_Get_Rank() == 0:
+            if self.rank == 0:
                 print ("\n")
                 print ("{FENICS} Simulation time per step: %g [s] at timestep: %i" % (simtimePerStep, n_steps))
             
