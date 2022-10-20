@@ -1250,30 +1250,26 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Time marching parameters define
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Time_Marching_Parameters(   self, 
-                                    MPI_COMM_WORLD, 
-                                    InputFolderPath):
+    def Time_Marching_Parameters(self):
         if self.iContinueRun:
             if True:
-                hdf5checkpointDataInTemp = HDF5File(MPI_COMM_WORLD, InputFolderPath + "/checkpointData.h5", "r")
-                Start_Time = hdf5checkpointDataInTemp.attributes("/ud/vector_0")["timestamp"] # Start time [s]
-                Start_Time += self.dt                                                         # Start time [s]
+                hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
+                self.Start_Time = hdf5checkpointDataInTemp.attributes("/ud/vector_0")["timestamp"] # Start time [s]
+                self.Start_Time += self.dt                                                         # Start time [s]
                 hdf5checkpointDataInTemp.close()
                 del hdf5checkpointDataInTemp                                                  # Delete HDF5File object, closing file
-                Time_Steps = math.ceil((self.T - Start_Time)/self.dt)                         # Time steps [-]
+                self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)                         # Time steps [-]
             else:
-                Start_Time = self.dt                                                          # Start time [s]
-                Time_Steps = math.ceil(self.T/self.dt)                                        # Time steps [-]
+                self.Start_Time = self.dt                                                          # Start time [s]
+                self.Time_Steps = math.ceil(self.T/self.dt)                                        # Time steps [-]
         else:
             if (self.iResetStartTime):
-                Start_Time = self.newStartTime+self.dt                                        # Start time [s]
-                Time_Steps = math.ceil((self.T - Start_Time)/self.dt)                         # Time steps [-]
+                self.Start_Time = self.newStartTime+self.dt                                        # Start time [s]
+                self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)                         # Time steps [-]
             else:
-                Start_Time = self.dt                                                          # Start time [s]
-                Time_Steps = math.ceil(self.T/self.dt)                                        # Time steps [-]
-        Start_Number_Sub_Iteration = 1                                                    # Initialize sub-iterations counter
-
-        return Start_Time, Time_Steps, Start_Number_Sub_Iteration
+                self.Start_Time = self.dt                                                          # Start time [s]
+                self.Time_Steps = math.ceil(self.T/self.dt)                                        # Time steps [-]
+        self.Start_Number_Sub_Iteration = 1                                                    # Initialize sub-iterations counter
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define DOFs extract function 
@@ -3115,16 +3111,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         else:
             pass
 
-    def Time_Marching_Log(  self, 
-                            MPI_COMM_WORLD, 
-                            current_time, 
-                            current_time_step):
+    def Time_Marching_Log(self):
         if self.rank == 0: 
             print ("\n")
             print ("{FENICS} Total time: ", self.T, " [s]")
             print ("{FENICS} Time step size: ", self.dt, " [s]")
-            print ("{FENICS} Time steps: ", current_time_step, " [-]")
-            print ("{FENICS} Start time: ", current_time, " [s]")
+            print ("{FENICS} Time steps: ", self.Start_Time, " [-]")
+            print ("{FENICS} Start time: ", self.Time_Steps, " [s]")
             print ("{FENICS} Numbers of sub-iterations: ", self.num_sub_iteration, " [-]")
             print ("\n")
 
@@ -3433,6 +3426,14 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #===========================================
 
         self.Set_Compiler_Options()
+
+        #===========================================
+        #%% Time marching parameters define
+        #===========================================
+
+        self.Time_Marching_Parameters()
+
+        self.Time_Marching_Log()
 
         #===========================================
         #%% Call solvers

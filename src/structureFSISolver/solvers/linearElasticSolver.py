@@ -62,10 +62,9 @@ class linearElastic:
         #%% Time marching parameters define
         #===========================================
 
-        t, t_step, i_sub_it = \
-            self.Time_Marching_Parameters(self.LOCAL_COMM_WORLD, self.inputFolderPath)
-
-        self.Time_Marching_Log(self.LOCAL_COMM_WORLD, t, t_step)
+        t = self.Start_Time
+        t_step = self.Time_Steps
+        i_sub_it = self.Start_Number_Sub_Iteration
 
         #===========================================
         #%% Solid Mesh input/generation
