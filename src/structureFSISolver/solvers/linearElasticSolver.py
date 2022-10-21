@@ -52,6 +52,57 @@ import structureFSISolver
 
 class linearElastic:
 
+    def tractionAssign(self,
+                        xyz_fetch,
+                        dofs_fetch_list,
+                        t_sampler,
+                        s_sampler,
+                        t_sub_it,
+                        areaf_vec):
+        # Assign traction forces at present time step
+        if self.iNonUniTraction:
+            if len(xyz_fetch)!=0:
+                # Execute only when there are DoFs need to exchange data in this rank.
+                if self.iparallelFSICoupling:
+                    # Parallel FSI coupling
+                    self.tF_apply_vec = self.MUI_Parallel_FSI_RBF_Fetch( 
+                                                    xyz_fetch, 
+                                                    dofs_fetch_list, 
+                                                    t_sampler, 
+                                                    s_sampler,
+                                                    t_sub_it, 
+                                                    self.tF_apply_vec, 
+                                                    areaf_vec)
+                else:
+                    # Staggered FSI coupling
+                    self.tF_apply_vec = self.MUI_Fetch(  xyz_fetch, 
+                                                    dofs_fetch_list, 
+                                                    t_sampler, 
+                                                    s_sampler, 
+                                                    t_sub_it, 
+                                                    self.tF_apply_vec, 
+                                                    areaf_vec)
+
+            if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
+                # Apply traction components. These calls do parallel communication
+                self.tF_apply.vector().set_local(self.tF_apply_vec)
+                self.tF_apply.vector().apply("insert")
+            else:
+                # Do not apply the fetched value, i.e. one-way coupling
+                pass
+
+        else:
+            if self.rank == 0: print ("{FENICS} Assigning uniform traction forces at present time step ...   ", 
+                                    end="", flush=True)
+            if t <= sForExtEndTime:
+                self.tF_magnitude.assign((Constant((self.sForExtX)/(self.YBeam*self.ZBeam))*self.X_direction_vector()) +
+                                    (Constant((self.sForExtY)/(self.XBeam*self.ZBeam))*self.Y_direction_vector()) +
+                                    (Constant((self.sForExtZ)/(self.XBeam*self.YBeam))*self.Z_direction_vector()))
+            else:
+                self.tF_magnitude.assign(Constant((0.0)))
+            if self.rank == 0:
+                print ("Done")
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,16 +230,18 @@ class linearElastic:
 
         if self.iNonUniTraction:
             if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
-            tF_apply = Function(V)
-            tF_apply_vec = tF_apply.vector().get_local()
+            self.tF_apply = Function(V)
+            self.tF_apply_vec = self.tF_apply.vector().get_local()
 
             if self.iMUIFetchForce:
                 force_dof_apply = Function(V)
                 force_dof_apply_vec = force_dof_apply.vector().get_local()
         else:
             if self.rank == 0: print ("{FENICS} Uniform traction applied")
-            tF_magnitude = Constant(-(0.0)/(self.YBeam*self.ZBeam))
-            tF_apply = tF_magnitude*self.X_direction_vector()
+            self.tF_magnitude = Constant(0.0 *self.X_direction_vector() + 
+                                    0.0 *self.Y_direction_vector() +
+                                    0.0 *self.Z_direction_vector() )
+            self.tF_apply = self.tF_magnitude
 
         #===========================================
         #%% Define SubDomains and boundaries
@@ -357,8 +410,8 @@ class linearElastic:
             if self.rank == 0: print ("{FENICS} Defining variational FORM and Jacobin functions ...   ", end="", flush=True)
 
             # Define the traction terms of the structure variational form
-            tF = dot(self.F_(d,gdim).T, tF_apply)
-            tF_ = dot(self.F_(d0,gdim).T, tF_apply)
+            tF = dot(self.F_(d,gdim).T, self.tF_apply)
+            tF_ = dot(self.F_(d0,gdim).T, self.tF_apply)
 
             # Define the transient terms of the structure variational form
             Form_s_T = (1/k)*self.rho_s*inner((u-u0), psi)*dx
@@ -397,7 +450,7 @@ class linearElastic:
         elif self.solving_method == 'MCK':
             if self.rank == 0: print ("{FENICS} Defining variational FORM functions ...   ", end="", flush=True)
             # Define the traction terms of the structure variational form
-            tF = dot(chi, tF_apply)
+            tF = dot(chi, self.tF_apply)
 
             Form_s_Update_Acce = self.AMCK (ddmck, 
                                             d0mck, 
@@ -637,296 +690,12 @@ class linearElastic:
                     print ("{FENICS} sub-iteration: ", i_sub_it)
                     print ("{FENICS} total sub-iterations to now: ", t_sub_it)
 
-                # Assign traction forces at present time step
-                if self.iNonUniTraction:
-                    if self.iMUICoupling:
-                        if self.iMUIFetchForce:
-                            # Starts the wall clock
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            if len(xyz_fetch)!=0:
-                                if self.iparallelFSICoupling:
-                                    if self.iUseRBF:
-                                        if self.iMUIFetchMoment:
-                                            tF_apply_vec, mom_x, mom_y, mom_z = \
-                                                self.MUI_Parallel_FSI_RBF_Fetch( self.LOCAL_COMM_WORLD,
-                                                                            self.ifaces3d,
-                                                                            xyz_fetch,
-                                                                            dofs_fetch_list,
-                                                                            t_sampler,
-                                                                            s_sampler,
-                                                                            n_steps,
-                                                                            i_sub_it,
-                                                                            t_sub_it,
-                                                                            tF_apply_vec,
-                                                                            areaf_vec,
-                                                                            self.outputFolderPath)
-
-                                        else:
-                                            tF_apply_vec = self.MUI_Parallel_FSI_RBF_Fetch(  self.LOCAL_COMM_WORLD, 
-                                                                            self.ifaces3d, 
-                                                                            xyz_fetch, 
-                                                                            dofs_fetch_list, 
-                                                                            t_sampler, 
-                                                                            s_sampler, 
-                                                                            n_steps,
-                                                                            i_sub_it,
-                                                                            t_sub_it, 
-                                                                            tF_apply_vec, 
-                                                                            areaf_vec,
-                                                                            self.outputFolderPath)
-                                            if len(dofs_fetch_list) != 0:
-                                                temp_area_pernode = (self.XBeam*self.ZBeam)/len(dofs_fetch_list)
-
-                                            if self.iMultidomain:
-
-                                                for i, p in enumerate(dofs_fetch_list):
-
-                                                    if t <= 0.5:
-                                                        tF_apply_vec[0::3][p] += ((t*(+(self.bForExtX/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[1::3][p] += ((t*(+(self.bForExtY/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[2::3][p] += ((t*(+(self.bForExtZ/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                            else:
-
-                                                for i, p in enumerate(dofs_fetch_list):
-
-                                                    if t <= 0.5:
-                                                        tF_apply_vec[0::3][p] += ((t*((self.bForExtX/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[1::3][p] += ((t*((self.bForExtY/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[2::3][p] += ((t*((self.bForExtZ/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-
-                                    else:
-                                        #nearest neighbour
-                                        if self.iMUIFetchMoment:
-                                            tF_apply_vec, mom_x, mom_y, mom_z = \
-                                                self.MUI_Parallel_FSI_Fetch( self.LOCAL_COMM_WORLD,
-                                                                            self.ifaces3d,
-                                                                            xyz_fetch,
-                                                                            dofs_fetch_list,
-                                                                            t_sampler,
-                                                                            s_sampler,
-                                                                            n_steps,
-                                                                            i_sub_it,
-                                                                            t_sub_it,
-                                                                            tF_apply_vec,
-                                                                            force_dof_apply_vec,
-                                                                            areaf_vec,
-                                                                            self.outputFolderPath)
-
-                                        else:
-                                            tF_apply_vec = self.MUI_Parallel_FSI_Fetch(  self.LOCAL_COMM_WORLD, 
-                                                                            self.ifaces3d, 
-                                                                            xyz_fetch, 
-                                                                            dofs_fetch_list, 
-                                                                            t_sampler, 
-                                                                            s_sampler, 
-                                                                            n_steps,
-                                                                            i_sub_it,
-                                                                            t_sub_it, 
-                                                                            tF_apply_vec, 
-                                                                            force_dof_apply_vec, 
-                                                                            areaf_vec,
-                                                                            self.outputFolderPath)
-
-                                            #self.ifaces3d.barrier(float(t_sub_it))
-                                            
-                                            if len(dofs_fetch_list) != 0:
-                                                temp_area_pernode = (self.XBeam*self.ZBeam)/len(dofs_fetch_list)
-
-                                            if self.iMultidomain:
-
-                                                for i, p in enumerate(dofs_fetch_list):
-
-                                                    if t <= 0.5:
-                                                        tF_apply_vec[0::3][p] += ((t*(+(self.bForExtX/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[1::3][p] += ((t*(+(self.bForExtY/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[2::3][p] += ((t*(+(self.bForExtZ/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                            else:
-
-                                                for i, p in enumerate(dofs_fetch_list):
-
-                                                    if t <= 0.5:
-                                                        tF_apply_vec[0::3][p] += ((t*(+(self.bForExtX/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[1::3][p] += ((t*(+(self.bForExtY/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                        tF_apply_vec[2::3][p] += ((t*(+(self.bForExtZ/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                else:
-                                    if self.iMUIFetchMoment:
-                                        tF_apply_vec, mom_x, mom_y, mom_z = \
-                                            self.MUI_Fetch( self.LOCAL_COMM_WORLD, 
-                                                            self.ifaces3d, 
-                                                            xyz_fetch, 
-                                                            dofs_fetch_list, 
-                                                            t_sampler, 
-                                                            s_sampler, 
-                                                            n_steps, 
-                                                            t_sub_it, 
-                                                            tF_apply_vec, 
-                                                            areaf_vec)
-                                    else:
-                                        tF_apply_vec = self.MUI_Fetch(  self.LOCAL_COMM_WORLD, 
-                                                                        self.ifaces3d, 
-                                                                        xyz_fetch, 
-                                                                        dofs_fetch_list, 
-                                                                        t_sampler, 
-                                                                        s_sampler, 
-                                                                        n_steps, 
-                                                                        t_sub_it, 
-                                                                        tF_apply_vec, 
-                                                                        areaf_vec)
-                                        if len(dofs_fetch_list) != 0:
-                                            temp_area_pernode = (self.XBeam*self.ZBeam)/len(dofs_fetch_list)
-
-                                        if self.iMultidomain:
-
-                                            for i, p in enumerate(dofs_fetch_list):
-
-                                                if t <= 0.5:
-                                                    tF_apply_vec[0::3][p] += ((t*(+(self.bForExtX/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                    tF_apply_vec[1::3][p] += ((t*(+(self.bForExtY/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                    tF_apply_vec[2::3][p] += ((t*(+(self.bForExtZ/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                        else:
-
-                                            for i, p in enumerate(dofs_fetch_list):
-
-                                                if t <= 0.5:
-                                                    tF_apply_vec[0::3][p] += ((t*(+(self.bForExtX/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                    tF_apply_vec[1::3][p] += ((t*(+(self.bForExtY/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-                                                    tF_apply_vec[2::3][p] += ((t*(+(self.bForExtZ/len(dofs_fetch_list)))/0.5)/temp_area_pernode)
-
-                                
-                            # Finish the wall clock on fetch Time
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-
-                            # Starts the wall clock
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
-                                # Apply traction components. These calls do parallel communication
-                                tF_apply.vector().set_local(tF_apply_vec)
-                                tF_apply.vector().apply("insert")
-                                # tF_apply = project(dfst, V)
-                                # tF_apply.assign(project(dfst, 
-                                    # V, 
-                                    # solver_type=self.prjsolver,
-                                    # form_compiler_parameters={"cpp_optimize": self.cppOptimize, 
-                                    # "representation": self.compRepresentation}))
-                            else:
-                                # do not apply the fetched value, i.e. one-way coupling
-                                pass
-
-                            # Finish the wall clock on force vector project
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-
-                        else:
-                            # Starts the wall clock
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            if self.iparallelFSICoupling:
-                                if self.iMUIFetchMoment:
-                                    tF_apply_vec, mom_x, mom_y, mom_z = \
-                                    self.MUI_Parallel_FSI_Fetch( self.LOCAL_COMM_WORLD,
-                                                                    self.ifaces3d,
-                                                                    xyz_fetch,
-                                                                    dofs_fetch_list,
-                                                                    t_sampler,
-                                                                    s_sampler,
-                                                                    n_steps,
-                                                                    i_sub_it,
-                                                                    t_sub_it,
-                                                                    tF_apply_vec,
-                                                                    force_dof_apply_vec,
-                                                                    areaf_vec,
-                                                                    self.outputFolderPath)
-                                else:
-                                    tF_apply_vec = self.MUI_Parallel_FSI_Fetch( self.LOCAL_COMM_WORLD,
-                                                                    self.ifaces3d,
-                                                                    xyz_fetch,
-                                                                    dofs_fetch_list,
-                                                                    t_sampler,
-                                                                    s_sampler,
-                                                                    n_steps,
-                                                                    i_sub_it,
-                                                                    t_sub_it,
-                                                                    tF_apply_vec,
-                                                                    force_dof_apply_vec,
-                                                                    areaf_vec,
-                                                                    self.outputFolderPath)
-                            else:
-                                if self.iMUIFetchMoment:
-                                    tF_apply_vec, mom_x, mom_y, mom_z = \
-                                        self.MUI_Fetch( self.LOCAL_COMM_WORLD, 
-                                                        self.ifaces3d, 
-                                                        xyz_fetch, 
-                                                        dofs_fetch_list, 
-                                                        t_sampler, 
-                                                        s_sampler, 
-                                                        n_steps, 
-                                                        t_sub_it, 
-                                                        tF_apply_vec, 
-                                                        areaf_vec)
-                                else:
-                                    tF_apply_vec = self.MUI_Fetch(  self.LOCAL_COMM_WORLD, 
-                                                                    self.ifaces3d, 
-                                                                    xyz_fetch, 
-                                                                    dofs_fetch_list, 
-                                                                    t_sampler, 
-                                                                    s_sampler, 
-                                                                    n_steps, 
-                                                                    t_sub_it, 
-                                                                    tF_apply_vec, 
-                                                                    areaf_vec)
-                            # Finish the wall clock on fetch Time
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-
-                            # Starts the wall clock
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            if self.iMUIFetchValue:
-                                # Apply traction components. These calls do parallel communication
-                                tF_apply.vector().set_local(tF_apply_vec)
-                                tF_apply.vector().apply("insert")
-                            else:
-                                # do not apply the fetched value, i.e. one-way coupling
-                                pass
-                            # Finish the wall clock on force vector project
-                            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-
-                    else:
-                        if self.rank == 0: print ("{FENICS} Assigning traction forces at present time step ...   ", 
-                                                end="", flush=True)
-
-                        temp_area_pernode = (self.YBeam*self.ZBeam)/len(dofs_fetch_list)
-                        print ("temp_area_pernode", temp_area_pernode)
-                        for i, p in enumerate(dofs_fetch_list):
-
-                            if t <= 7.0:
-                                tF_apply_vec[1::3][p] = ((t*(-(500.0/len(dofs_fetch_list)))/7.0)/temp_area_pernode)
-                            else:
-                                tF_apply_vec[1::3][p] = (0.0)
-
-                            tF_apply_vec[0::3][p] = 0.0
-                            tF_apply_vec[2::3][p] = 0.0
-                            print ("tF_apply_vec[1::3][p]", tF_apply_vec[1::3][p])
-                        
-                        # Apply traction components. These calls do parallel communication
-                        tF_apply.vector().set_local(tF_apply_vec)
-                        tF_apply.vector().apply("insert")
-                        # tF_apply = project(dfst, V)
-                        # tF_apply.assign(project(dfst, 
-                            # V, 
-                            # solver_type=self.prjsolver,
-                            # form_compiler_parameters={"cpp_optimize": self.cppOptimize, 
-                            # "representation": self.compRepresentation}))
-                        # # Apply traction components. These calls do parallel communication
-                        # tF_apply.vector().set_local(tF_apply_vec)
-                        # tF_apply.vector().apply("insert")
-
-                else:
-                    if self.rank == 0: print ("{FENICS} Assigning traction forces at present time step ...   ", 
-                                            end="", flush=True)
-                    if t <= 7.0:
-                        tF_magnitude.assign(Constant((t*(-500.0)/7.0)/(self.YBeam*self.ZBeam)))
-                    else:
-                        tF_magnitude.assign(Constant((0.0)/(self.YBeam*self.ZBeam)))
-                    if self.rank == 0:
-                        print ("Done")
-                        #if self.iDebug: print ("{FENICS} tF_magnitude: ", tF_magnitude(0))
+                self.tractionAssign(xyz_fetch,
+                                    dofs_fetch_list,
+                                    t_sampler,
+                                    s_sampler,
+                                    t_sub_it,
+                                    areaf_vec)
 
                 if (not ((self.iContinueRun) and (n_steps == 1))):
                     if self.solving_method == 'MCK':
@@ -965,9 +734,9 @@ class linearElastic:
                     # Starts the wall clock
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     if self.solving_method == 'MCK':
-                        force_X = dot(tF_apply, self.X_direction_vector())*ds(2)
-                        force_Y = dot(tF_apply, self.Y_direction_vector())*ds(2)
-                        force_Z = dot(tF_apply, self.Z_direction_vector())*ds(2)
+                        force_X = dot(self.tF_apply, self.X_direction_vector())*ds(2)
+                        force_Y = dot(self.tF_apply, self.Y_direction_vector())*ds(2)
+                        force_Z = dot(self.tF_apply, self.Z_direction_vector())*ds(2)
                     else:
                         force_X = dot(tF, self.X_direction_vector())*ds(2)
                         force_Y = dot(tF, self.Y_direction_vector())*ds(2)
@@ -1104,7 +873,7 @@ class linearElastic:
                                             mesh, 
                                             gdim, 
                                             V, 
-                                            tF_apply, 
+                                            self.tF_apply, 
                                             dmck, 
                                             stress_file, 
                                             disp_file, 

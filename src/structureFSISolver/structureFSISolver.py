@@ -252,6 +252,14 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         self.bForExtY = float(self.cfg['EXTFORCE']['bForExtY'])
         # Body external forces in z-axis direction [N/m^3]
         self.bForExtZ = float(self.cfg['EXTFORCE']['bForExtZ'])
+        # Surface external forces in x-axis direction [N/m^2]
+        self.sForExtX = float(self.cfg['EXTFORCE']['sForExtX'])
+        # Surface external forces in y-axis direction [N/m^2]
+        self.sForExtY = float(self.cfg['EXTFORCE']['sForExtY'])
+        # Surface external forces in z-axis direction [N/m^2]
+        self.sForExtZ = float(self.cfg['EXTFORCE']['sForExtZ'])
+        # Surface external forces end time [s]
+        self.sForExtEndTime = float(self.cfg['EXTFORCE']['sForExtEndTime'])
 
         #===========================================
         #%% Time marching parameter input
@@ -1384,866 +1392,172 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         return ((Current_Time_Step - self.forgetTStepsMUI - 1) * self.num_sub_iteration + current_Sub_Iteration)
 
     def MUI_Fetch(  self, 
-                    MPI_COMM_WORLD, 
-                    MUI_Interfaces, 
                     dofs_to_xyz, 
                     dofs_fetch_list, 
                     Temporal_sampler,
                     Spatial_sampler, 
-                    Current_Time_Step, 
                     total_Sub_Iteration, 
                     temp_vec_function, 
                     facet_area_vec_function):
 
-        # if self.iDebug:
-            # print ("{FENICS} temp_vec_function shape: ", temp_vec_function.shape)
-            # print ("{FENICS} temp_vec_function[:2] shape: ", temp_vec_function[::3].shape)
-            # print ("{FENICS} temp_vec_function type: ", temp_vec_function.dtype)
         totForceX = 0.0
         totForceY = 0.0
         totForceZ = 0.0
-        if self.iMUIFetchForce:
-            # MUI Fetch traction components
-            if self.iMUIFetchMany:
-                if self.iMultidomain:
 
-                    temp_vec_function[0::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("forceX", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[1::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("forceY", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[2::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("forceZ", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                else:
-
-                    if self.iDebug:
-                        print("[FEniCE] Fetch Many Switched On, ", len(dofs_to_xyz), " at rank: ", self.rank)
-
-                    temp_vec_function[0::3][dofs_fetch_list] = MUI_Interfaces.\
-                                fetch_many("forceX", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[1::3][dofs_fetch_list] = MUI_Interfaces.\
-                                fetch_many("forceY", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[2::3][dofs_fetch_list] = MUI_Interfaces.\
-                                fetch_many("forceZ", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-
-                for i, p in enumerate(dofs_fetch_list):
-                    totForceX += temp_vec_function[0::3][p]
-                    totForceY += temp_vec_function[1::3][p]
-                    totForceZ += temp_vec_function[2::3][p]
-                    temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                    temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                    temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-
-                print ("{FENICS**} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration), " at rank: ", self.rank)
-
-            else:
-                if((total_Sub_Iteration-0) >= 0):
-
-                    for i, p in enumerate(dofs_fetch_list):
-                        if self.iMultidomain:
-                            #MUI_Interfaces["threeDInterface0"].barrier(float(total_Sub_Iteration-1))
-                            temp_vec_function[0::3][p] = MUI_Interfaces["threeDInterface0"].fetch("forceX",
-                                                        dofs_to_xyz[i], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[1::3][p] = MUI_Interfaces["threeDInterface0"].fetch("forceY", 
-                                                        dofs_to_xyz[i], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[2::3][p] = MUI_Interfaces["threeDInterface0"].fetch("forceZ", 
-                                                        dofs_to_xyz[i], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-                        else:
-                            #MUI_Interfaces["threeDInterface0"].barrier(float(total_Sub_Iteration-1))
-                            temp_vec_function[0::3][p] = MUI_Interfaces.fetch("forceX",
-                                                        dofs_to_xyz[i], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[1::3][p] = MUI_Interfaces.fetch("forceY", 
-                                                        dofs_to_xyz[i], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[2::3][p] = MUI_Interfaces.fetch("forceZ", 
-                                                        dofs_to_xyz[i], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-                        # print ("{FENICS**} forceY: ",temp_vec_function[1::3][p], " at ", p," with ", dofs_to_xyz[p])
-                        # print ("{FENICS*****} facet_force : ",temp_vec_function[1::3][p])
-                        totForceX += temp_vec_function[0::3][p]
-                        totForceY += temp_vec_function[1::3][p]
-                        totForceZ += temp_vec_function[2::3][p]
-                        temp_vec_function[0::3][p] /= 1.0*(1.0+self.fetchExtendRBF)
-                        temp_vec_function[1::3][p] /= 1.0*(1.0+self.fetchExtendRBF)
-                        temp_vec_function[2::3][p] /= 1.0*(1.0+self.fetchExtendRBF)
-
-                        temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-
-                        temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-
-                        temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-                        # print ("{FENICS*****} facet_areas : ",facet_area_vec_function[p])
-                        # print ("{FENICS*****} facet_traction : ",temp_vec_function[1::3][p])
-                        # print ("{FENICS*****} p : ",p)
-
-                    print ("{FENICS**} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration), " at rank: ", self.rank)
-                else:
-
-                    pass
-
-        else:
-            # MUI Fetch traction components
-            if self.iMUIFetchMany:
-                if self.iMultidomain:
-
-                    temp_vec_function[0::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("tractionX", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[1::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("tractionY", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[2::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("tractionZ", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                else:
-
-                    temp_vec_function[0::3][dofs_fetch_list] = MUI_Interfaces.\
-                                fetch_many("tractionX", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[1::3][dofs_fetch_list] = MUI_Interfaces.\
-                                fetch_many("tractionY", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    temp_vec_function[2::3][dofs_fetch_list] = MUI_Interfaces.\
-                                fetch_many("tractionZ", 
-                                            dofs_to_xyz,
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-            else:
-                if(total_Sub_Iteration >= 0):
-        
-                    for i, p in enumerate(dofs_fetch_list):
-                        if self.iMultidomain:
-
-                            temp_vec_function[0::3][p] = MUI_Interfaces["threeDInterface0"].fetch("tractionX", 
-                                                        dofs_to_xyz[p], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[1::3][p] = MUI_Interfaces["threeDInterface0"].fetch("tractionY", 
-                                                        dofs_to_xyz[p], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[2::3][p] = MUI_Interfaces["threeDInterface0"].fetch("tractionZ", 
-                                                        dofs_to_xyz[p], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-                        else:
-
-                            temp_vec_function[0::3][p] = MUI_Interfaces.fetch("tractionX", 
-                                                        dofs_to_xyz[p], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[1::3][p] = MUI_Interfaces.fetch("tractionY", 
-                                                        dofs_to_xyz[p], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-
-                            temp_vec_function[2::3][p] = MUI_Interfaces.fetch("tractionZ", 
-                                                        dofs_to_xyz[p], 
-                                                        float(total_Sub_Iteration-0), 
-                                                        Spatial_sampler,
-                                                        Temporal_sampler)
-                else:
-
-                    pass
-
-        if (self.rank == 0) and self.iDebug:
-            print ('{FENICS} fetch step: ',total_Sub_Iteration)
-        if self.iDebug:
-            for i in range(self.size):
-                if self.rank == i:
-                    if (len(dofs_to_xyz) == 0):
-                        pass
-                    else:
-                        pass
-                        #print ('{FENICS} at rank ', self.rank, 
-                                #'fetch points: ', dofs_to_xyz[dofs_fetch_list] )
-
-                    if (len(temp_vec_function[dofs_fetch_list]) == 0):
-                        pass
-                    else:
-                        pass
-                        #print('{FENICS} at rank ', self.rank, 
-                                #'fetch value:', temp_vec_function[dofs_fetch_list] )
-
-        # MUI Fetch global moment components
-        if self.iMUIFetchMoment:
-            if self.iMultidomain:
-                if self.iMUIFetchMany:
-
-                    moment_x = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("momentX", 
-                                            [0.0, 0.0, 0.0], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    moment_y = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("momentY", 
-                                            [0.0, 0.0, 0.0], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    moment_z = MUI_Interfaces["threeDInterface0"].\
-                                fetch_many("momentZ", 
-                                            [0.0, 0.0, 0.0], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                else:
-
-                    moment_x = MUI_Interfaces["threeDInterface0"].fetch("momentX", 
-                                    [0.0, 0.0, 0.0], 
+        if self.iMUIFetchMany:
+            temp_vec_function[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                        fetch_many("forceX", 
+                                    dofs_to_xyz,
+                                    total_Sub_Iteration, 
+                                    Spatial_sampler,
+                                    Temporal_sampler)
+            temp_vec_function[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                        fetch_many("forceY", 
+                                    dofs_to_xyz,
+                                    total_Sub_Iteration, 
+                                    Spatial_sampler,
+                                    Temporal_sampler)
+            temp_vec_function[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                        fetch_many("forceZ", 
+                                    dofs_to_xyz,
                                     total_Sub_Iteration, 
                                     Spatial_sampler,
                                     Temporal_sampler)
 
-                    moment_y = MUI_Interfaces["threeDInterface0"].fetch("momentY", 
-                                    [0.0, 0.0, 0.0], 
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-
-                    moment_z = MUI_Interfaces["threeDInterface0"].fetch("momentZ", 
-                                    [0.0, 0.0, 0.0], 
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-            else:
-                if self.iMUIFetchMany:
-
-                    moment_x = MUI_Interfaces.\
-                                fetch_many("momentX", 
-                                            [0.0, 0.0, 0.0], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    moment_y = MUI_Interfaces.\
-                                fetch_many("momentY", 
-                                            [0.0, 0.0, 0.0], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                    moment_z = MUI_Interfaces.\
-                                fetch_many("momentZ", 
-                                            [0.0, 0.0, 0.0], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                else:
-
-                    moment_x = MUI_Interfaces.fetch("momentX", 
-                                    [0.0, 0.0, 0.0], 
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-
-                    moment_y = MUI_Interfaces.fetch("momentY", 
-                                    [0.0, 0.0, 0.0], 
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-
-                    moment_z = MUI_Interfaces.fetch("momentZ", 
-                                    [0.0, 0.0, 0.0], 
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-
-            if (self.rank == 0) and self.iDebug:
-                print ('{FENICS} fetch name: ', "momentX")
-                print ('{FENICS} fetch step: ',total_Sub_Iteration)
+            for i, p in enumerate(dofs_fetch_list):
+                # Calculate the total applied force
+                totForceX += temp_vec_function[0::3][p]
+                totForceY += temp_vec_function[1::3][p]
+                totForceZ += temp_vec_function[2::3][p]
+                # Convert force to traction
+                temp_vec_function[0::3][p] /= facet_area_vec_function[p]
+                temp_vec_function[1::3][p] /= facet_area_vec_function[p]
+                temp_vec_function[2::3][p] /= facet_area_vec_function[p]
             if self.iDebug:
-                print('{FENICS} at rank ', self.rank, 'fetch value:', moment_x, moment_y, moment_z)
-            
-            return temp_vec_function, moment_x, moment_y, moment_z
-        else:
-            return temp_vec_function
+                print ("{FENICS} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, 
+                        "; at iteration: ", total_Sub_Iteration, " at rank: ", self.rank)
 
-    def MUI_Parallel_FSI_RBF_Fetch(  self, 
-                                MPI_COMM_WORLD, 
-                                MUI_Interfaces, 
+        else:
+            for i, p in enumerate(dofs_fetch_list):
+                temp_vec_function[0::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceX",
+                                            dofs_to_xyz[i], 
+                                            total_Sub_Iteration, 
+                                            Spatial_sampler,
+                                            Temporal_sampler)
+
+                temp_vec_function[1::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceY", 
+                                            dofs_to_xyz[i], 
+                                            total_Sub_Iteration, 
+                                            Spatial_sampler,
+                                            Temporal_sampler)
+
+                temp_vec_function[2::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceZ", 
+                                            dofs_to_xyz[i], 
+                                            total_Sub_Iteration, 
+                                            Spatial_sampler,
+                                            Temporal_sampler)
+                # Calculate the total applied force
+                totForceX += temp_vec_function[0::3][p]
+                totForceY += temp_vec_function[1::3][p]
+                totForceZ += temp_vec_function[2::3][p]
+                # Convert force to traction
+                temp_vec_function[0::3][p] /= facet_area_vec_function[p]
+                temp_vec_function[1::3][p] /= facet_area_vec_function[p]
+                temp_vec_function[2::3][p] /= facet_area_vec_function[p]
+            if self.iDebug:
+                print ("{FENICS} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, 
+                        "; at iteration: ", total_Sub_Iteration, " at rank: ", self.rank)
+
+        return temp_vec_function
+
+    def MUI_Parallel_FSI_RBF_Fetch(  self,
                                 dofs_to_xyz, 
                                 dofs_fetch_list, 
                                 Temporal_sampler,
-                                Spatial_sampler, 
-                                Current_Time_Step, 
-                                i_sub_it, 
+                                Spatial_sampler,
                                 total_Sub_Iteration, 
                                 temp_vec_function, 
-                                facet_area_vec_function, 
-                                OutputFolderPath):
+                                facet_area_vec_function):
 
-        # if self.iDebug:
-            # print ("{FENICS} temp_vec_function shape: ", temp_vec_function.shape)
-            # print ("{FENICS} temp_vec_function[:2] shape: ", temp_vec_function[::3].shape)
-            # print ("{FENICS} temp_vec_function type: ", temp_vec_function.dtype)
-        use_IQNILS=False
-        totForceFetchX = 0.0
-        totForceFetchY = 0.0
-        totForceFetchZ = 0.0
         totForceX = 0.0
         totForceY = 0.0
         totForceZ = 0.0
         temp_vec_function_temp = temp_vec_function
         if (total_Sub_Iteration-1)>0:
-            if self.iMUIFetchForce:
-                # MUI Fetch traction components
-                if self.iMUIFetchMany:
-                    if self.iMultidomain:
-
-                        temp_vec_function_temp[0::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("forceX", 
-                                                dofs_to_xyz,
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        temp_vec_function_temp[1::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("forceY", 
-                                                dofs_to_xyz,
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        temp_vec_function_temp[2::3][dofs_fetch_list] = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("forceZ", 
-                                                dofs_to_xyz,
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                    else:
-
-                        if self.iDebug:
-                            print("[FEniCE] Fetch Many Switched On, len(dofs_to_xyz): ", len(dofs_to_xyz), " at ", self.rank)
-
-                        # create an instance of the TicToc wall clock class
-                        wallClockNPZeroCreate = structureFSISolver.tictoc.TicToc()
-                        # Starts the wall clock
-                        wallClockNPZeroCreate.tic()
-                        fetch_valsX = np.zeros(len(dofs_to_xyz))
-                        fetch_valsY = np.zeros(len(dofs_to_xyz))
-                        fetch_valsZ = np.zeros(len(dofs_to_xyz))
-                        points = np.zeros(((len(dofs_to_xyz)), 3))
-                        # Finish the wall clock on total sim time Per iter
-                        timeNPZeroCreate = wallClockNPZeroCreate.toc()
-
-                        # create an instance of the TicToc wall clock class
-                        wallClockPointsLoop = structureFSISolver.tictoc.TicToc()
-                        # Starts the wall clock
-                        wallClockPointsLoop.tic()
-                        for i, p in enumerate(dofs_fetch_list):
-                            points[i]=dofs_to_xyz[i]
-                        # Finish the wall clock on total sim time Per iter
-                        timePointsLoop = wallClockPointsLoop.toc()  
-
-                        # create an instance of the TicToc wall clock class
-                        wallClockMUIFetchMany = structureFSISolver.tictoc.TicToc()
-                        # Starts the wall clock
-                        wallClockMUIFetchMany.tic()                   
-                        fetch_valsX = MUI_Interfaces.\
-                                    fetch_many("forceX", 
-                                                points,
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        fetch_valsY = MUI_Interfaces.\
-                                    fetch_many("forceY", 
-                                                points,
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        fetch_valsZ = MUI_Interfaces.\
-                                    fetch_many("forceZ", 
-                                                points,
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        # Finish the wall clock on total sim time Per iter
-                        timeMUIFetchMany = wallClockMUIFetchMany.toc()  
-
-                        # create an instance of the TicToc wall clock class
-                        wallClockVectFuncEvlu = structureFSISolver.tictoc.TicToc()
-                        # Starts the wall clock
-                        wallClockVectFuncEvlu.tic() 
-                        for i, p in enumerate(dofs_fetch_list):
-                            temp_vec_function_temp[0::3][p] = fetch_valsX[i]
-                            temp_vec_function_temp[1::3][p] = fetch_valsY[i]
-                            temp_vec_function_temp[2::3][p] = fetch_valsZ[i]
-                            totForceFetchX += temp_vec_function_temp[0::3][p]
-                            totForceFetchY += temp_vec_function_temp[1::3][p]
-                            totForceFetchZ += temp_vec_function_temp[2::3][p]
-                        print ("{FENICS**} totForce Fetch: ", totForceFetchX, "; ",totForceFetchY, "; ",totForceFetchZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.rank)
-                        # Finish the wall clock on total sim time Per iter
-                        timeVectFuncEvlu = wallClockVectFuncEvlu.toc()
-
-                    # create an instance of the TicToc wall clock class
-                    wallClockFRArg = structureFSISolver.tictoc.TicToc()
-                    # Starts the wall clock
-                    wallClockFRArg.tic()
-                    if use_IQNILS:
-                        # for i, p in enumerate(dofs_fetch_list):
-                            # IQNILS.collectResidual( temp_vec_function_temp[0::3][p],
-                                                    # temp_vec_function_temp[1::3][p],
-                                                    # temp_vec_function_temp[2::3][p],
-                                                    # temp_vec_function[0::3][p],
-                                                    # temp_vec_function[1::3][p],
-                                                    # temp_vec_function[2::3][p],
-                                                    # p)
-                        # IQNILS.process(i_sub_it)
-                        # for i, p in enumerate(dofs_fetch_list):
-                            # temp_vec_function[0::3][p] += IQNILS.getXDeltaDisp(p)
-                            # temp_vec_function[1::3][p] += IQNILS.getYDeltaDisp(p)
-                            # temp_vec_function[2::3][p] += IQNILS.getZDeltaDisp(p)
-                            # totForceX += temp_vec_function[0::3][p]
-                            # totForceY += temp_vec_function[1::3][p]
-                            # totForceZ += temp_vec_function[2::3][p]
-
-                            # temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                            # temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                            # temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-                        # print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.rank)
-                        pass
-                    else:
-                        for i, p in enumerate(dofs_fetch_list):
-                            temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                            temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                            temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
-                            totForceX += temp_vec_function[0::3][p]
-                            totForceY += temp_vec_function[1::3][p]
-                            totForceZ += temp_vec_function[2::3][p]
-
-                            if (facet_area_vec_function[p] == 0):
-                                temp_vec_function[0::3][p] = 0.
-                                temp_vec_function[1::3][p] = 0.
-                                temp_vec_function[2::3][p] = 0.
-                            else:
-                                temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                                temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                                temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-
-                    # Finish the wall clock on total sim time Per iter
-                    timeFRArg = wallClockFRArg.toc()
-
-                    for irank in range(self.size):
-                        if self.rank == irank:
-                            if ((Current_Time_Step==1) and (i_sub_it==1)):
-                                ftxt_time = open(OutputFolderPath + "/timeFETCH" + str(irank)+ ".txt", "a")
-                                ftxt_time.write("Current_Time_Step,"+
-                                                "i_sub_it,"+
-                                                "timeNPZeroCreate,"+
-                                                "timePointsLoop,"+
-                                                "timeMUIFetchMany,"+
-                                                "timeVectFuncEvlu,"+
-                                                "timeFRArg")
-                                ftxt_time.write("\n")
-                                ftxt_time.write(str(Current_Time_Step)+","+
-                                                str(i_sub_it)+","+
-                                                str(timeNPZeroCreate)+","+
-                                                str(timePointsLoop)+","+
-                                                str(timeMUIFetchMany)+","+
-                                                str(timeVectFuncEvlu)+","+
-                                                str(timeFRArg))
-                                ftxt_time.write("\n")
-                                ftxt_time.close
-                            else:
-                                ftxt_time = open(OutputFolderPath + "/timeFETCH" + str(irank)+ ".txt", "a")
-                                # ftxt_time.write(str(Current_Time_Step)+","+
-                                                # str(i_sub_it)+","+
-                                                # str(timeNPZeroCreate)+","+
-                                                # str(timePointsLoop)+","+
-                                                # str(timeMUIFetchMany)+","+
-                                                # str(timeVectFuncEvlu)+","+
-                                                # str(timeFRArg))
-                                ftxt_time.write("\n")
-                                ftxt_time.close
-
-                else:
-                    if((total_Sub_Iteration-1) >= 0):
-
-                        for i, p in enumerate(dofs_fetch_list):
-                            if self.iMultidomain:
-                                #MUI_Interfaces["threeDInterface0"].barrier(float(total_Sub_Iteration-1))
-                                temp_vec_function_temp[0::3][p] = MUI_Interfaces["threeDInterface0"].fetch("forceX",
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[1::3][p] = MUI_Interfaces["threeDInterface0"].fetch("forceY", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[2::3][p] = MUI_Interfaces["threeDInterface0"].fetch("forceZ", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                # IQNILS.collectResidual( temp_vec_function_temp[0::3][p],
-                                                        # temp_vec_function_temp[1::3][p],
-                                                        # temp_vec_function_temp[2::3][p],
-                                                        # temp_vec_function[0::3][p], 
-                                                        # temp_vec_function[1::3][p], 
-                                                        # temp_vec_function[2::3][p], 
-                                                        # p)
-
-                            else:
-                                #MUI_Interfaces["threeDInterface0"].barrier(float(total_Sub_Iteration-1))
-                                temp_vec_function_temp[0::3][p] = MUI_Interfaces.fetch("forceX",
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[1::3][p] = MUI_Interfaces.fetch("forceY", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[2::3][p] = MUI_Interfaces.fetch("forceZ", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                        for i, p in enumerate(dofs_fetch_list):
-                            temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                            temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                            temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
-                            totForceX += temp_vec_function[0::3][p]
-                            totForceY += temp_vec_function[1::3][p]
-                            totForceZ += temp_vec_function[2::3][p]
-
-                            temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.rank)
-
-                    else:
-
-                        pass
-
-            else:
-                # MUI Fetch traction components
-                if self.iMUIFetchMany:
-                    if self.iMultidomain:
-
-                        temp_vec_function_temp[0::3] = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("tractionX", 
-                                                dofs_to_xyz, 
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        temp_vec_function_temp[1::3] = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("tractionY", 
-                                                dofs_to_xyz, 
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        temp_vec_function_temp[2::3] = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("tractionZ", 
-                                                dofs_to_xyz, 
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-
-                        for i, p in enumerate(dofs_fetch_list):
-                            temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                            temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                            temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
-                            totForceX += temp_vec_function[0::3][p]
-                            totForceY += temp_vec_function[1::3][p]
-                            totForceZ += temp_vec_function[2::3][p]
-
-                            temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-
-                    else:
-
-                        temp_vec_function_temp[0::3] = MUI_Interfaces.\
-                                    fetch_many("tractionX", 
-                                                dofs_to_xyz, 
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        temp_vec_function_temp[1::3] = MUI_Interfaces.\
-                                    fetch_many("tractionY", 
-                                                dofs_to_xyz, 
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        temp_vec_function_temp[2::3] = MUI_Interfaces.\
-                                    fetch_many("tractionZ", 
-                                                dofs_to_xyz, 
-                                                float(total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        
-                        for i, p in enumerate(dofs_fetch_list):
-                            temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                            temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                            temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
-                            totForceX += temp_vec_function[0::3][p]
-                            totForceY += temp_vec_function[1::3][p]
-                            totForceZ += temp_vec_function[2::3][p]
-
-                            temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-
-                else:
-                    if(total_Sub_Iteration >= 1):
-            
-                        for i, p in enumerate(dofs_fetch_list):
-                            if self.iMultidomain:
-
-                                temp_vec_function_temp[0::3][p] = MUI_Interfaces["threeDInterface0"].fetch("tractionX", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[1::3][p] = MUI_Interfaces["threeDInterface0"].fetch("tractionY", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[2::3][p] = MUI_Interfaces["threeDInterface0"].fetch("tractionZ", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                            else:
-
-                                temp_vec_function_temp[0::3][p] = MUI_Interfaces.fetch("tractionX", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[1::3][p] = MUI_Interfaces.fetch("tractionY", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-                                temp_vec_function_temp[2::3][p] = MUI_Interfaces.fetch("tractionZ", 
-                                                            dofs_to_xyz[i], 
-                                                            float(total_Sub_Iteration-1), 
-                                                            Spatial_sampler,
-                                                            Temporal_sampler)
-
-
-                        for i, p in enumerate(dofs_fetch_list):
-                            temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                            temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                            temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
-                            totForceX += temp_vec_function[0::3][p]
-                            totForceY += temp_vec_function[1::3][p]
-                            totForceZ += temp_vec_function[2::3][p]
-
-                            temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                            temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-
-                    else:
-
-                        pass
-        else:
+            if self.iMUIFetchMany:
+                temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                            fetch_many("forceX", 
+                                        dofs_to_xyz,
+                                        (total_Sub_Iteration-1), 
+                                        Spatial_sampler,
+                                        Temporal_sampler)
+                temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                            fetch_many("forceY", 
+                                        dofs_to_xyz,
+                                        (total_Sub_Iteration-1), 
+                                        Spatial_sampler,
+                                        Temporal_sampler)
+                temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                            fetch_many("forceZ", 
+                                        dofs_to_xyz,
+                                        (total_Sub_Iteration-1), 
+                                        Spatial_sampler,
+                                        Temporal_sampler)
 
             for i, p in enumerate(dofs_fetch_list):
-                temp_vec_function[0::3][p] += 0.0
-                temp_vec_function[1::3][p] += 0.0
-                temp_vec_function[2::3][p] += 0.0
+                temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
+                temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
+                temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
+                totForceX += temp_vec_function[0::3][p]
+                totForceY += temp_vec_function[1::3][p]
+                totForceZ += temp_vec_function[2::3][p]
 
-        if (self.rank == 0) and self.iDebug:
-            # print ('{FENICS} fetch name: ', "tractionX")
-            print ('{FENICS} fetch step: ',(total_Sub_Iteration-1))
-        if self.iDebug:
-            for i in range(self.size):
-                if self.rank == i:
-                    if (len(dofs_to_xyz) == 0):
-                        pass
-                    else:
-                        pass
-                        #print ('{FENICS} at rank ', self.rank, 
-                                #'fetch points: ', dofs_to_xyz[dofs_fetch_list] )
-
-                    if (len(temp_vec_function[dofs_fetch_list]) == 0):
-                        pass
-                    else:
-                        pass
-                        #print('{FENICS} at rank ', self.rank, 
-                                #'fetch value:', temp_vec_function[dofs_fetch_list] )
-
-        # MUI Fetch global moment components
-        if self.iMUIFetchMoment:
-            if((total_Sub_Iteration-1) >= 0):
-                if self.iMultidomain:
-                    if self.iMUIFetchMany:
-
-                        moment_x = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("momentX", 
-                                                [0.0, 0.0, 0.0], 
-                                                (total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        moment_y = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("momentY", 
-                                                [0.0, 0.0, 0.0], 
-                                                (total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        moment_z = MUI_Interfaces["threeDInterface0"].\
-                                    fetch_many("momentZ", 
-                                                [0.0, 0.0, 0.0], 
-                                                (total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        
-                    else:
-
-                        moment_x = MUI_Interfaces["threeDInterface0"].fetch("momentX", 
-                                        [0.0, 0.0, 0.0], 
-                                        (total_Sub_Iteration-1), 
-                                        Spatial_sampler,
-                                        Temporal_sampler)
-
-                        moment_y = MUI_Interfaces["threeDInterface0"].fetch("momentY", 
-                                        [0.0, 0.0, 0.0], 
-                                        (total_Sub_Iteration-1), 
-                                        Spatial_sampler,
-                                        Temporal_sampler)
-
-                        moment_z = MUI_Interfaces["threeDInterface0"].fetch("momentZ", 
-                                        [0.0, 0.0, 0.0], 
-                                        (total_Sub_Iteration-1), 
-                                        Spatial_sampler,
-                                        Temporal_sampler)
+                if (facet_area_vec_function[p] == 0):
+                    temp_vec_function[0::3][p] = 0.
+                    temp_vec_function[1::3][p] = 0.
+                    temp_vec_function[2::3][p] = 0.
                 else:
-                    if self.iMUIFetchMany:
+                    temp_vec_function[0::3][p] /= facet_area_vec_function[p]
+                    temp_vec_function[1::3][p] /= facet_area_vec_function[p]
+                    temp_vec_function[2::3][p] /= facet_area_vec_function[p]
 
-                        moment_x = MUI_Interfaces.\
-                                    fetch_many("momentX", 
-                                                [0.0, 0.0, 0.0], 
-                                                (total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        moment_y = MUI_Interfaces.\
-                                    fetch_many("momentY", 
-                                                [0.0, 0.0, 0.0], 
-                                                (total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                        moment_z = MUI_Interfaces.\
-                                    fetch_many("momentZ", 
-                                                [0.0, 0.0, 0.0], 
-                                                (total_Sub_Iteration-1), 
-                                                Spatial_sampler,
-                                                Temporal_sampler)
-                    else:
-
-                        moment_x = MUI_Interfaces.fetch("momentX", 
-                                        [0.0, 0.0, 0.0], 
-                                        (total_Sub_Iteration-1), 
-                                        Spatial_sampler,
-                                        Temporal_sampler)
-
-                        moment_y = MUI_Interfaces.fetch("momentY", 
-                                        [0.0, 0.0, 0.0], 
-                                        (total_Sub_Iteration-1), 
-                                        Spatial_sampler,
-                                        Temporal_sampler)
-
-                        moment_z = MUI_Interfaces.fetch("momentZ", 
-                                        [0.0, 0.0, 0.0], 
-                                        (total_Sub_Iteration-1), 
-                                        Spatial_sampler,
-                                        Temporal_sampler)
             else:
-                        moment_x += 0.0
-                        moment_y += 0.0
-                        moment_z += 0.0
+                if((total_Sub_Iteration-1) >= 0):
+                    for i, p in enumerate(dofs_fetch_list):
+                        temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceX",
+                                                    dofs_to_xyz[i], 
+                                                    (total_Sub_Iteration-1), 
+                                                    Spatial_sampler,
+                                                    Temporal_sampler)
 
-            if (self.rank == 0) and self.iDebug:
-                print ('{FENICS} fetch name: ', "momentX")
-                print ('{FENICS} fetch step: ',(total_Sub_Iteration-1))
-            if self.iDebug:
-                print('{FENICS} at rank ', self.rank, 'fetch value:', moment_x, moment_y, moment_z)
-            
-            return temp_vec_function, moment_x, moment_y, moment_z
-        else:
-            return temp_vec_function
+                        temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceY", 
+                                                    dofs_to_xyz[i], 
+                                                    (total_Sub_Iteration-1), 
+                                                    Spatial_sampler,
+                                                    Temporal_sampler)
+
+                        temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceZ", 
+                                                    dofs_to_xyz[i], 
+                                                    (total_Sub_Iteration-1), 
+                                                    Spatial_sampler,
+                                                    Temporal_sampler)
+
+                    for i, p in enumerate(dofs_fetch_list):
+                        temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
+                        temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
+                        temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
+                        totForceX += temp_vec_function[0::3][p]
+                        totForceY += temp_vec_function[1::3][p]
+                        totForceZ += temp_vec_function[2::3][p]
+
+                        temp_vec_function[0::3][p] /= facet_area_vec_function[p]
+                        temp_vec_function[1::3][p] /= facet_area_vec_function[p]
+                        temp_vec_function[2::3][p] /= facet_area_vec_function[p]
+                    if self.iDebug:
+                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, 
+                                "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.rank)
+
+        return temp_vec_function
 
     def MUI_Parallel_FSI_Fetch(  self, 
                                 MPI_COMM_WORLD, 
