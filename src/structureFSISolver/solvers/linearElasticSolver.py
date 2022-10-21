@@ -71,7 +71,7 @@ class linearElastic:
         #===========================================
 
         mesh, meshOri, gdim, gdimOri, N = \
-            self.Mesh_Generation(self.LOCAL_COMM_WORLD, self.inputFolderPath, self.outputFolderPath)
+            self.Mesh_Generation()
 
         #===========================================
         #%% Define coefficients

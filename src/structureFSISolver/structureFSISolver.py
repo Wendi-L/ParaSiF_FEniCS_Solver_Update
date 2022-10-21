@@ -1028,79 +1028,66 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Solid Mesh input/generation
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Mesh_Generation(    self, 
-                            MPI_COMM_WORLD, 
-                            InputFolderPath, 
-                            OutputFolderPath):        
+    def Mesh_Generation(self):
         if self.iContinueRun:
-            if False:
-                # mesh = Mesh()    # Store deformed mesh
-                # mesh_original = Mesh() # Store original mesh
-                                    #mesh = Mesh()
-                mesh = BoxMesh(MPI_COMM_WORLD, Point(0, 0, 0), 
-                   Point(1, 1, 1), 
-                   10, 10, 10)
-                mesh_original = BoxMesh(MPI_COMM_WORLD, Point(0, 0, 0), 
-                   Point(1, 1, 1), 
-                   10, 10, 10)
-                if self.rank == 0: print ("{FENICS} Loading HDF5 mesh from previous run ...   ")
-                hdf5checkpointDataInTemp = HDF5File(MPI_COMM_WORLD, InputFolderPath + "/checkpointData.h5", "r")
-                hdf5checkpointDataInTemp.read(mesh, "/mesh", False)
-                hdf5checkpointDataInTemp.read(mesh_original, "/meshOri", False)
-                hdf5checkpointDataInTemp.close()
-                del hdf5checkpointDataInTemp # Delete HDF5File object, closing file
-                if self.rank == 0: print ("{FENICS} Done with loading HDF5 mesh")
-            else:
-                if self.iMeshLoad:
-                    # Load mesh from file
-                    if self.iLoadXML:
-                        if self.rank == 0: print ("{FENICS} Loading XML mesh ...   ")
-                        mesh = Mesh(MPI_COMM_WORLD, InputFolderPath + "/Structure_FEniCS.xml")
-                        if self.rank == 0: print ("{FENICS} Done with loading XML mesh")
-                    else:
-                        if self.rank == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
-                        #mesh = Mesh()
-                        mesh = BoxMesh(MPI_COMM_WORLD, Point(0, 0, 0), 
-                           Point(1, 1, 1), 
-                           10, 10, 10)
-                        hdfInTemp = HDF5File(mesh.mpi_comm(), InputFolderPath + "/checkpointData.h5", "r")
-                        hdfInTemp.read(mesh, "/mesh", False)
-                        mesh_original = Mesh(mesh)                    # Store original mesh
-                        hdfInTemp.read(mesh_original, "/meshOri", False)
-                        hdfInTemp.close()
-                        del hdfInTemp 
-                        if self.rank == 0: print ("{FENICS} Done with loading HDF5 mesh")
-                else:
-                    # Generate mesh
-                    if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
-                    mesh = BoxMesh(MPI_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ), 
-                           Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)), 
-                           self.XMesh, self.YMesh, self.ZMesh)
-                    if self.rank == 0: print ("{FENICS} Done with generating mesh")
-                    mesh_original = Mesh(mesh)                    # Store original mesh
-        else:
+            # Restart simulation
             if self.iMeshLoad:
                 # Load mesh from file
                 if self.iLoadXML:
+                    # Load mesh from XML file
                     if self.rank == 0: print ("{FENICS} Loading XML mesh ...   ")
-                    mesh = Mesh(MPI_COMM_WORLD, InputFolderPath + "/Structure_FEniCS.xml")
+                    mesh = Mesh(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/Structure_FEniCS.xml")
                     if self.rank == 0: print ("{FENICS} Done with loading XML mesh")
                 else:
+                    # Load mesh from HDF5 file
                     if self.rank == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
+                    # commit off due to the hanging in FEniCS-v2019.1.0
                     #mesh = Mesh()
-                    mesh = BoxMesh(MPI_COMM_WORLD, Point(0, 0, 0), 
-                       Point(1, 1, 1), 
+                    # generate a dummy mesh and overwrite it by the HDF5 read-in data.
+                    mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(0, 0, 0),
+                       Point(1, 1, 1),
                        10, 10, 10)
-                    hdfInTemp = HDF5File(mesh.mpi_comm(), InputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                    hdfInTemp = HDF5File(mesh.mpi_comm(), self.inputFolderPath + "/checkpointData.h5", "r")
                     hdfInTemp.read(mesh, "/mesh", False)
+                    mesh_original = Mesh(mesh)                    # Store original mesh
+                    hdfInTemp.read(mesh_original, "/meshOri", False)
                     hdfInTemp.close()
-                    del hdfInTemp 
+                    del hdfInTemp
                     if self.rank == 0: print ("{FENICS} Done with loading HDF5 mesh")
             else:
                 # Generate mesh
                 if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
-                mesh = BoxMesh(MPI_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ), 
-                       Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)), 
+                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ),
+                       Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)),
+                       self.XMesh, self.YMesh, self.ZMesh)
+                if self.rank == 0: print ("{FENICS} Done with generating mesh")
+                mesh_original = Mesh(mesh)                    # Store original mesh
+        else:
+            # Simulation from zero
+            if self.iMeshLoad:
+                # Load mesh from file
+                if self.iLoadXML:
+                    if self.rank == 0: print ("{FENICS} Loading XML mesh ...   ")
+                    mesh = Mesh(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/Structure_FEniCS.xml")
+                    if self.rank == 0: print ("{FENICS} Done with loading XML mesh")
+                else:
+                    if self.rank == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
+                    # commit off due to the hanging in FEniCS-v2019.1.0
+                    #mesh = Mesh()
+                    # generate a dummy mesh and overwrite it by the HDF5 read-in data.
+                    mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(0, 0, 0),
+                       Point(1, 1, 1),
+                       10, 10, 10)
+                    hdfInTemp = HDF5File(mesh.mpi_comm(), self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                    hdfInTemp.read(mesh, "/mesh", False)
+                    hdfInTemp.close()
+                    del hdfInTemp
+                    if self.rank == 0: print ("{FENICS} Done with loading HDF5 mesh")
+            else:
+                # Generate mesh
+                if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
+                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ),
+                       Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)),
                        self.XMesh, self.YMesh, self.ZMesh)
                 if self.rank == 0: print ("{FENICS} Done with generating mesh")
 
@@ -1112,7 +1099,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         if self.iHDF5FileExport and self.iHDF5MeshExport:
             if self.rank == 0: print ("{FENICS} Exporting HDF5 mesh ...   ", end="", flush=True)
-            hdfOutTemp = HDF5File(MPI_COMM_WORLD, OutputFolderPath + "/mesh_boundary_and_values.h5", "w")
+            hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
             hdfOutTemp.write(mesh, "/mesh")
             hdfOutTemp.close()
             del hdfOutTemp               
