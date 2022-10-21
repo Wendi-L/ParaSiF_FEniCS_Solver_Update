@@ -637,33 +637,12 @@ class linearElastic:
                     print ("{FENICS} sub-iteration: ", i_sub_it)
                     print ("{FENICS} total sub-iterations to now: ", t_sub_it)
 
-                # create an instance of the TicToc wall clock class
-                wallClockPerIter = structureFSISolver.tictoc.TicToc()
-                # Starts the wall clock
-                wallClockPerIter.tic()
-
-                # create an instance of the TicToc wall clock class
-                wallClockFetchTime = structureFSISolver.tictoc.TicToc()
-                wallClockForceVecProj = structureFSISolver.tictoc.TicToc()
-                wallClockLinearAssemble = structureFSISolver.tictoc.TicToc()
-                wallClockBCApply = structureFSISolver.tictoc.TicToc()
-                wallClockSolverSolve = structureFSISolver.tictoc.TicToc()
-                wallClockTotalForceCal = structureFSISolver.tictoc.TicToc()
-                wallClockPrintDisp = structureFSISolver.tictoc.TicToc()
-                wallClockPush = structureFSISolver.tictoc.TicToc()
-                wallClockMoveMesh = structureFSISolver.tictoc.TicToc()
-                wallClockDispVTKExp = structureFSISolver.tictoc.TicToc()
-                wallClockDispTxtExp = structureFSISolver.tictoc.TicToc()
-                wallClockCheckpointExp = structureFSISolver.tictoc.TicToc()
-                wallClockAssignOldFuncSpace = structureFSISolver.tictoc.TicToc()
-
                 # Assign traction forces at present time step
                 if self.iNonUniTraction:
                     if self.iMUICoupling:
                         if self.iMUIFetchForce:
                             # Starts the wall clock
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            wallClockFetchTime.tic()
                             if len(xyz_fetch)!=0:
                                 if self.iparallelFSICoupling:
                                     if self.iUseRBF:
@@ -816,11 +795,9 @@ class linearElastic:
                                 
                             # Finish the wall clock on fetch Time
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            fetchTime = wallClockFetchTime.toc()
 
                             # Starts the wall clock
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            wallClockForceVecProj.tic()
                             if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
                                 # Apply traction components. These calls do parallel communication
                                 tF_apply.vector().set_local(tF_apply_vec)
@@ -837,12 +814,10 @@ class linearElastic:
 
                             # Finish the wall clock on force vector project
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            forceVecProjTime = wallClockForceVecProj.toc()
 
                         else:
                             # Starts the wall clock
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            wallClockFetchTime.tic()
                             if self.iparallelFSICoupling:
                                 if self.iMUIFetchMoment:
                                     tF_apply_vec, mom_x, mom_y, mom_z = \
@@ -899,11 +874,9 @@ class linearElastic:
                                                                     areaf_vec)
                             # Finish the wall clock on fetch Time
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            fetchTime = wallClockFetchTime.toc()
 
                             # Starts the wall clock
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            wallClockForceVecProj.tic()
                             if self.iMUIFetchValue:
                                 # Apply traction components. These calls do parallel communication
                                 tF_apply.vector().set_local(tF_apply_vec)
@@ -913,7 +886,6 @@ class linearElastic:
                                 pass
                             # Finish the wall clock on force vector project
                             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                            forceVecProjTime = wallClockForceVecProj.toc()
 
                     else:
                         if self.rank == 0: print ("{FENICS} Assigning traction forces at present time step ...   ", 
@@ -960,7 +932,6 @@ class linearElastic:
                     if self.solving_method == 'MCK':
                         # Starts the wall clock
                         if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                        wallClockLinearAssemble.tic()
                         # Assemble linear form
                         if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
                             pass
@@ -968,24 +939,20 @@ class linearElastic:
                             Linear_Assemble = assemble(Linear_Form)
                         # Finish the wall clock on linear assemble
                         if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                        linearAssembleTime = wallClockLinearAssemble.toc()
                         #bcs.apply(Linear_Assemble)
                         #!!!!!->
                         # Starts the wall clock
                         if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                        wallClockBCApply.tic()
                         if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
                             pass
                         else:
                             [bc.apply(Linear_Assemble) for bc in bcs]
                         # Finish the wall clock on bc apply
                         if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                        bcApplyTime = wallClockBCApply.toc()
                         #!!!!!<-
                     # Solving the structure functions inside the time loop
                     # Starts the wall clock
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    wallClockSolverSolve.tic()
                     if (self.solving_method == 'MCK') and (self.linear_solver == 'LU'):
                         solver.solve(Bilinear_Assemble, dmck.vector(), Linear_Assemble)
                     else:
@@ -995,10 +962,8 @@ class linearElastic:
                             solver.solve()
                     # Finish the wall clock on solver solve
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    solverSolveTime = wallClockSolverSolve.toc()
                     # Starts the wall clock
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    wallClockTotalForceCal.tic()
                     if self.solving_method == 'MCK':
                         force_X = dot(tF_apply, self.X_direction_vector())*ds(2)
                         force_Y = dot(tF_apply, self.Y_direction_vector())*ds(2)
@@ -1017,7 +982,6 @@ class linearElastic:
                     print ("{FENICS} Total Force_Z on structure: ", f_Z_a, " at self.rank ", self.rank)
                     # Finish the wall clock on total force calculate
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    totalForceCalTime = wallClockTotalForceCal.toc()
                 else:
                     pass
 
@@ -1042,15 +1006,12 @@ class linearElastic:
                 elif self.solving_method == 'MCK':
                     # Starts the wall clock
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    wallClockPrintDisp.tic()
                     # Compute and print the displacement of monitored point
                     self.print_Disp (self.LOCAL_COMM_WORLD, dmck)
                     # Finish the wall clock on print disp
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    printDispTime = wallClockPrintDisp.toc()
                     # Starts the wall clock
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    wallClockPush.tic()
                     # MUI Push internal points and commit current steps
                     if (self.iMUICoupling) and (len(xyz_push)!=0):
                         self.MUI_Push(  self.LOCAL_COMM_WORLD, 
@@ -1064,9 +1025,6 @@ class linearElastic:
                         pass
                     # Finish the wall clock on push
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    pushTime = wallClockPush.toc()
-                # Finish the wall clock on total sim time Per iter
-                simtimePerIter = wallClockPerIter.toc()
 
                 if self.iExporttxt: self.Time_Txt_Export(self.LOCAL_COMM_WORLD, 
                                                         t,
@@ -1134,14 +1092,11 @@ class linearElastic:
             elif self.solving_method == 'MCK':
                 # Starts the wall clock
                 if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                wallClockMoveMesh.tic()
                 self.Move_Mesh(V, dmck, d0mck, mesh)
                 # Finish the wall clock on move mesh
                 if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                moveMeshTime = wallClockMoveMesh.toc()
                 # Starts the wall clock
                 if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                wallClockDispVTKExp.tic()
                 if (not (self.iQuiet)):
                     self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD, 
                                             n_steps, 
@@ -1156,20 +1111,16 @@ class linearElastic:
                                             traction_file)
                 # Finish the wall clock on disp VTK export
                 if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                dispVTKExpTime = wallClockDispVTKExp.toc()
                 # Starts the wall clock
                 if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                wallClockDispTxtExp.tic()
                 if (not (self.iQuiet)):
                     self.Export_Disp_txt(   self.LOCAL_COMM_WORLD, 
                                             dmck, 
                                             self.outputFolderPath)
                 # Finish the wall clock on disp txt export
                 if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                dispTxtExpTime = wallClockDispTxtExp.toc()
             # Starts the wall clock
             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-            wallClockCheckpointExp.tic()
             if (not (self.iQuiet)):
                 self.Checkpoint_Output( self.LOCAL_COMM_WORLD, 
                                         self.outputFolderPath, 
@@ -1187,10 +1138,8 @@ class linearElastic:
                                         True)
             # Finish the wall clock on checkpoint export
             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-            checkpointExpTime = wallClockCheckpointExp.toc()
             # Starts the wall clock
             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-            wallClockAssignOldFuncSpace.tic()
             # Assign the old function spaces
             if self.solving_method == 'STVK':
                 u0d0.assign(ud)
@@ -1215,7 +1164,6 @@ class linearElastic:
                     d0mck.vector()[:] = dmck.vector()
             # Finish the wall clock on assign old function space
             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-            assignOldFuncSpaceTime = wallClockAssignOldFuncSpace.toc()
             # Move to next time step
             i_sub_it = 1
             t += self.dt
@@ -1224,7 +1172,7 @@ class linearElastic:
             if self.rank == 0:
                 print ("\n")
                 print ("{FENICS} Simulation time per step: %g [s] at timestep: %i" % (simtimePerStep, n_steps))
-            
+
         #===========================================
         #%% Calculate wall time
         #===========================================
