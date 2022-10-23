@@ -52,57 +52,6 @@ import structureFSISolver
 
 class linearElastic:
 
-    def tractionAssign(self,
-                        xyz_fetch,
-                        dofs_fetch_list,
-                        t_sampler,
-                        s_sampler,
-                        t_sub_it,
-                        areaf_vec):
-        # Assign traction forces at present time step
-        if self.iNonUniTraction:
-            if len(xyz_fetch)!=0:
-                # Execute only when there are DoFs need to exchange data in this rank.
-                if self.iparallelFSICoupling:
-                    # Parallel FSI coupling
-                    self.tF_apply_vec = self.MUI_Parallel_FSI_RBF_Fetch( 
-                                                    xyz_fetch, 
-                                                    dofs_fetch_list, 
-                                                    t_sampler, 
-                                                    s_sampler,
-                                                    t_sub_it, 
-                                                    self.tF_apply_vec, 
-                                                    areaf_vec)
-                else:
-                    # Staggered FSI coupling
-                    self.tF_apply_vec = self.MUI_Fetch(  xyz_fetch, 
-                                                    dofs_fetch_list, 
-                                                    t_sampler, 
-                                                    s_sampler, 
-                                                    t_sub_it, 
-                                                    self.tF_apply_vec, 
-                                                    areaf_vec)
-
-            if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
-                # Apply traction components. These calls do parallel communication
-                self.tF_apply.vector().set_local(self.tF_apply_vec)
-                self.tF_apply.vector().apply("insert")
-            else:
-                # Do not apply the fetched value, i.e. one-way coupling
-                pass
-
-        else:
-            if self.rank == 0: print ("{FENICS} Assigning uniform traction forces at present time step ...   ", 
-                                    end="", flush=True)
-            if t <= sForExtEndTime:
-                self.tF_magnitude.assign((Constant((self.sForExtX)/(self.YBeam*self.ZBeam))*self.X_direction_vector()) +
-                                    (Constant((self.sForExtY)/(self.XBeam*self.ZBeam))*self.Y_direction_vector()) +
-                                    (Constant((self.sForExtZ)/(self.XBeam*self.YBeam))*self.Z_direction_vector()))
-            else:
-                self.tF_magnitude.assign(Constant((0.0)))
-            if self.rank == 0:
-                print ("Done")
-
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
