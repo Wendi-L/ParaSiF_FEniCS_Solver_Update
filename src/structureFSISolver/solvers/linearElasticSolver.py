@@ -511,17 +511,12 @@ class linearElastic:
         #%% Define MUI samplers and commit ZERO step
         #===========================================
 
-        if self.iMUICoupling:
-
-            self.MUI_Sampler_Define(dofs_fetch_list,
-                                    dofs_to_xyz,
-                                    dofs_push_list,
-                                    dofs_to_xyz,
-                                    xyz_fetch_list_total_group,
-                                    t_step)
-
-        else:
-            pass
+        self.MUI_Sampler_Define(dofs_fetch_list,
+                                dofs_to_xyz,
+                                dofs_push_list,
+                                dofs_to_xyz,
+                                xyz_fetch_list_total_group,
+                                t_step)
 
         if self.iExporttxt: self.Time_Txt_Export_init(self.LOCAL_COMM_WORLD, self.outputFolderPath)
 

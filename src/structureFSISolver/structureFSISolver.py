@@ -428,224 +428,227 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             xyz_fetch_list_total_group,
                             Total_Time_Steps):
 
-        synchronised=False
+        if self.iMUICoupling:
+            synchronised=False
 
-        send_min_X = sys.float_info.max
-        send_min_Y = sys.float_info.max
-        send_min_Z = sys.float_info.max
+            send_min_X = sys.float_info.max
+            send_min_Y = sys.float_info.max
+            send_min_Z = sys.float_info.max
 
-        send_max_X = -sys.float_info.max
-        send_max_Y = -sys.float_info.max
-        send_max_Z = -sys.float_info.max
+            send_max_X = -sys.float_info.max
+            send_max_Y = -sys.float_info.max
+            send_max_Z = -sys.float_info.max
 
-        for i, p in enumerate(dofs_push_list):
-            if (dofs_to_xyz_push[p][0] < send_min_X):
-                send_min_X = dofs_to_xyz_push[p][0]
+            for i, p in enumerate(dofs_push_list):
+                if (dofs_to_xyz_push[p][0] < send_min_X):
+                    send_min_X = dofs_to_xyz_push[p][0]
 
-            if (dofs_to_xyz_push[p][1] < send_min_Y):
-                send_min_Y = dofs_to_xyz_push[p][1]
+                if (dofs_to_xyz_push[p][1] < send_min_Y):
+                    send_min_Y = dofs_to_xyz_push[p][1]
 
-            if (dofs_to_xyz_push[p][2] < send_min_Z):
-                send_min_Z = dofs_to_xyz_push[p][2]
+                if (dofs_to_xyz_push[p][2] < send_min_Z):
+                    send_min_Z = dofs_to_xyz_push[p][2]
 
-            if (dofs_to_xyz_push[p][0] > send_max_X):
-                send_max_X = dofs_to_xyz_push[p][0]
+                if (dofs_to_xyz_push[p][0] > send_max_X):
+                    send_max_X = dofs_to_xyz_push[p][0]
 
-            if (dofs_to_xyz_push[p][1] > send_max_Y):
-                send_max_Y = dofs_to_xyz_push[p][1]
+                if (dofs_to_xyz_push[p][1] > send_max_Y):
+                    send_max_Y = dofs_to_xyz_push[p][1]
 
-            if (dofs_to_xyz_push[p][2] > send_max_Z):
-                send_max_Z = dofs_to_xyz_push[p][2]
+                if (dofs_to_xyz_push[p][2] > send_max_Z):
+                    send_max_Z = dofs_to_xyz_push[p][2]
 
-        if (send_max_X < send_min_X):
-            print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.rank)
+            if (send_max_X < send_min_X):
+                print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.rank)
 
-        if (send_max_Y < send_min_Y):
-            print("{** FENICS ERROR **} send_max_Y: ", send_max_Y, " smaller than send_min_Y: ", send_min_Y, " at rank: ", self.rank)
+            if (send_max_Y < send_min_Y):
+                print("{** FENICS ERROR **} send_max_Y: ", send_max_Y, " smaller than send_min_Y: ", send_min_Y, " at rank: ", self.rank)
 
-        if (send_max_Z < send_min_Z):
-            print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.rank)
+            if (send_max_Z < send_min_Z):
+                print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.rank)
 
-        if (len(dofs_push_list)!=0):
-            # Set up sending span
-            span_push = mui4py.geometry.Box([send_min_X, send_min_Y, send_min_Z],
-                                            [send_max_X, send_max_Y, send_max_Z])
+            if (len(dofs_push_list)!=0):
+                # Set up sending span
+                span_push = mui4py.geometry.Box([send_min_X, send_min_Y, send_min_Z],
+                                                [send_max_X, send_max_Y, send_max_Z])
 
-            # Announce the MUI send span
-            self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration, span_push, synchronised)
+                # Announce the MUI send span
+                self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration, span_push, synchronised)
 
-            print("{FENICS} at rank: ", self.rank, " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
-            print("{FENICS} at rank: ", self.rank, " send_max_Y: ", send_max_Y, " send_min_Y: ", send_min_Y)
-            print("{FENICS} at rank: ", self.rank, " send_max_Z: ", send_max_Z, " send_min_Z: ", send_min_Z)
+                print("{FENICS} at rank: ", self.rank, " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
+                print("{FENICS} at rank: ", self.rank, " send_max_Y: ", send_max_Y, " send_min_Y: ", send_min_Y)
+                print("{FENICS} at rank: ", self.rank, " send_max_Z: ", send_max_Z, " send_min_Z: ", send_min_Z)
 
-        else:
-            # Announce the MUI send span
-            self.ifaces3d["threeDInterface0"].announce_send_disable()
+            else:
+                # Announce the MUI send span
+                self.ifaces3d["threeDInterface0"].announce_send_disable()
 
-        recv_min_X = sys.float_info.max
-        recv_min_Y = sys.float_info.max
-        recv_min_Z = sys.float_info.max
+            recv_min_X = sys.float_info.max
+            recv_min_Y = sys.float_info.max
+            recv_min_Z = sys.float_info.max
 
-        recv_max_X = -sys.float_info.max
-        recv_max_Y = -sys.float_info.max
-        recv_max_Z = -sys.float_info.max
+            recv_max_X = -sys.float_info.max
+            recv_max_Y = -sys.float_info.max
+            recv_max_Z = -sys.float_info.max
 
-        # Declare list to store mui::point3d
-        point3dList = []
-        point3dGlobalID = []
+            # Declare list to store mui::point3d
+            point3dList = []
+            point3dGlobalID = []
 
-        for i, p in enumerate(dofs_fetch_list):
-            if (dofs_to_xyz_fetch[p][0] < recv_min_X):
-                recv_min_X = dofs_to_xyz_fetch[p][0]
+            for i, p in enumerate(dofs_fetch_list):
+                if (dofs_to_xyz_fetch[p][0] < recv_min_X):
+                    recv_min_X = dofs_to_xyz_fetch[p][0]
 
-            if (dofs_to_xyz_fetch[p][1] < recv_min_Y):
-                recv_min_Y = dofs_to_xyz_fetch[p][1]
+                if (dofs_to_xyz_fetch[p][1] < recv_min_Y):
+                    recv_min_Y = dofs_to_xyz_fetch[p][1]
 
-            if (dofs_to_xyz_fetch[p][2] < recv_min_Z):
-                recv_min_Z = dofs_to_xyz_fetch[p][2]
+                if (dofs_to_xyz_fetch[p][2] < recv_min_Z):
+                    recv_min_Z = dofs_to_xyz_fetch[p][2]
 
-            if (dofs_to_xyz_fetch[p][0] > recv_max_X):
-                recv_max_X = dofs_to_xyz_fetch[p][0]
+                if (dofs_to_xyz_fetch[p][0] > recv_max_X):
+                    recv_max_X = dofs_to_xyz_fetch[p][0]
 
-            if (dofs_to_xyz_fetch[p][1] > recv_max_Y):
-                recv_max_Y = dofs_to_xyz_fetch[p][1]
+                if (dofs_to_xyz_fetch[p][1] > recv_max_Y):
+                    recv_max_Y = dofs_to_xyz_fetch[p][1]
 
-            if (dofs_to_xyz_fetch[p][2] > recv_max_Z):
-                recv_max_Z = dofs_to_xyz_fetch[p][2]
+                if (dofs_to_xyz_fetch[p][2] > recv_max_Z):
+                    recv_max_Z = dofs_to_xyz_fetch[p][2]
 
-            point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz_fetch[p][0],
-                                                                    dofs_to_xyz_fetch[p][1],
-                                                                    dofs_to_xyz_fetch[p][2]])
+                point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz_fetch[p][0],
+                                                                        dofs_to_xyz_fetch[p][1],
+                                                                        dofs_to_xyz_fetch[p][2]])
 
-            point_ID = -999
-            for ii, pp in enumerate(xyz_fetch_list_total_group):
-                if (pp[0] == dofs_to_xyz_fetch[p][0]):
-                    if (pp[1] == dofs_to_xyz_fetch[p][1]):
-                        if (pp[2] == dofs_to_xyz_fetch[p][2]):
-                            point_ID = ii
-                            break
+                point_ID = -999
+                for ii, pp in enumerate(xyz_fetch_list_total_group):
+                    if (pp[0] == dofs_to_xyz_fetch[p][0]):
+                        if (pp[1] == dofs_to_xyz_fetch[p][1]):
+                            if (pp[2] == dofs_to_xyz_fetch[p][2]):
+                                point_ID = ii
+                                break
 
-            if (point_ID<0):
-                print("{** FENICS ERROR **} cannot find point: ", dofs_to_xyz_fetch[p][0],
-                                                                    dofs_to_xyz_fetch[p][1],
-                                                                    dofs_to_xyz_fetch[p][2], 
-                                                                    " in Global xyz fetch list")
-            point3dList.append(point_fetch)
-            point3dGlobalID.append(point_ID)
+                if (point_ID<0):
+                    print("{** FENICS ERROR **} cannot find point: ", dofs_to_xyz_fetch[p][0],
+                                                                        dofs_to_xyz_fetch[p][1],
+                                                                        dofs_to_xyz_fetch[p][2],
+                                                                        " in Global xyz fetch list")
+                point3dList.append(point_fetch)
+                point3dGlobalID.append(point_ID)
 
-        if (recv_max_X < recv_min_X):
-            print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.rank)
+            if (recv_max_X < recv_min_X):
+                print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.rank)
 
-        if (recv_max_Y < recv_min_Y):
-            print("{** FENICS ERROR **} recv_max_Y: ", recv_max_Y, " smaller than recv_min_Y: ", recv_min_Y, " at rank: ", self.rank)
+            if (recv_max_Y < recv_min_Y):
+                print("{** FENICS ERROR **} recv_max_Y: ", recv_max_Y, " smaller than recv_min_Y: ", recv_min_Y, " at rank: ", self.rank)
 
-        if (recv_max_Z < recv_min_Z):
-            print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.rank)
+            if (recv_max_Z < recv_min_Z):
+                print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.rank)
 
-        if (len(dofs_fetch_list)!=0):
-            # Set up receiving span
-            span_fetch = mui4py.geometry.Box([recv_min_X, recv_min_Y, recv_min_Z],
-                                             [recv_max_X, recv_max_Y, recv_max_Z])
+            if (len(dofs_fetch_list)!=0):
+                # Set up receiving span
+                span_fetch = mui4py.geometry.Box([recv_min_X, recv_min_Y, recv_min_Z],
+                                                 [recv_max_X, recv_max_Y, recv_max_Z])
 
-            # Announce the MUI receive span
-            self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_fetch, synchronised)
+                # Announce the MUI receive span
+                self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_fetch, synchronised)
 
-            print("{FENICS} at rank: ", self.rank, " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
-            print("{FENICS} at rank: ", self.rank, " recv_max_Y: ", recv_max_Y, " recv_min_Y: ", recv_min_Y)
-            print("{FENICS} at rank: ", self.rank, " recv_max_Z: ", recv_max_Z, " recv_min_Z: ", recv_min_Z)
+                print("{FENICS} at rank: ", self.rank, " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
+                print("{FENICS} at rank: ", self.rank, " recv_max_Y: ", recv_max_Y, " recv_min_Y: ", recv_min_Y)
+                print("{FENICS} at rank: ", self.rank, " recv_max_Z: ", recv_max_Z, " recv_min_Z: ", recv_min_Z)
 
-        else:
-            # Announce the MUI receive span
-            self.ifaces3d["threeDInterface0"].announce_recv_disable()
+            else:
+                # Announce the MUI receive span
+                self.ifaces3d["threeDInterface0"].announce_recv_disable()
 
-        # Spatial/temporal samplers
-        if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
+            # Spatial/temporal samplers
+            if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
 
-        fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.rank)
-        os.makedirs(fileAddress)
+            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.rank)
+            os.makedirs(fileAddress)
 
-        if (self.iReadMatrix):
-            print ("{FENICS} Reading RBF matrix from ", self.rank)
-            sourcefileAddress=self.inputFolderName + '/RBFMatrix'
+            if (self.iReadMatrix):
+                print ("{FENICS} Reading RBF matrix from ", self.rank)
+                sourcefileAddress=self.inputFolderName + '/RBFMatrix'
 
-            # search line number of the pointID
-            numberOfFolders = 0
-            with open(sourcefileAddress +'/partitionSize.dat', 'r') as f_psr:
-                print ("{FENICS} open partitionSize from ", self.rank)
-                for line in f_psr:
-                    numberOfFolders = int(line)
-            f_psr.close()
-            print ("{FENICS} Number of RBF subfolders: ", numberOfFolders, " from ", self.rank)
-
-            numberOfCols=-99
-            for i, point_IDs in enumerate(point3dGlobalID):
                 # search line number of the pointID
-                iFolder=0
-                while iFolder < numberOfFolders:
-                    line_number = -1
-                    result_line_number = -99
-                    result_folder_number = -99
-                    with open(sourcefileAddress+'/'+str(iFolder)+'/pointID.dat', 'r') as f_pid:
-                        for line in f_pid:
-                            line_number += 1
-                            if str(point_IDs) in line:
-                                result_line_number = line_number
-                                result_folder_number = iFolder
-                                break    
-                    f_pid.close()
-                    iFolder += 1
-                    if (result_folder_number >= 0):
-                        break
+                numberOfFolders = 0
+                with open(sourcefileAddress +'/partitionSize.dat', 'r') as f_psr:
+                    print ("{FENICS} open partitionSize from ", self.rank)
+                    for line in f_psr:
+                        numberOfFolders = int(line)
+                f_psr.close()
+                print ("{FENICS} Number of RBF subfolders: ", numberOfFolders, " from ", self.rank)
 
-                if (result_line_number < 0):
-                    print ("{** FENICS ERROR **} Cannot find Point ID: ", point_ID, " in file")
-                # Get the line in H matrix and copy to local file
-                with open(sourcefileAddress+'/'+str(result_folder_number)+'/Hmatrix.dat', 'r') as f_h:
-                    for i, line in enumerate(f_h):
-                        if i == (result_line_number+6):
-                            with open(fileAddress+'/Hmatrix.dat', 'a') as f_h_result:
-                                if line[-1] == '\n':
-                                    f_h_result.write(line)
-                                else:
-                                    f_h_result.write(line+'\n')
-                                if (numberOfCols<0):
-                                    numberOfCols=len(line.split(","))
-                            f_h_result.close()
-                        elif i > (result_line_number+6):
+                numberOfCols=-99
+                for i, point_IDs in enumerate(point3dGlobalID):
+                    # search line number of the pointID
+                    iFolder=0
+                    while iFolder < numberOfFolders:
+                        line_number = -1
+                        result_line_number = -99
+                        result_folder_number = -99
+                        with open(sourcefileAddress+'/'+str(iFolder)+'/pointID.dat', 'r') as f_pid:
+                            for line in f_pid:
+                                line_number += 1
+                                if str(point_IDs) in line:
+                                    result_line_number = line_number
+                                    result_folder_number = iFolder
+                                    break
+                        f_pid.close()
+                        iFolder += 1
+                        if (result_folder_number >= 0):
                             break
-                f_h.close()
 
-            with open(fileAddress+'/matrixSize.dat', 'w') as f_size:
-                f_size.write(str(numberOfCols)+","+str(len(point3dGlobalID))+",0,0,"+str(len(point3dGlobalID))+","+str(numberOfCols))
-            f_size.close()
+                    if (result_line_number < 0):
+                        print ("{** FENICS ERROR **} Cannot find Point ID: ", point_ID, " in file")
+                    # Get the line in H matrix and copy to local file
+                    with open(sourcefileAddress+'/'+str(result_folder_number)+'/Hmatrix.dat', 'r') as f_h:
+                        for i, line in enumerate(f_h):
+                            if i == (result_line_number+6):
+                                with open(fileAddress+'/Hmatrix.dat', 'a') as f_h_result:
+                                    if line[-1] == '\n':
+                                        f_h_result.write(line)
+                                    else:
+                                        f_h_result.write(line+'\n')
+                                    if (numberOfCols<0):
+                                        numberOfCols=len(line.split(","))
+                                f_h_result.close()
+                            elif i > (result_line_number+6):
+                                break
+                    f_h.close()
 
+                with open(fileAddress+'/matrixSize.dat', 'w') as f_size:
+                    f_size.write(str(numberOfCols)+","+str(len(point3dGlobalID))+",0,0,"+str(len(point3dGlobalID))+","+str(numberOfCols))
+                f_size.close()
+
+            else:
+                if self.rank == 0:
+                    with open(self.outputFolderName + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
+                        f_ps.write("%i\n" % self.size)
+
+            # Best practice suggestion: for a better performance on the RBF method, always switch on the smoothFunc when structure Dofs are more than
+            #                           fluid points; Tune the rMUIFetcher to receive a reasonable totForce_Fetch value; Tune the areaListFactor to
+            #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
+            self.t_sampler = mui4py.ChronoSamplerExact()
+
+            self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher,
+                                                    point3dList,
+                                                    self.basisFunc,
+                                                    self.iConservative,
+                                                    self.iPolynomial,
+                                                    self.iSmoothFunc,
+                                                    self.iReadMatrix,
+                                                    fileAddress,
+                                                    self.cutoffRBF)
+
+            with open(fileAddress+'/pointID.dat', 'w') as f_pid:
+                for pid in point3dGlobalID:
+                    f_pid.write("%i\n" % pid)
+
+            # Commit ZERO step
+            self.ifaces3d["threeDInterface0"].commit(0)
+            if self.rank == 0: print ("{FENICS} Commit ZERO step")
         else:
-            if self.rank == 0: 
-                with open(self.outputFolderName + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
-                    f_ps.write("%i\n" % self.size)
-
-        # Best practice suggestion: for a better performance on the RBF method, always switch on the smoothFunc when structure Dofs are more than 
-        #                           fluid points; Tune the rMUIFetcher to receive a reasonable totForce_Fetch value; Tune the areaListFactor to 
-        #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
-        self.t_sampler = mui4py.ChronoSamplerExact()
-
-        self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher, 
-                                                point3dList, 
-                                                self.basisFunc, 
-                                                self.iConservative, 
-                                                self.iPolynomial, 
-                                                self.iSmoothFunc, 
-                                                self.iReadMatrix, 
-                                                fileAddress, 
-                                                self.cutoffRBF)
-
-        with open(fileAddress+'/pointID.dat', 'w') as f_pid:
-            for pid in point3dGlobalID:
-                f_pid.write("%i\n" % pid)
-
-        # Commit ZERO step
-        self.ifaces3d["threeDInterface0"].commit(0)
-        if self.rank == 0: print ("{FENICS} Commit ZERO step")
+            pass
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solid Mesh input/generation
