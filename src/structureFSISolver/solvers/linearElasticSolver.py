@@ -567,40 +567,12 @@ class linearElastic:
 
                 if (not ((self.iContinueRun) and (n_steps == 1))):
                     if self.solving_method == 'MCK':
-                        # Starts the wall clock
-                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                         # Assemble linear form
-                        if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
-                            pass
-                        else:
-                            Linear_Assemble = assemble(Linear_Form)
-                        # Finish the wall clock on linear assemble
-                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                        #bcs.apply(Linear_Assemble)
-                        #!!!!!->
-                        # Starts the wall clock
-                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                        if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
-                            pass
-                        else:
-                            [bc.apply(Linear_Assemble) for bc in bcs]
-                        # Finish the wall clock on bc apply
-                        if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                        #!!!!!<-
+                        Linear_Assemble = assemble(Linear_Form)
+                        [bc.apply(Linear_Assemble) for bc in bcs]
                     # Solving the structure functions inside the time loop
-                    # Starts the wall clock
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    if (self.solving_method == 'MCK') and (self.linear_solver == 'LU'):
-                        solver.solve(Bilinear_Assemble, dmck.vector(), Linear_Assemble)
-                    else:
-                        if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
-                            pass
-                        else:
-                            solver.solve()
-                    # Finish the wall clock on solver solve
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    # Starts the wall clock
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
+                    solver.solve()
+
                     if self.solving_method == 'MCK':
                         force_X = dot(self.tF_apply, self.X_direction_vector())*ds(2)
                         force_Y = dot(self.tF_apply, self.Y_direction_vector())*ds(2)
@@ -617,8 +589,7 @@ class linearElastic:
                     print ("{FENICS} Total Force_X on structure: ", f_X_a, " at self.rank ", self.rank)
                     print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at self.rank ", self.rank)
                     print ("{FENICS} Total Force_Z on structure: ", f_Z_a, " at self.rank ", self.rank)
-                    # Finish the wall clock on total force calculate
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
+
                 else:
                     pass
 
