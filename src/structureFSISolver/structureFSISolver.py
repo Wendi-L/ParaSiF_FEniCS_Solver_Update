@@ -1006,11 +1006,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # MUI calculate forget iteration steps
         return ((Current_Time_Step - self.forgetTStepsMUI - 1) * self.num_sub_iteration + current_Sub_Iteration)
 
-    def MUI_Fetch(  self, 
+    def MUI_Fetch ( self,
                     dofs_to_xyz, 
                     dofs_fetch_list, 
                     Temporal_sampler,
-                    Spatial_sampler, 
+                    Spatial_sampler,
                     total_Sub_Iteration, 
                     temp_vec_function, 
                     facet_area_vec_function):
@@ -1018,149 +1018,87 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         totForceX = 0.0
         totForceY = 0.0
         totForceZ = 0.0
-
-        if self.iMUIFetchMany:
-            temp_vec_function[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
-                        fetch_many("forceX", 
-                                    dofs_to_xyz,
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-            temp_vec_function[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
-                        fetch_many("forceY", 
-                                    dofs_to_xyz,
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-            temp_vec_function[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
-                        fetch_many("forceZ", 
-                                    dofs_to_xyz,
-                                    total_Sub_Iteration, 
-                                    Spatial_sampler,
-                                    Temporal_sampler)
-
-            for i, p in enumerate(dofs_fetch_list):
-                # Calculate the total applied force
-                totForceX += temp_vec_function[0::3][p]
-                totForceY += temp_vec_function[1::3][p]
-                totForceZ += temp_vec_function[2::3][p]
-                # Convert force to traction
-                temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-            if self.iDebug:
-                print ("{FENICS} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, 
-                        "; at iteration: ", total_Sub_Iteration, " at rank: ", self.rank)
-
-        else:
-            for i, p in enumerate(dofs_fetch_list):
-                temp_vec_function[0::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceX",
-                                            dofs_to_xyz[i], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-
-                temp_vec_function[1::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceY", 
-                                            dofs_to_xyz[i], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-
-                temp_vec_function[2::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceZ", 
-                                            dofs_to_xyz[i], 
-                                            total_Sub_Iteration, 
-                                            Spatial_sampler,
-                                            Temporal_sampler)
-                # Calculate the total applied force
-                totForceX += temp_vec_function[0::3][p]
-                totForceY += temp_vec_function[1::3][p]
-                totForceZ += temp_vec_function[2::3][p]
-                # Convert force to traction
-                temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                temp_vec_function[2::3][p] /= facet_area_vec_function[p]
-            if self.iDebug:
-                print ("{FENICS} totForce Fetch: ", totForceX, "; ",totForceY, "; ",totForceZ, 
-                        "; at iteration: ", total_Sub_Iteration, " at rank: ", self.rank)
-
-        return temp_vec_function
-
-    def MUI_Parallel_FSI_RBF_Fetch(  self,
-                                dofs_to_xyz, 
-                                dofs_fetch_list, 
-                                Temporal_sampler,
-                                Spatial_sampler,
-                                total_Sub_Iteration, 
-                                temp_vec_function, 
-                                facet_area_vec_function):
-
-        totForceX = 0.0
-        totForceY = 0.0
-        totForceZ = 0.0
         temp_vec_function_temp = temp_vec_function
-        if (total_Sub_Iteration-1)>0:
+
+        if self.iparallelFSICoupling:
+            fetch_iteration = total_Sub_Iteration-1
+        else:
+            fetch_iteration = total_Sub_Iteration
+
+        if (fetch_iteration >= 0):
             if self.iMUIFetchMany:
                 temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
                             fetch_many("forceX", 
                                         dofs_to_xyz,
-                                        (total_Sub_Iteration-1), 
+                                        fetch_iteration,
                                         Spatial_sampler,
                                         Temporal_sampler)
                 temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
                             fetch_many("forceY", 
                                         dofs_to_xyz,
-                                        (total_Sub_Iteration-1), 
+                                        fetch_iteration,
                                         Spatial_sampler,
                                         Temporal_sampler)
                 temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
                             fetch_many("forceZ", 
                                         dofs_to_xyz,
-                                        (total_Sub_Iteration-1), 
+                                        fetch_iteration,
                                         Spatial_sampler,
                                         Temporal_sampler)
 
-            for i, p in enumerate(dofs_fetch_list):
-                temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
-                totForceX += temp_vec_function[0::3][p]
-                totForceY += temp_vec_function[1::3][p]
-                totForceZ += temp_vec_function[2::3][p]
+                for i, p in enumerate(dofs_fetch_list):
+                    if self.iparallelFSICoupling:
+                        temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
+                        temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
+                        temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
+                    else:
+                        temp_vec_function[0::3][p] = temp_vec_function_temp[0::3][p]
+                        temp_vec_function[1::3][p] = temp_vec_function_temp[1::3][p]
+                        temp_vec_function[2::3][p] = temp_vec_function_temp[2::3][p]
 
-                if (facet_area_vec_function[p] == 0):
-                    temp_vec_function[0::3][p] = 0.
-                    temp_vec_function[1::3][p] = 0.
-                    temp_vec_function[2::3][p] = 0.
-                else:
-                    temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                    temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                    temp_vec_function[2::3][p] /= facet_area_vec_function[p]
+                    totForceX += temp_vec_function[0::3][p]
+                    totForceY += temp_vec_function[1::3][p]
+                    totForceZ += temp_vec_function[2::3][p]
+
+                    if (facet_area_vec_function[p] == 0):
+                        temp_vec_function[0::3][p] = 0.
+                        temp_vec_function[1::3][p] = 0.
+                        temp_vec_function[2::3][p] = 0.
+                    else:
+                        temp_vec_function[0::3][p] /= facet_area_vec_function[p]
+                        temp_vec_function[1::3][p] /= facet_area_vec_function[p]
+                        temp_vec_function[2::3][p] /= facet_area_vec_function[p]
 
             else:
-                if((total_Sub_Iteration-1) >= 0):
+                if (fetch_iteration >= 0):
                     for i, p in enumerate(dofs_fetch_list):
                         temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceX",
                                                     dofs_to_xyz[i], 
-                                                    (total_Sub_Iteration-1), 
+                                                    fetch_iteration,
                                                     Spatial_sampler,
                                                     Temporal_sampler)
 
                         temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceY", 
                                                     dofs_to_xyz[i], 
-                                                    (total_Sub_Iteration-1), 
+                                                    fetch_iteration,
                                                     Spatial_sampler,
                                                     Temporal_sampler)
 
                         temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceZ", 
                                                     dofs_to_xyz[i], 
-                                                    (total_Sub_Iteration-1), 
+                                                    fetch_iteration,
                                                     Spatial_sampler,
                                                     Temporal_sampler)
 
-                    for i, p in enumerate(dofs_fetch_list):
-                        temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                        temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                        temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
+                        if self.iparallelFSICoupling:
+                            temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
+                            temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
+                            temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
+                        else:
+                            temp_vec_function[0::3][p] = temp_vec_function_temp[0::3][p]
+                            temp_vec_function[1::3][p] = temp_vec_function_temp[1::3][p]
+                            temp_vec_function[2::3][p] = temp_vec_function_temp[2::3][p]
+
                         totForceX += temp_vec_function[0::3][p]
                         totForceY += temp_vec_function[1::3][p]
                         totForceZ += temp_vec_function[2::3][p]
@@ -1168,9 +1106,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         temp_vec_function[0::3][p] /= facet_area_vec_function[p]
                         temp_vec_function[1::3][p] /= facet_area_vec_function[p]
                         temp_vec_function[2::3][p] /= facet_area_vec_function[p]
+
                     if self.iDebug:
                         print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, 
-                                "; at iteration: ", float(total_Sub_Iteration-1), " at rank: ", self.rank)
+                                "; at iteration: ", fetch_iteration, " at rank: ", self.rank)
 
         return temp_vec_function
 
@@ -1453,19 +1392,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if self.iNonUniTraction:
             if len(xyz_fetch)!=0:
                 # Execute only when there are DoFs need to exchange data in this rank.
-                if self.iparallelFSICoupling:
-                    # Parallel FSI coupling
-                    self.tF_apply_vec = self.MUI_Parallel_FSI_RBF_Fetch(
-                                                    xyz_fetch,
-                                                    dofs_fetch_list,
-                                                    t_sampler,
-                                                    s_sampler,
-                                                    t_sub_it,
-                                                    self.tF_apply_vec,
-                                                    areaf_vec)
-                else:
-                    # Staggered FSI coupling
-                    self.tF_apply_vec = self.MUI_Fetch(  xyz_fetch,
+                self.tF_apply_vec = self.MUI_Fetch( xyz_fetch,
                                                     dofs_fetch_list,
                                                     t_sampler,
                                                     s_sampler,
