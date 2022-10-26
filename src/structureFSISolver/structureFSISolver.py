@@ -1116,110 +1116,51 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         return temp_vec_function
 
-    def MUI_Push(   self, 
-                    MPI_COMM_WORLD, 
-                    MUI_Interfaces, 
+    def MUI_Push(   self,
                     dofs_to_xyz, 
                     dofs_push, 
                     displacement_function, 
                     total_Sub_Iteration):
 
-        # total_Sub_Iteration = (( (Current_Time_Step - 1) * self.num_sub_iteration ) + Current_sub_iteration -1)*3
         d_vec_x = displacement_function.vector().get_local()[0::3]
         d_vec_y = displacement_function.vector().get_local()[1::3]
         d_vec_z = displacement_function.vector().get_local()[2::3]
 
         if self.iMUIPushMany:
-            if self.iMultidomain:
-                if self.iPushX:
-                    MUI_Interfaces["threeDInterface0"].push_many("dispX", dofs_to_xyz,
+            if self.iPushX:
+                self.ifaces3d["threeDInterface0"].push_many("dispX", dofs_to_xyz,
                                                             (d_vec_x[dofs_push]))
-                if self.iPushY:
-                    MUI_Interfaces["threeDInterface0"].push_many("dispY", dofs_to_xyz,
-                                                            (d_vec_y[dofs_push]))
-                if self.iPushZ:
-                    MUI_Interfaces["threeDInterface0"].push_many("dispZ", dofs_to_xyz,
-                                                            (d_vec_z[dofs_push]))
-                a = MUI_Interfaces["threeDInterface0"].commit(total_Sub_Iteration)
-            else:
-                # for ii in range(len(d_vec_x)):
-                    # d_vec_x[ii] = 11.11
-                    # d_vec_y[ii] = 22.22
-                    # d_vec_z[ii] = 33.33
-                if self.iPushX:
-                    MUI_Interfaces.push_many("dispX", dofs_to_xyz,(d_vec_x[dofs_push]))
-                if self.iPushY:
-                    MUI_Interfaces.push_many("dispY", dofs_to_xyz,(d_vec_y[dofs_push]))
-                if self.iPushZ:
-                    MUI_Interfaces.push_many("dispZ", dofs_to_xyz,(d_vec_z[dofs_push]))
-                a = MUI_Interfaces.commit(total_Sub_Iteration)
-                print ('{FENICS} MUI commit step: ',total_Sub_Iteration, ' with peer numbers: ', a, ' at rank: ', self.rank)
+            if self.iPushY:
+                self.ifaces3d["threeDInterface0"].push_many("dispY", dofs_to_xyz,
+                                                        (d_vec_y[dofs_push]))
+            if self.iPushZ:
+                self.ifaces3d["threeDInterface0"].push_many("dispZ", dofs_to_xyz,
+                                                        (d_vec_z[dofs_push]))
+            a = self.ifaces3d["threeDInterface0"].commit(total_Sub_Iteration)
+
         else:
-            
-            if self.iMultidomain:
-                if self.iPushX:
-                    for i, p in enumerate(dofs_push):
-                        # #//*****************************->
-                        # amp_local = 0.001
-
-                        # d_vec_x[ii] = 0.0
-                        # d_vec_y[ii] = amp_local*((dofs_to_xyz[ii][0]/0.1))*math.sin(2.0*3.14*8333.333* (Current_Time_Step * self.dt))
-                        # d_vec_z[ii] = 0.0
-                    
-                        # if dofs_to_xyz[ii][0] <= 0.05:
-                            # d_vec_y[ii] = 0.0
-
-                        # #//*****************************<-
-
-                        MUI_Interfaces["threeDInterface0"].push("dispX", dofs_to_xyz[i],  (d_vec_x[p]))
-                if self.iPushY:
-                    for i, p in enumerate(dofs_push):
-                        MUI_Interfaces["threeDInterface0"].push("dispY", dofs_to_xyz[i],  (d_vec_y[p]))
-                if self.iPushZ:
-                    for i, p in enumerate(dofs_push):
-                        MUI_Interfaces["threeDInterface0"].push("dispZ", dofs_to_xyz[i],  (d_vec_z[p]))
-                a = MUI_Interfaces["threeDInterface0"].commit(total_Sub_Iteration)
-            else:
-                if self.iPushX:
-                    for i, p in enumerate(dofs_push):
-
-                        # #//*****************************->
-                        # amp_local = 0.001
-
-                        # d_vec_x[ii] = 0.0
-                        # d_vec_y[ii] = amp_local*((dofs_to_xyz[ii][0]/0.1))*math.sin(2.0*3.14*8333.333* (Current_Time_Step * self.dt))
-                        # d_vec_z[ii] = 0.0
-                    
-                        # if dofs_to_xyz[ii][0] <= 0.05:
-                            # d_vec_y[ii] = 0.0
-
-                        # #//*****************************<-
-
-                        MUI_Interfaces.push("dispX", dofs_to_xyz[i],  (d_vec_x[p]))
-
-                if self.iPushY:
-                    for i, p in enumerate(dofs_push):
-                        MUI_Interfaces.push("dispY", dofs_to_xyz[i],  (d_vec_y[p]))
-                if self.iPushZ:
-                    for i, p in enumerate(dofs_push):
-                        MUI_Interfaces.push("dispZ", dofs_to_xyz[i],  (d_vec_z[p]))
-                a = MUI_Interfaces.commit(total_Sub_Iteration)
+            if self.iPushX:
+                for i, p in enumerate(dofs_push):
+                    self.ifaces3d["threeDInterface0"].push("dispX", dofs_to_xyz[i],
+                                                            (d_vec_x[p]))
+            if self.iPushY:
+                for i, p in enumerate(dofs_push):
+                    self.ifaces3d["threeDInterface0"].push("dispY", dofs_to_xyz[i],
+                                                            (d_vec_y[p]))
+            if self.iPushZ:
+                for i, p in enumerate(dofs_push):
+                    self.ifaces3d["threeDInterface0"].push("dispZ", dofs_to_xyz[i],
+                                                            (d_vec_z[p]))
+            a = self.ifaces3d["threeDInterface0"].commit(total_Sub_Iteration)
 
         if (self.rank == 0) and self.iDebug:
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
-        if ((total_Sub_Iteration-(self.forgetTStepsMUI)) > 0):
-            if self.iMultidomain:
-                a = MUI_Interfaces["threeDInterface0"].forget((total_Sub_Iteration-(self.forgetTStepsMUI)))
-            else:
-                a = MUI_Interfaces.forget((total_Sub_Iteration-(self.forgetTStepsMUI)))
-                #MUI_Interfaces.set_memory(self.forgetTStepsMUI)
-                MUI_Interfaces.set_memory(self.forgetTStepsMUI)
+        if ((total_Sub_Iteration-self.forgetTStepsMUI) > 0):
+            a = self.ifaces3d["threeDInterface0"].forget(total_Sub_Iteration-self.forgetTStepsMUI)
+            self.ifaces3d["threeDInterface0"].set_memory(self.forgetTStepsMUI)
             if (self.rank == 0) and self.iDebug:
-                print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-(self.forgetTStepsMUI)))
-
-        if (self.rank == 0) and self.iDebug: print('{FENICS} max displacement_function:', 
-                                                                            displacement_function.vector()[:].max())
+                print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI))
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define directional vectors

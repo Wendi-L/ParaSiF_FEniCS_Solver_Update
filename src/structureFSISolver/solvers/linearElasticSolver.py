@@ -602,9 +602,7 @@ class linearElastic:
 
                     # MUI Push internal points and commit current steps
                     if (self.iMUICoupling) and (len(xyz_push)!=0):
-                        self.MUI_Push(  self.LOCAL_COMM_WORLD, 
-                                        self.ifaces3d, 
-                                        xyz_push, 
+                        self.MUI_Push(  xyz_push,
                                         dofs_push_list, 
                                         d, 
                                         t_sub_it)
@@ -622,9 +620,7 @@ class linearElastic:
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     # MUI Push internal points and commit current steps
                     if (self.iMUICoupling) and (len(xyz_push)!=0):
-                        self.MUI_Push(  self.LOCAL_COMM_WORLD, 
-                                        self.ifaces3d, 
-                                        xyz_push, 
+                        self.MUI_Push(  xyz_push,
                                         dofs_push_list, 
                                         dmck, 
                                         t_sub_it)
