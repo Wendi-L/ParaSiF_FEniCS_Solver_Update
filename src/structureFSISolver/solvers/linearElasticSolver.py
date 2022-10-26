@@ -512,69 +512,14 @@ class linearElastic:
         #===========================================
 
         if self.iMUICoupling:
-            if self.iUseRBF:
-                if self.iMUIFetchForce:
-                    if self.iparallelFSICoupling:
-                        t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
-                                                    self.ifaces3d,
-                                                    dofs_fetch_list,
-                                                    dofs_to_xyz,
-                                                    dofs_push_list,
-                                                    dofs_to_xyz,
-                                                    xyz_fetch_list_total_group,
-                                                    t_step)
-                    else:
-                        t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
-                                                    self.ifaces3d,
-                                                    dofs_fetch_list,
-                                                    dofs_to_xyz,
-                                                    dofs_push_list,
-                                                    dofs_to_xyz,
-                                                    xyz_fetch_list_total_group,
-                                                    t_step)
-                else:
-                    if self.iparallelFSICoupling:
-                        t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
-                                                    self.ifaces3d,
-                                                    dofs_fetch_list,
-                                                    dofs_to_xyz,
-                                                    dofs_push_list,
-                                                    dofs_to_xyz,
-                                                    xyz_fetch_list_total_group,
-                                                    t_step)
-                    else:
-                        t_sampler, s_sampler = \
-                            self.MUI_Sampler_RBF_Define(self.LOCAL_COMM_WORLD, 
-                                                    self.ifaces3d,
-                                                    dofs_fetch_list,
-                                                    dofs_to_xyz,
-                                                    dofs_push_list,
-                                                    dofs_to_xyz,
-                                                    xyz_fetch_list_total_group,
-                                                    t_step)
-            else:
-                if self.iMUIFetchForce:
-                    t_sampler, s_sampler = \
-                            self.MUI_Sampler_Define(self.LOCAL_COMM_WORLD, 
-                                                    self.ifaces3d,
-                                                    dofs_fetch_list,
-                                                    xyz_fetch,
-                                                    dofs_push_list,
-                                                    xyz_push,
-                                                    t_step)
-                else:
-                    t_sampler, s_sampler = \
-                            self.MUI_Sampler_Define(self.LOCAL_COMM_WORLD, 
-                                                    self.ifaces3d,
-                                                    dofs_fetch_list,
-                                                    xyz_fetch,
-                                                    dofs_push_list,
-                                                    xyz_push,
-                                                    t_step)
-            
+
+            self.MUI_Sampler_Define(dofs_fetch_list,
+                                    dofs_to_xyz,
+                                    dofs_push_list,
+                                    dofs_to_xyz,
+                                    xyz_fetch_list_total_group,
+                                    t_step)
+
         else:
             pass
 
@@ -622,8 +567,8 @@ class linearElastic:
 
                 self.tractionAssign(xyz_fetch,
                                     dofs_fetch_list,
-                                    t_sampler,
-                                    s_sampler,
+                                    self.t_sampler,
+                                    self.s_sampler,
                                     t_sub_it,
                                     areaf_vec)
 

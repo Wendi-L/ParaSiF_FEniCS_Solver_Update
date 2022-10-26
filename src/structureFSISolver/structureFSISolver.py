@@ -421,246 +421,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def MUI_Sampler_Define( self, 
-                            MPI_COMM_WORLD, 
-                            MUI_Interfaces, 
-                            dofs_fetch_list, 
-                            dofs_to_xyz_fetch,
-                            dofs_push_list,
-                            dofs_to_xyz_push,
-                            Total_Time_Steps):
-
-        #import mui4py
-
-        synchronised=False
-        
-        send_min_X = sys.float_info.max
-        send_min_Y = sys.float_info.max
-        send_min_Z = sys.float_info.max
-
-        send_max_X = -sys.float_info.max
-        send_max_Y = -sys.float_info.max
-        send_max_Z = -sys.float_info.max
-
-        # for i, p in enumerate(dofs_push_list):
-            # if (dofs_to_xyz_push[i][0] < send_min_X):
-                # send_min_X = dofs_to_xyz_push[i][0]
-
-            # if (dofs_to_xyz_push[i][1] < send_min_Y):
-                # send_min_Y = dofs_to_xyz_push[i][1]
-
-            # if (dofs_to_xyz_push[i][2] < send_min_Z):
-                # send_min_Z = dofs_to_xyz_push[i][2]
-
-            # if (dofs_to_xyz_push[i][0] > send_max_X):
-                # send_max_X = dofs_to_xyz_push[i][0]
-
-            # if (dofs_to_xyz_push[i][1] > send_max_Y):
-                # send_max_Y = dofs_to_xyz_push[i][1]
-
-            # if (dofs_to_xyz_push[i][2] > send_max_Z):
-                # send_max_Z = dofs_to_xyz_push[i][2]
-
-        # if (send_max_X < send_min_X):
-            # print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.rank)
-
-        # if (send_max_Y < send_min_Y):
-            # print("{** FENICS ERROR **} send_max_Y: ", send_max_Y, " smaller than send_min_Y: ", send_min_Y, " at rank: ", self.rank)
-
-        # if (send_max_Z < send_min_Z):
-            # print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.rank)
-
-        # if (send_min_X == send_max_X):
-            # send_min_X -= 0.005
-            # send_max_X += 0.005
-        # if (send_min_Y == send_max_Y):
-            # send_min_Y -= 0.005
-            # send_max_Y += 0.005
-        # if (send_min_Z == send_max_Z):
-            # send_min_Z -= 0.005
-            # send_max_Z += 0.005
-
-        if len(dofs_to_xyz_push)!=0:
-            min_push = np.amin(dofs_to_xyz_push, axis=0)
-            send_min_X = min_push[0]
-            send_min_Y = min_push[1]
-            send_min_Z = min_push[2]
-
-            max_push = np.amax(dofs_to_xyz_push, axis=0)
-            send_max_X = max_push[0]
-            send_max_Y = max_push[1]
-            send_max_Z = max_push[2]
-
-            # Set up sending span
-            span_push = mui4py.geometry.Box([send_min_X, send_min_Y, send_min_Z],
-                                            [send_max_X, send_max_Y, send_max_Z])
-
-            # Announce the MUI send span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_push, synchronised)
-            else:
-                MUI_Interfaces.announce_send_span(0, (Total_Time_Steps*self.num_sub_iteration*10), span_push, synchronised)
-
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " send_max_Y: ", send_max_Y, " send_min_Y: ", send_min_Y)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " send_max_Z: ", send_max_Z, " send_min_Z: ", send_min_Z)
-
-        else:
-            send_min_X = -sys.float_info.max
-            send_min_Y = -sys.float_info.max
-            send_min_Z = -sys.float_info.max
-
-            send_max_X = -sys.float_info.max
-            send_max_Y = -sys.float_info.max
-            send_max_Z = -sys.float_info.max
-
-            # Announce the MUI send span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_send_disable()
-            else:
-                MUI_Interfaces.announce_send_disable()
-
-        recv_min_X = sys.float_info.max
-        recv_min_Y = sys.float_info.max
-        recv_min_Z = sys.float_info.max
-
-        recv_max_X = -sys.float_info.max
-        recv_max_Y = -sys.float_info.max
-        recv_max_Z = -sys.float_info.max
- 
-        # for i, p in enumerate(dofs_fetch_list):
-            # # if (dofs_to_xyz_fetch[p][0] < recv_min_X):
-                # # recv_min_X = dofs_to_xyz_fetch[p][0]
-
-            # # if (dofs_to_xyz_fetch[p][1] < recv_min_Y):
-                # # recv_min_Y = dofs_to_xyz_fetch[p][1]
-
-            # # if (dofs_to_xyz_fetch[p][2] < recv_min_Z):
-                # # recv_min_Z = dofs_to_xyz_fetch[p][2]
-
-            # # if (dofs_to_xyz_fetch[p][0] > recv_max_X):
-                # # recv_max_X = dofs_to_xyz_fetch[p][0]
-
-            # # if (dofs_to_xyz_fetch[p][1] > recv_max_Y):
-                # # recv_max_Y = dofs_to_xyz_fetch[p][1]
-
-            # # if (dofs_to_xyz_fetch[p][2] > recv_max_Z):
-                # # recv_max_Z = dofs_to_xyz_fetch[p][2]
-
-            # if self.iMultidomain:
-                # point_fetch = MUI_Interfaces["threeDInterface0"].Point([dofs_to_xyz_fetch[p][0],
-                                                                        # dofs_to_xyz_fetch[p][1],
-                                                                        # dofs_to_xyz_fetch[p][2]])
-            # else:
-                # point_fetch = MUI_Interfaces.Point([dofs_to_xyz_fetch[p][0],
-                                                    # dofs_to_xyz_fetch[p][1],
-                                                    # dofs_to_xyz_fetch[p][2]])
-
-        # if (recv_max_X < recv_min_X):
-            # print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.rank)
-
-        # if (recv_max_Y < recv_min_Y):
-            # print("{** FENICS ERROR **} recv_max_Y: ", recv_max_Y, " smaller than recv_min_Y: ", recv_min_Y, " at rank: ", self.rank)
-
-        # if (recv_max_Z < recv_min_Z):
-            # print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.rank)
-
-        # if (recv_min_X == recv_max_X):
-            # recv_min_X -= 0.005
-            # recv_max_X += 0.005
-        # if (recv_min_Y == recv_max_Y):
-            # recv_min_Y -= 0.005
-            # recv_max_Y += 0.005
-        # if (recv_min_Z == recv_max_Z):
-            # recv_min_Z -= 0.005
-            # recv_max_Z += 0.005
-
-        if len(dofs_to_xyz_fetch)!=0:
-            min_fetch = np.amin(dofs_to_xyz_fetch, axis=0)
-            recv_min_X = min_fetch[0]
-            recv_min_Y = min_fetch[1]
-            recv_min_Z = min_fetch[2]
-
-            max_fetch = np.amax(dofs_to_xyz_fetch, axis=0)
-            recv_max_X = max_fetch[0]
-            recv_max_Y = max_fetch[1]
-            recv_max_Z = max_fetch[2]
-
-            for i in range (len(dofs_to_xyz_fetch)):
-
-                if self.iMultidomain:
-                    point_fetch = MUI_Interfaces["threeDInterface0"].Point([dofs_to_xyz_fetch[i][0],dofs_to_xyz_fetch[i][1],dofs_to_xyz_fetch[i][2]])
-                else:
-                    point_fetch = MUI_Interfaces.Point([dofs_to_xyz_fetch[i][0],dofs_to_xyz_fetch[i][1],dofs_to_xyz_fetch[i][2]])
-
-            # Set up receiving span
-            span_fetch = mui4py.geometry.Box([recv_min_X, recv_min_Y, recv_min_Z],
-                                             [recv_max_X, recv_max_Y, recv_max_Z])
-
-            # Announce the MUI receive span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_fetch, synchronised)
-            else:
-                MUI_Interfaces.announce_recv_span(0, (Total_Time_Steps*self.num_sub_iteration*10), span_fetch, synchronised)
-
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " recv_max_Y: ", recv_max_Y, " recv_min_Y: ", recv_min_Y)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " recv_max_Z: ", recv_max_Z, " recv_min_Z: ", recv_min_Z)
-
-        else:
-            recv_min_X = -sys.float_info.max
-            recv_min_Y = -sys.float_info.max
-            recv_min_Z = -sys.float_info.max
-
-            recv_max_X = -sys.float_info.max
-            recv_max_Y = -sys.float_info.max
-            recv_max_Z = -sys.float_info.max
-
-            # Announce the MUI receive span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_recv_disable()
-            else:
-                MUI_Interfaces.announce_recv_disable()
-
-        # Spatial/temporal samplers
-        if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
-
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        recv_min_X -= (recv_max_X - recv_min_X)*self.fetchExtendRBF
-        recv_max_X += (recv_max_X - recv_min_X)*self.fetchExtendRBF
-
-        recv_min_Y -= (recv_max_Y - recv_min_Y)*self.fetchExtendRBF
-        recv_max_Y += (recv_max_Y - recv_min_Y)*self.fetchExtendRBF
-
-        recv_min_Z -= (recv_max_Z - recv_min_Z)*self.fetchExtendRBF
-        recv_max_Z += (recv_max_Z - recv_min_Z)*self.fetchExtendRBF
-
-        Temporal_sampler = mui4py.ChronoSamplerExact()
-        Spatial_sampler = mui4py.SamplerPseudoNearest2Linear(self.rMUIFetcher)
-
-        print ("{FENICS} Done")
-        #MPI_COMM_WORLD.Barrier()
-        # Commit ZERO step
-        if self.iMultidomain:
-            MUI_Interfaces["threeDInterface0"].commit(0)
-        else:
-            MUI_Interfaces.commit(0)
-        if self.rank == 0: print ("{FENICS} Commit ZERO step")
-
-        return Temporal_sampler, Spatial_sampler
-
-    def MUI_Sampler_RBF_Define( self, 
-                            MPI_COMM_WORLD, 
-                            MUI_Interfaces, 
                             dofs_fetch_list, 
                             dofs_to_xyz_fetch,
                             dofs_push_list,
                             dofs_to_xyz_push,
                             xyz_fetch_list_total_group,
                             Total_Time_Steps):
-
-        #import mui4py
-        #print("{FENICS***} len(dofs_fetch_list): ", len(dofs_fetch_list), " len(dofs_push_list): ", len(dofs_push_list))
 
         synchronised=False
 
@@ -700,45 +466,21 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if (send_max_Z < send_min_Z):
             print("{** FENICS ERROR **} send_max_Z: ", send_max_Z, " smaller than send_min_Z: ", send_min_Z, " at rank: ", self.rank)
 
-        if (send_min_X == send_max_X):
-            send_min_X -= 0.005
-            send_max_X += 0.005
-        if (send_min_Y == send_max_Y):
-            send_min_Y -= 0.005
-            send_max_Y += 0.005
-        if (send_min_Z == send_max_Z):
-            send_min_Z -= 0.005
-            send_max_Z += 0.005
-        print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), "Here 02")
         if (len(dofs_push_list)!=0):
             # Set up sending span
             span_push = mui4py.geometry.Box([send_min_X, send_min_Y, send_min_Z],
                                             [send_max_X, send_max_Y, send_max_Z])
 
             # Announce the MUI send span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_push, synchronised)
-            else:
-                MUI_Interfaces.announce_send_span(0, (Total_Time_Steps*self.num_sub_iteration*10), span_push, synchronised)
+            self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration, span_push, synchronised)
 
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " send_max_Y: ", send_max_Y, " send_min_Y: ", send_min_Y)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " send_max_Z: ", send_max_Z, " send_min_Z: ", send_min_Z)
+            print("{FENICS} at rank: ", self.rank, " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
+            print("{FENICS} at rank: ", self.rank, " send_max_Y: ", send_max_Y, " send_min_Y: ", send_min_Y)
+            print("{FENICS} at rank: ", self.rank, " send_max_Z: ", send_max_Z, " send_min_Z: ", send_min_Z)
 
         else:
-            send_min_X = -sys.float_info.max
-            send_min_Y = -sys.float_info.max
-            send_min_Z = -sys.float_info.max
-
-            send_max_X = -sys.float_info.max
-            send_max_Y = -sys.float_info.max
-            send_max_Z = -sys.float_info.max
-
             # Announce the MUI send span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_send_disable()
-            else:
-                MUI_Interfaces.announce_send_disable()
+            self.ifaces3d["threeDInterface0"].announce_send_disable()
 
         recv_min_X = sys.float_info.max
         recv_min_Y = sys.float_info.max
@@ -748,7 +490,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         recv_max_Y = -sys.float_info.max
         recv_max_Z = -sys.float_info.max
 
-        # Declare list to store mui::point2d
+        # Declare list to store mui::point3d
         point3dList = []
         point3dGlobalID = []
 
@@ -771,14 +513,9 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             if (dofs_to_xyz_fetch[p][2] > recv_max_Z):
                 recv_max_Z = dofs_to_xyz_fetch[p][2]
 
-            if self.iMultidomain:
-                point_fetch = MUI_Interfaces["threeDInterface0"].Point([dofs_to_xyz_fetch[p][0],
-                                                                        dofs_to_xyz_fetch[p][1],
-                                                                        dofs_to_xyz_fetch[p][2]])
-            else:
-                point_fetch = MUI_Interfaces.Point([dofs_to_xyz_fetch[p][0],
-                                                    dofs_to_xyz_fetch[p][1],
-                                                    dofs_to_xyz_fetch[p][2]])
+            point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz_fetch[p][0],
+                                                                    dofs_to_xyz_fetch[p][1],
+                                                                    dofs_to_xyz_fetch[p][2]])
 
             point_ID = -999
             for ii, pp in enumerate(xyz_fetch_list_total_group):
@@ -805,84 +542,32 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if (recv_max_Z < recv_min_Z):
             print("{** FENICS ERROR **} recv_max_Z: ", recv_max_Z, " smaller than recv_min_Z: ", recv_min_Z, " at rank: ", self.rank)
 
-        if (recv_min_X == recv_max_X):
-            recv_min_X -= 0.005
-            recv_max_X += 0.005
-        if (recv_min_Y == recv_max_Y):
-            recv_min_Y -= 0.005
-            recv_max_Y += 0.005
-        if (recv_min_Z == recv_max_Z):
-            recv_min_Z -= 0.005
-            recv_max_Z += 0.005
         if (len(dofs_fetch_list)!=0):
             # Set up receiving span
             span_fetch = mui4py.geometry.Box([recv_min_X, recv_min_Y, recv_min_Z],
                                              [recv_max_X, recv_max_Y, recv_max_Z])
 
             # Announce the MUI receive span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_fetch, synchronised)
-            else:
-                MUI_Interfaces.announce_recv_span(0, (Total_Time_Steps*self.num_sub_iteration*10), span_fetch, synchronised)
+            self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_fetch, synchronised)
 
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " recv_max_Y: ", recv_max_Y, " recv_min_Y: ", recv_min_Y)
-            print("{FENICS} at rank: ", MPI_COMM_WORLD.Get_rank(), " recv_max_Z: ", recv_max_Z, " recv_min_Z: ", recv_min_Z)
+            print("{FENICS} at rank: ", self.rank, " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
+            print("{FENICS} at rank: ", self.rank, " recv_max_Y: ", recv_max_Y, " recv_min_Y: ", recv_min_Y)
+            print("{FENICS} at rank: ", self.rank, " recv_max_Z: ", recv_max_Z, " recv_min_Z: ", recv_min_Z)
 
         else:
-            recv_min_X = -sys.float_info.max
-            recv_min_Y = -sys.float_info.max
-            recv_min_Z = -sys.float_info.max
-
-            recv_max_X = -sys.float_info.max
-            recv_max_Y = -sys.float_info.max
-            recv_max_Z = -sys.float_info.max
-
             # Announce the MUI receive span
-            if self.iMultidomain:
-                MUI_Interfaces["threeDInterface0"].announce_recv_disable()
-            else:
-                MUI_Interfaces.announce_recv_disable()
+            self.ifaces3d["threeDInterface0"].announce_recv_disable()
 
         # Spatial/temporal samplers
         if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
-        #print ("{FENICS} *** DEBUG HERE 00 *** at ", self.rank, "\n", end="", flush=True)
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        recv_min_X -= (recv_max_X - recv_min_X)*self.fetchExtendRBF
-        recv_max_X += (recv_max_X - recv_min_X)*self.fetchExtendRBF
+        fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.rank)
+        os.makedirs(fileAddress)
 
-        recv_min_Y -= (recv_max_Y - recv_min_Y)*self.fetchExtendRBF
-        recv_max_Y += (recv_max_Y - recv_min_Y)*self.fetchExtendRBF
-
-        recv_min_Z -= (recv_max_Z - recv_min_Z)*self.fetchExtendRBF
-        recv_max_Z += (recv_max_Z - recv_min_Z)*self.fetchExtendRBF
-
-    # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #print("{FENICS***}: len(point3dList): ",  len(point3dList))
-        # # Declare list to store mui::point2d
-        # point3dLists = []
-        # for i, p in enumerate(xyz_fetch_list_total_group):
-            # if self.iMultidomain:
-                # point_fetch = MUI_Interfaces["threeDInterface0"].Point([p[0],
-                                                                    # p[1],
-                                                                    # p[2]])
-            # else:
-                # point_fetch = MUI_Interfaces.Point([p[0],
-                                                    # p[1],
-                                                    # p[2]])
-
-            # point3dLists.append(point_fetch)
-        # #print("!!!!!!!!!!!!!!!!!{FENICS}: len(point3dLists): ",  len(point3dLists))
-        # #print("!!!!!!!!!!!!!!!!!{FENICS}: point3dLists: ",  point3dLists)
-
-    # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        print ("{FENICS} before read matrix from ", self.rank)
         if (self.iReadMatrix):
+            print ("{FENICS} Reading RBF matrix from ", self.rank)
             sourcefileAddress=self.inputFolderName + '/RBFMatrix'
-            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.rank)
-            os.makedirs(fileAddress)
-            print ("{FENICS} before read partitionSize from ", self.rank)
+
             # search line number of the pointID
             numberOfFolders = 0
             with open(sourcefileAddress +'/partitionSize.dat', 'r') as f_psr:
@@ -911,7 +596,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                     iFolder += 1
                     if (result_folder_number >= 0):
                         break
-                   
+
                 if (result_line_number < 0):
                     print ("{** FENICS ERROR **} Cannot find Point ID: ", point_ID, " in file")
                 # Get the line in H matrix and copy to local file
@@ -935,20 +620,16 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             f_size.close()
 
         else:
-            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.rank)
-            os.makedirs(fileAddress)
             if self.rank == 0: 
                 with open(self.outputFolderName + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
                     f_ps.write("%i\n" % self.size)
 
-        # Best practice suggestion: for a better performance on the RBF method, always swotch on the smoothFunc when structure Dofs are more than 
+        # Best practice suggestion: for a better performance on the RBF method, always switch on the smoothFunc when structure Dofs are more than 
         #                           fluid points; Tune the rMUIFetcher to receive a reasonable totForce_Fetch value; Tune the areaListFactor to 
         #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
-        # print ("{FENICS} *** DEBUG HERE 01 *** at ", self.rank, "\n", end="", flush=True)
-        Temporal_sampler = mui4py.ChronoSamplerExact()
-        # print ("{FENICS} *** DEBUG HERE 02 *** at ", self.rank, "\n", end="", flush=True)
-        MPI_COMM_WORLD.Barrier()
-        Spatial_sampler = mui4py.SamplerRbf(self.rMUIFetcher, 
+        self.t_sampler = mui4py.ChronoSamplerExact()
+
+        self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher, 
                                                 point3dList, 
                                                 self.basisFunc, 
                                                 self.iConservative, 
@@ -957,63 +638,15 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                                 self.iReadMatrix, 
                                                 fileAddress, 
                                                 self.cutoffRBF)
-        MPI_COMM_WORLD.Barrier()
-        # print ("{FENICS} *** DEBUG HERE 03 *** at ", self.rank, "\n", end="", flush=True)
-        # print ("{FENICS} *** DEBUG HERE after 03 *** at ", self.rank, self.rMUIFetcher, len(point3dList), self.basisFunc, 
-                                                # self.iConservative, 
-                                                # self.iPolynomial, 
-                                                # self.iSmoothFunc, 
-                                                # self.iReadMatrix, 
-                                                # fileAddress, 
-                                                # self.cutoffRBF,"\n", end="", flush=True)
+
         with open(fileAddress+'/pointID.dat', 'w') as f_pid:
             for pid in point3dGlobalID:
                 f_pid.write("%i\n" % pid)
-        # print ("{FENICS} *** DEBUG HERE 04 *** at ", self.rank, "\n", end="", flush=True)
-        if (self.iparallelFSICoupling):
-            #print ("{FENICS} before Barrier: ", self.rank)
-            #MPI_COMM_WORLD.Barrier()
-            #print ("{FENICS} after Barrier: ", self.rank)
-            globalRank = self.rank
-            globalRankList =MPI_COMM_WORLD.allgather(globalRank)
-            pointLength=len(point3dList)
-            mpiSize=self.size
-            print ("{FENICS} globalRankList: ", globalRankList, " at Rank ", self.rank)
-            print ("{FENICS} size: ", self.size, " at Rank ", self.rank)
-            # IQNILS=cfsil4py.muiCouplingIQNILS(pointLength, 
-                                              # self.initUndRelxCpl, 
-                                              # globalRankList, 
-                                              # mpiSize, 
-                                              # self.undRelxCplMax, 
-                                              # self.aitkenIterationN, 
-                                              # self.globalAlphaInput)
-            # IQNILS=cfsil4py.muiCouplingIQNILS(pointLength, 
-                                              # self.initUndRelxCpl, 
-                                              # self.undRelxCplMax, 
-                                              # self.aitkenIterationN, 
-                                              # self.globalAlphaInput)
 
-            #MPI_COMM_WORLD.Barrier()
-
-            # IQNILS.initialize(pointLength,
-                              # self.undRelxCplMax, 
-                              # self.aitkenIterationN, 
-                              # self.globalAlphaInput)
-        # print ("{FENICS} *** DEBUG HERE 05 *** at ", self.rank, "\n", end="", flush=True)
-        print ("{FENICS} Done")
-        MPI_COMM_WORLD.Barrier()
         # Commit ZERO step
-        if self.iMultidomain:
-            MUI_Interfaces["threeDInterface0"].commit(0)
-        else:
-            MUI_Interfaces.commit(0)
+        self.ifaces3d["threeDInterface0"].commit(0)
         if self.rank == 0: print ("{FENICS} Commit ZERO step")
-        # print ("{FENICS} *** DEBUG HERE 06 *** at ", self.rank, "\n", end="", flush=True)
-        # if (self.iparallelFSICoupling):
-            # return Temporal_sampler, Spatial_sampler, IQNILS
-        # else:
-            # return Temporal_sampler, Spatial_sampler
-        return Temporal_sampler, Spatial_sampler
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solid Mesh input/generation
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
