@@ -383,54 +383,36 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def MPI_Init (self):
+
         if self.iMUICoupling:
-            #import mui4py
             # App common world claims 
-            MPI_COMM_WORLD = mui4py.mpi_split_by_app()
+            self.LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
             # MUI parameters
             dimensionMUI = 3
             data_types = {"dispX": mui4py.FLOAT64, 
                           "dispY": mui4py.FLOAT64,
                           "dispZ": mui4py.FLOAT64,
-                          "tractionX": mui4py.FLOAT64,
-                          "tractionY": mui4py.FLOAT64,
-                          "tractionZ": mui4py.FLOAT64,
                           "forceX": mui4py.FLOAT64,
                           "forceY": mui4py.FLOAT64,
-                          "forceZ": mui4py.FLOAT64,
-                          "momentX": mui4py.FLOAT64,
-                          "momentY": mui4py.FLOAT64,
-                          "momentZ": mui4py.FLOAT64}
+                          "forceZ": mui4py.FLOAT64}
             # MUI interface creation
             domain = "structureDomain"
             config3d = mui4py.Config(dimensionMUI, mui4py.FLOAT64)
-            if self.iMultidomain:
-                iface = ["threeDInterface0"]
-                MUI_Interfaces = mui4py.create_unifaces(domain, iface, config3d) 
-                MUI_Interfaces["threeDInterface0"].set_data_types(data_types)
-            else:
-                # Default configuration for every object so no need to pass it as an argument 
-                # to any class constructor.
-                URI = "mpi://" + domain + "/threeDInterface0"
-                MUI_Interfaces = mui4py.Uniface(uri=URI, config=config3d)
-                MUI_Interfaces.set_data_types(data_types)
 
-            # Necessary to avoid hangs at PETSc vector communication 
-            petsc4py.init(comm=MPI_COMM_WORLD)
+            iface = ["threeDInterface0"]
+            self.ifaces3d = mui4py.create_unifaces(domain, iface, config3d)
+            self.ifaces3d["threeDInterface0"].set_data_types(data_types)
 
-            return MPI_COMM_WORLD, MUI_Interfaces
+            # Necessary to avoid hangs at PETSc vector communication
+            petsc4py.init(comm=self.LOCAL_COMM_WORLD)
 
         else:
             # App common world claims    
-            MPI_COMM_WORLD = MPI.COMM_WORLD
- 
-            return MPI_COMM_WORLD
+            self.LOCAL_COMM_WORLD = MPI.COMM_WORLD
 
-    def MPI_Get_Rank(self):
         # Define local communicator rank
         self.rank = self.LOCAL_COMM_WORLD.Get_rank()
 
-    def MPI_Get_Size(self):
         # Define local communicator size
         self.size = self.LOCAL_COMM_WORLD.Get_size()
 
@@ -640,7 +622,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 MUI_Interfaces.announce_recv_disable()
 
         # Spatial/temporal samplers
-        if self.MPI_Get_Rank(self) == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
+        if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -663,7 +645,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             MUI_Interfaces["threeDInterface0"].commit(0)
         else:
             MUI_Interfaces.commit(0)
-        if self.MPI_Get_Rank(self) == 0: print ("{FENICS} Commit ZERO step")
+        if self.rank == 0: print ("{FENICS} Commit ZERO step")
 
         return Temporal_sampler, Spatial_sampler
 
@@ -900,7 +882,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             sourcefileAddress=self.inputFolderName + '/RBFMatrix'
             fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.rank)
             os.makedirs(fileAddress)
-            print ("{FENICS} before read partitionSize from ", self.MPI_Get_Rank(MPI_CMM_WORLD))
+            print ("{FENICS} before read partitionSize from ", self.rank)
             # search line number of the pointID
             numberOfFolders = 0
             with open(sourcefileAddress +'/partitionSize.dat', 'r') as f_psr:
@@ -2244,15 +2226,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #%% Initialize MPI by mpi4py/MUI for parallelized computation
         #===========================================
 
-        if self.iMUICoupling:
-            #import mui4py
-            self.LOCAL_COMM_WORLD, self.ifaces3d = self.MPI_Init()
-        else:
-            self.LOCAL_COMM_WORLD = self.MPI_Init()
-
-        self.MPI_Get_Rank()
-
-        self.MPI_Get_Size()
+        self.MPI_Init()
 
         #===========================================
         #%% Set target folder
