@@ -580,23 +580,6 @@ class linearElastic:
 
         if self.iExporttxt: self.Time_Txt_Export_init(self.LOCAL_COMM_WORLD, self.outputFolderPath)
 
-        # Finish the wall clock on fetch Time
-        fetchTime = 0.0
-        forceVecProjTime = 0.0
-        linearAssembleTime = 0.0
-        bcApplyTime = 0.0
-        solverSolveTime = 0.0
-        totalForceCalTime = 0.0
-        printDispTime = 0.0
-        pushTime = 0.0
-        moveMeshTime = 0.0
-        dispVTKExpTime = 0.0
-        dispTxtExpTime = 0.0
-        checkpointExpTime = 0.0
-        assignOldFuncSpaceTime = 0.0
-        simtimePerIter = 0.0
-        simtimePerStep = 0.0
-
         #===========================================
         #%% Define time loops
         #===========================================
@@ -741,27 +724,6 @@ class linearElastic:
                         pass
                     # Finish the wall clock on push
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-
-                if self.iExporttxt: self.Time_Txt_Export(self.LOCAL_COMM_WORLD, 
-                                                        t,
-                                                        n_steps,
-                                                        i_sub_it,
-                                                        fetchTime,
-                                                        forceVecProjTime,
-                                                        linearAssembleTime,
-                                                        bcApplyTime,
-                                                        solverSolveTime,
-                                                        totalForceCalTime,
-                                                        printDispTime,
-                                                        pushTime,
-                                                        moveMeshTime,
-                                                        dispVTKExpTime,
-                                                        dispTxtExpTime,
-                                                        checkpointExpTime,
-                                                        assignOldFuncSpaceTime,
-                                                        simtimePerIter,
-                                                        simtimePerStep,
-                                                        self.outputFolderPath)
 
                 # Move to the next sub-iteration
                 i_sub_it += 1
