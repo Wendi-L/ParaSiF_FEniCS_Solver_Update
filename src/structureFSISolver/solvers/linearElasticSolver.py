@@ -518,8 +518,6 @@ class linearElastic:
                                 xyz_fetch_list_total_group,
                                 t_step)
 
-        if self.iExporttxt: self.Time_Txt_Export_init(self.LOCAL_COMM_WORLD, self.outputFolderPath)
-
         #===========================================
         #%% Define time loops
         #===========================================
