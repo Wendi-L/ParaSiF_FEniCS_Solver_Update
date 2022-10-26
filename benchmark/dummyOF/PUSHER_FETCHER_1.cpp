@@ -6,10 +6,13 @@
  */
 
 #include "mui.h"
+#include <iostream>
+#include <fstream>
 
 int main(int argc, char ** argv) {
     using namespace mui;
 
+    std::ofstream displacementOutFile("dispCpp.txt");
 
     // Define the name of MUI interfaces
     std::vector<std::string> interfaces;
@@ -54,10 +57,13 @@ int main(int argc, char ** argv) {
     double local_x3 = 20.;
     double local_y3 = 2.;
 	double local_z3 = 2.;
+    double monitorX = 20.;
+    double monitorY = 0.;
+	double monitorZ = 0.;
     double pp[Nx][Ny][Nz][3], pf[Nx][Ny][Nz][3];
-    double pressure_pushX[Nx][Ny][Nz],pressure_pushY[Nx][Ny][Nz],pressure_pushZ[Nx][Ny][Nz];
-    double pressure_fetchX[Nx][Ny][Nz], pressure_fetchY[Nx][Ny][Nz], pressure_fetchZ[Nx][Ny][Nz];
-    double pressure_fetchX_Store[Nx][Ny][Nz], pressure_fetchY_Store[Nx][Ny][Nz], pressure_fetchZ_Store[Nx][Ny][Nz];
+    double force_pushX[Nx][Ny][Nz],force_pushY[Nx][Ny][Nz],force_pushZ[Nx][Ny][Nz];
+    double displacement_fetchX[Nx][Ny][Nz], displacement_fetchY[Nx][Ny][Nz], displacement_fetchZ[Nx][Ny][Nz];
+    double displacement_fetchX_Store[Nx][Ny][Nz], displacement_fetchY_Store[Nx][Ny][Nz], displacement_fetchZ_Store[Nx][Ny][Nz];
 
 	// Push points generation and evaluation
 	for ( int i = 0; i < Nx; ++i ) {
@@ -69,9 +75,9 @@ int main(int argc, char ** argv) {
 				pp[i][j][k][0] = x;
 				pp[i][j][k][1] = y;
 				pp[i][j][k][2] = z;
-				pressure_pushX[i][j][k] = 0.;
-				pressure_pushY[i][j][k] = 0.;
-				pressure_pushZ[i][j][k] = 0.;
+				force_pushX[i][j][k] = 0.;
+				force_pushY[i][j][k] = 0.;
+				force_pushZ[i][j][k] = 0.;
 			}
         }
 	}
@@ -86,12 +92,12 @@ int main(int argc, char ** argv) {
 				pf[i][j][k][0] = x;
 				pf[i][j][k][1] = y;
 				pf[i][j][k][2] = z;
-				pressure_fetchX[i][j][k] = 0.0;
-				pressure_fetchY[i][j][k] = 0.0;
-				pressure_fetchZ[i][j][k] = 0.0;
-				pressure_fetchX_Store[i][j][k] = 0.0;
-				pressure_fetchY_Store[i][j][k] = 0.0;
-				pressure_fetchZ_Store[i][j][k] = 0.0;
+				displacement_fetchX[i][j][k] = 0.0;
+				displacement_fetchY[i][j][k] = 0.0;
+				displacement_fetchZ[i][j][k] = 0.0;
+				displacement_fetchX_Store[i][j][k] = 0.0;
+				displacement_fetchY_Store[i][j][k] = 0.0;
+				displacement_fetchZ_Store[i][j][k] = 0.0;
 			}
         }
 	}
@@ -104,8 +110,8 @@ int main(int argc, char ** argv) {
     ifs[0]->announce_recv_span( 0, steps*10, recv_region );
 
 	// define spatial and temporal samplers
-	sampler_gauss3d<double> s1( r, r / 4 );
-	chrono_sampler_exact3d  s2;
+	sampler_pseudo_n2_linear3d<double> s1(r);
+	chrono_sampler_exact3d s2;
 
 	// commit ZERO step
 	ifs[0]->commit(0);
@@ -128,22 +134,20 @@ int main(int argc, char ** argv) {
                 for ( int j = 0; j < Ny; ++j ) {
                     for ( int k = 0; k < Nz; ++k ) {
 						if (((n*timeStepSize)<=7.)&& (i==(Nx-1))){
-							pressure_pushX[i][j][k] = 0.;
-							pressure_pushY[i][j][k] = -((n*timeStepSize)*(20)/7.0);
-							pressure_pushZ[i][j][k] = 0.;
+							force_pushX[i][j][k] = 0.;
+							force_pushY[i][j][k] = -((n*timeStepSize)*(20)/7.0);
+							force_pushZ[i][j][k] = 0.;
 						}else{
-							pressure_pushX[i][j][k] = 0.;
-							pressure_pushY[i][j][k] = 0.;
-							pressure_pushZ[i][j][k] = 0.;
+							force_pushX[i][j][k] = 0.;
+							force_pushY[i][j][k] = 0.;
+							force_pushZ[i][j][k] = 0.;
 						}
-/* 						pp[i][j][k][0] = 0.45;
-						pp[i][j][k][1] = 0.15;
-						pp[i][j][k][2] = -0.05; */
+
 						point3d locp( pp[i][j][k][0], pp[i][j][k][1], pp[i][j][k][2] );
-						ifs[0]->push( name_pushX, locp, pressure_pushX[i][j][k] );
-						ifs[0]->push( name_pushY, locp, pressure_pushY[i][j][k] );
-						ifs[0]->push( name_pushZ, locp, pressure_pushZ[i][j][k] );
-						total_force_Y += pressure_pushY[i][j][k];
+						ifs[0]->push( name_pushX, locp, force_pushX[i][j][k] );
+						ifs[0]->push( name_pushY, locp, force_pushY[i][j][k] );
+						ifs[0]->push( name_pushZ, locp, force_pushZ[i][j][k] );
+						total_force_Y += force_pushY[i][j][k];
                     }
                 }
             }
@@ -155,15 +159,15 @@ int main(int argc, char ** argv) {
 					for ( int j = 0; j < Ny; ++j ) {
 						for ( int k = 0; k < Nz; ++k ) {
 							point3d locf( pf[i][j][k][0], pf[i][j][k][1], pf[i][j][k][2] );
-							pressure_fetchX[i][j][k] = ifs[0]->fetch( name_fetchX, locf, 
+							displacement_fetchX[i][j][k] = ifs[0]->fetch( name_fetchX, locf, 
 								(totalIter-1), 
 								s1, 
 								s2 );
-							pressure_fetchY[i][j][k] = ifs[0]->fetch( name_fetchY, locf, 
+							displacement_fetchY[i][j][k] = ifs[0]->fetch( name_fetchY, locf, 
 								(totalIter-1), 
 								s1, 
 								s2 );
-							pressure_fetchZ[i][j][k] = ifs[0]->fetch( name_fetchZ, locf, 
+							displacement_fetchZ[i][j][k] = ifs[0]->fetch( name_fetchZ, locf, 
 								(totalIter-1), 
 								s1, 
 								s2 );
@@ -171,15 +175,17 @@ int main(int argc, char ** argv) {
 					}
 				}
 			}
-/*             for ( int i = 0; i < Nx; ++i ) {
+             for ( int i = 0; i < Nx; ++i ) {
                 for ( int j = 0; j < Ny; ++j ) {
                     for ( int k = 0; k < Nz; ++k ) {
-                        printf( "{PUSHER_FETCHER_1} pressure_fetch[%d][%d][%d]: %lf\n", i, j, k, pressure_fetchX[i][j][k] );
-                        printf( "{PUSHER_FETCHER_1} pressure_fetch[%d][%d][%d]: %lf\n", i, j, k, pressure_fetchY[i][j][k] );
-                        printf( "{PUSHER_FETCHER_1} pressure_fetch[%d][%d][%d]: %lf\n", i, j, k, pressure_fetchZ[i][j][k] );
+						if ((pf[i][j][k][0] == monitorX) && (pf[i][j][k][1] == monitorY) && (pf[i][j][k][2] == monitorZ)) {
+							displacementOutFile.open("dispCpp.txt", std::ios_base::app);
+							displacementOutFile << n*timeStepSize << " " << displacement_fetchY[i][j][k] << std::endl;
+							displacementOutFile.close();
+						}
                     }
                 }
-            } */
+            }
 
         }
 	

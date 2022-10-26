@@ -89,6 +89,8 @@ x = []
 y = []
 xBench = []
 yBench = []
+xCpp = []
+yCpp = []
 
 for i in np.arange(0.1, 100.1, 0.1):
   x.append(i)
@@ -101,14 +103,20 @@ for line in open('dataInput/Slone_et_al.txt', 'r'):
     xBench.append(float(lines[0]))
     yBench.append(float(lines[1]))
 
+for line in open('../dummyOF/dispCpp.txt', 'r'):
+    lines = [i for i in line.split()]
+    xCpp.append(float(lines[0]))
+    yCpp.append(float(lines[1]))
+
 plt.title("Y-Disp Compare")
 plt.xlabel('Time [s]')
 plt.ylabel('Y-Disp [m]')
 plt.plot(xBench, yBench, label = 'Slone et al. 2003', marker= 'o', linestyle='None', c = 'b')
-plt.plot(x, y, label = 'Present Simulation', linestyle='-', c = 'g')
+plt.plot(x, y, label = 'Present FEniCS Output', linestyle='-', c = 'g')
+plt.plot(xCpp, yCpp, label = 'Present C++ Receive', linestyle='--', c = 'r')
 plt.xticks(np.arange(0, 101, step=20))
 plt.yticks(np.arange(-0.15, 0.16, step=0.05))
-plt.legend()
+plt.legend(loc='upper right')
 plt.savefig('../result_compare.png')
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#

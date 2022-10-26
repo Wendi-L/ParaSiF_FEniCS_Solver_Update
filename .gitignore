@@ -4,8 +4,11 @@
 # EXE file
 *PUSHER_FETCHER_1
 
-# FEniCS Results folder
+# FEniCS results folder
 *structureResults*
 
 # Plots
 *.png
+
+# C++ output file
+dispCpp.txt
