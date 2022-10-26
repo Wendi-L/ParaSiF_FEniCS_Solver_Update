@@ -113,9 +113,9 @@ class linearElastic:
         V_ele     =     VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc) # Displacement & Velocity Vector element
 
         QOri      =     FunctionSpace(meshOri, "Lagrange", self.deg_fun_spc)         # Function space by original mesh
-        #SOOri     =     FunctionSpace(meshOri, "Lagrange", 1)                           # Function space with 1st order
+
         SO        =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc)            # Function space with updated mesh
-        #VS        =     VectorFunctionSpace(mesh, "Lagrange", 1)                     # Vector function space with 1st order
+
         V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc)      # Vector function space
         VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
         T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc)      # Define nth order structure function spaces
@@ -252,89 +252,87 @@ class linearElastic:
 
         areaf_vec = areaf.vector().get_local()
 
-        if (self.iMUIFetchForce):
-            if (self.iUseRBF):
 
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                local = np.zeros(1)
-                total = np.zeros(1)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        local = np.zeros(1)
+        total = np.zeros(1)
 
-                local[0] = len(xyz_fetch_list)
-                total[0] = 0
+        local[0] = len(xyz_fetch_list)
+        total[0] = 0
 
-                xyz_fetch_list_flat = [item for sublist in xyz_fetch_list for item in sublist]
+        xyz_fetch_list_flat = [item for sublist in xyz_fetch_list for item in sublist]
 
-                # use MPI to get the totals 
-                self.LOCAL_COMM_WORLD.Reduce(local,total,op = MPI.SUM,root = 0)
-                self.LOCAL_COMM_WORLD.Bcast(total, root=0)
+        # use MPI to get the totals 
+        self.LOCAL_COMM_WORLD.Reduce(local,total,op = MPI.SUM,root = 0)
+        self.LOCAL_COMM_WORLD.Bcast(total, root=0)
 
-                xyz_fetch_list_total_flat = np.empty(int(total[0]*3), dtype=np.float64)
+        xyz_fetch_list_total_flat = np.empty(int(total[0]*3), dtype=np.float64)
 
-                xyz_fetch_list_total = self.LOCAL_COMM_WORLD.gather(xyz_fetch_list_flat, root = 0)
-                if self.rank == 0:
-                    xyz_fetch_list_total_flat = np.asarray([item for sublist in xyz_fetch_list_total for item in sublist])
+        xyz_fetch_list_total = self.LOCAL_COMM_WORLD.gather(xyz_fetch_list_flat, root = 0)
+        if self.rank == 0:
+            xyz_fetch_list_total_flat = np.asarray([item for sublist in xyz_fetch_list_total for item in sublist])
 
-                self.LOCAL_COMM_WORLD.Bcast(xyz_fetch_list_total_flat, root=0)
-                xyz_fetch_list_total_group = [ xyz_fetch_list_total_flat.tolist()[i:i+3]
-                                                    for i in range(0, len(xyz_fetch_list_total_flat.tolist()), 3) ]
+        self.LOCAL_COMM_WORLD.Bcast(xyz_fetch_list_total_flat, root=0)
+        xyz_fetch_list_total_group = [ xyz_fetch_list_total_flat.tolist()[i:i+3]
+                                            for i in range(0, len(xyz_fetch_list_total_flat.tolist()), 3) ]
 
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-            if (not self.iContinueRun):
-                if (not self.iLoadAreaList):
-                    if self.rank == 0: print ("{FENICS} facet area calculating")
+        if (not self.iContinueRun):
+            if (not self.iLoadAreaList):
+                if self.rank == 0: print ("{FENICS} facet area calculating")
 
-                    areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
-                                                        meshOri,
-                                                        QOri,
-                                                        boundariesOri,
-                                                        dofs_fetch_list,
-                                                        gdimOri,
-                                                        areaf_vec)
+                areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
+                                                    meshOri,
+                                                    QOri,
+                                                    boundariesOri,
+                                                    dofs_fetch_list,
+                                                    gdimOri,
+                                                    areaf_vec)
 
-                    # Apply the facet area vectors
-                    areaf.vector().set_local(areaf_vec)
-                    areaf.vector().apply("insert")
-                    if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
-                    else:
-                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
-                    hdfOutTemp.write(areaf, "/areaf")
-                    hdfOutTemp.close()
-
+                # Apply the facet area vectors
+                areaf.vector().set_local(areaf_vec)
+                areaf.vector().apply("insert")
+                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
+                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
                 else:
-
-                    hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
-                    hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
-                    hdf5meshAreaDataInTemp.close()
+                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
+                hdfOutTemp.write(areaf, "/areaf")
+                hdfOutTemp.close()
 
             else:
-                if (not self.iLoadAreaList):
-                    if self.rank == 0: print ("{FENICS} facet area calculating")
 
-                    areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
-                                                        meshOri,
-                                                        QOri,
-                                                        boundariesOri,
-                                                        dofs_fetch_list,
-                                                        gdimOri,
-                                                        areaf_vec)
+                hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
+                hdf5meshAreaDataInTemp.close()
 
-                    # Apply the facet area vectors
-                    areaf.vector().set_local(areaf_vec)
-                    areaf.vector().apply("insert")
-                    if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
-                    else:
-                        hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
-                    hdfOutTemp.write(areaf, "/areaf")
-                    hdfOutTemp.close()
+        else:
+            if (not self.iLoadAreaList):
+                if self.rank == 0: print ("{FENICS} facet area calculating")
 
+                areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
+                                                    meshOri,
+                                                    QOri,
+                                                    boundariesOri,
+                                                    dofs_fetch_list,
+                                                    gdimOri,
+                                                    areaf_vec)
+
+                # Apply the facet area vectors
+                areaf.vector().set_local(areaf_vec)
+                areaf.vector().apply("insert")
+                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
+                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
                 else:
+                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
+                hdfOutTemp.write(areaf, "/areaf")
+                hdfOutTemp.close()
 
-                    hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
-                    hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
-                    hdf5meshAreaDataInTemp.close()
+            else:
+
+                hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
+                hdf5meshAreaDataInTemp.close()
 
         #===========================================
         #%% Prepare post-process files
