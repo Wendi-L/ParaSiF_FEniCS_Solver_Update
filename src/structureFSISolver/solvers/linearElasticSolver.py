@@ -601,7 +601,8 @@ class linearElastic:
                     self.print_Disp (self.LOCAL_COMM_WORLD, d)
 
                     # MUI Push internal points and commit current steps
-                    if (self.iMUICoupling) and (len(xyz_push)!=0):
+                    #if (self.iMUICoupling) and (len(xyz_push)!=0):
+                    if (self.iMUICoupling):
                         self.MUI_Push(  xyz_push,
                                         dofs_push_list, 
                                         d, 
@@ -619,7 +620,8 @@ class linearElastic:
                     # Starts the wall clock
                     if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     # MUI Push internal points and commit current steps
-                    if (self.iMUICoupling) and (len(xyz_push)!=0):
+                    #if (self.iMUICoupling) and (len(xyz_push)!=0):
+                    if (self.iMUICoupling):
                         self.MUI_Push(  xyz_push,
                                         dofs_push_list, 
                                         dmck, 

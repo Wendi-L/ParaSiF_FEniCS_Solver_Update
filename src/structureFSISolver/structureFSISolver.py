@@ -481,7 +481,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
             else:
                 # Announce the MUI send span
-                self.ifaces3d["threeDInterface0"].announce_send_disable()
+                #self.ifaces3d["threeDInterface0"].announce_send_disable()
+                pass
 
             recv_min_X = sys.float_info.max
             recv_min_Y = sys.float_info.max
@@ -557,7 +558,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
             else:
                 # Announce the MUI receive span
-                self.ifaces3d["threeDInterface0"].announce_recv_disable()
+                #self.ifaces3d["threeDInterface0"].announce_recv_disable()
+                pass
 
             # Spatial/temporal samplers
             if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
