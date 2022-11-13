@@ -153,7 +153,7 @@ class linearElastic:
         sigma_s = Function(T_s_space)   # Structure traction normal to structure
 
         #dfst = Function(VS)             # Function for displacement with 1st order
-        areaf= Function(QOri)             # Function for facet area
+
 
         if self.iContinueRun:
             hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
@@ -248,35 +248,11 @@ class linearElastic:
         #%% Define facet areas
         #===========================================
 
-        areaf_vec = areaf.vector().get_local()
-
-        if (not self.iLoadAreaList):
-            if self.rank == 0: print ("{FENICS} facet area calculating")
-
-            areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
-                                                meshOri,
-                                                QOri,
-                                                boundariesOri,
-                                                dofs_fetch_list,
-                                                gdimOri,
-                                                areaf_vec)
-
-            # Apply the facet area vectors
-            areaf.vector().set_local(areaf_vec)
-            areaf.vector().apply("insert")
-            if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
-            else:
-                hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
-            hdfOutTemp.write(areaf, "/areaf")
-            hdfOutTemp.close()
-
-        else:
-
-            hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
-            hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
-            hdf5meshAreaDataInTemp.close()
-
+        self.facets_area_define(meshOri,
+                                QOri,
+                                boundariesOri,
+                                dofs_fetch_list,
+                                gdimOri)
 
         #===========================================
         #%% Prepare post-process files
@@ -436,19 +412,19 @@ class linearElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output( self.LOCAL_COMM_WORLD, 
-                                self.outputFolderPath, 
-                                (t-self.dt), 
-                                mesh, 
-                                meshOri, 
-                                u0d0, 
-                                d0mck, 
-                                u0mck, 
-                                a0mck, 
-                                ud, 
-                                dmck, 
-                                sigma_s, 
-                                areaf, 
+        self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
+                                self.outputFolderPath,
+                                (t-self.dt),
+                                mesh,
+                                meshOri,
+                                u0d0,
+                                d0mck,
+                                u0mck,
+                                a0mck,
+                                ud,
+                                dmck,
+                                sigma_s,
+                                self.areaf,
                                 False)
 
         #===========================================
@@ -507,7 +483,7 @@ class linearElastic:
                                     self.t_sampler,
                                     self.s_sampler,
                                     t_sub_it,
-                                    areaf_vec)
+                                    self.areaf_vec)
 
                 if (not ((self.iContinueRun) and (n_steps == 1))):
                     if self.solving_method == 'MCK':
@@ -603,19 +579,19 @@ class linearElastic:
                                             d, 
                                             self.outputFolderPath)
 
-                    self.Checkpoint_Output( self.LOCAL_COMM_WORLD, 
-                                            self.outputFolderPath, 
-                                            t, 
-                                            mesh, 
-                                            meshOri, 
-                                            u0d0, 
-                                            d0mck, 
-                                            u0mck, 
-                                            a0mck, 
-                                            ud, 
-                                            dmck, 
-                                            sigma_s, 
-                                            areaf, 
+                    self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
+                                            self.outputFolderPath,
+                                            t,
+                                            mesh,
+                                            meshOri,
+                                            u0d0,
+                                            d0mck,
+                                            u0mck,
+                                            a0mck,
+                                            ud,
+                                            dmck,
+                                            sigma_s,
+                                            self.areaf,
                                             True)
 
             elif self.solving_method == 'MCK':
@@ -651,19 +627,19 @@ class linearElastic:
             # Starts the wall clock
             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
             if (not (self.iQuiet)):
-                self.Checkpoint_Output( self.LOCAL_COMM_WORLD, 
-                                        self.outputFolderPath, 
-                                        t, 
-                                        mesh, 
-                                        meshOri, 
-                                        u0d0, 
-                                        d0mck, 
-                                        u0mck, 
-                                        a0mck, 
-                                        ud, 
-                                        dmck, 
-                                        sigma_s, 
-                                        areaf, 
+                self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
+                                        self.outputFolderPath,
+                                        t,
+                                        mesh,
+                                        meshOri,
+                                        u0d0,
+                                        d0mck,
+                                        u0mck,
+                                        a0mck,
+                                        ud,
+                                        dmck,
+                                        sigma_s,
+                                        self.areaf,
                                         True)
             # Finish the wall clock on checkpoint export
             if (sync == True): self.LOCAL_COMM_WORLD.Barrier()

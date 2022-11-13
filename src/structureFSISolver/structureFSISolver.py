@@ -995,6 +995,44 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         return temp_vec_function
 
+    def facets_area_define(self,
+                        meshOri,
+                        QOri,
+                        boundariesOri,
+                        dofs_fetch_list,
+                        gdimOri):
+
+            self.areaf= Function(QOri)             # Function for facet area
+
+            self.areaf_vec = self.areaf.vector().get_local()
+
+            if (not self.iLoadAreaList):
+                if self.rank == 0: print ("{FENICS} facet area calculating")
+
+                self.areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
+                                                    meshOri,
+                                                    QOri,
+                                                    boundariesOri,
+                                                    dofs_fetch_list,
+                                                    gdimOri,
+                                                    self.areaf_vec)
+
+                # Apply the facet area vectors
+                self.areaf.vector().set_local(self.areaf_vec)
+                self.areaf.vector().apply("insert")
+                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
+                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
+                else:
+                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
+                hdfOutTemp.write(self.areaf, "/areaf")
+                hdfOutTemp.close()
+
+            else:
+
+                hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                hdf5meshAreaDataInTemp.read(self.areaf, "/areaf/vector_0")
+                hdf5meshAreaDataInTemp.close()
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define MUI Fetch and Push 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
