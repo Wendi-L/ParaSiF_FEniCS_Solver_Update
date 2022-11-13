@@ -70,8 +70,10 @@ class linearElastic:
         #%% Solid Mesh input/generation
         #===========================================
 
-        mesh, meshOri, gdim, gdimOri, N = \
-            self.Mesh_Generation()
+        mesh, meshOri= self.Mesh_Generation()
+        gdim = self.Get_Grid_Dimension(mesh)
+        gdimOri= self.Get_Grid_Dimension(meshOri)
+        N = self.Get_Face_Narmal(mesh)
 
         #===========================================
         #%% Define coefficients
@@ -79,29 +81,20 @@ class linearElastic:
 
         # Time step constants
         k = Constant(self.dt)
+
         # Time lists
         times = []
         t_sub_it = 0
 
-        # One-step theta value
-        theta = Constant(self.thetaOS)
-
-        # Rayleigh damping coefficients
-        alpha_rdc = Constant(self.alpha_rdc)
-        beta_rdc  = Constant(self.beta_rdc)
-
         # Generalized-alpha method parameters
-        # alpha_m_gam >= alpha_f_gam >= 0.5 for a better performance
-        alpha_m_gam = Constant(self.alpha_m_gam)
-        alpha_f_gam = Constant(self.alpha_f_gam)
-        gamma_gam   = Constant((1./2.) + alpha_m_gam - alpha_f_gam)
+        gamma_gam   = Constant((1./2.) + self.alpha_m_gam - self.alpha_f_gam)
         beta_gam    = Constant((1./4.) * (gamma_gam + (1./2.))**2)
 
         sync = False
 
         if self.rank == 0:
             print ("\n")
-            print ("{FENICS} One-step theta: ", float(theta))
+            print ("{FENICS} One-step theta: ", float(self.thetaOS))
             print ("\n")
 
         #===========================================
@@ -135,12 +128,11 @@ class linearElastic:
         # Test functions
         psi, phi = TestFunctions(VV)    # Test functions for velocity and displacement
         chi = TestFunction(V)           # Test function for displacement by MCK solving method
-        
+
         # Functions at present time step
         ud = Function(VV)               # Functions for velocity and displacement
         u, d = split(ud)                # Split velocity and displacement functions
         dmck = Function(V)              # Function for displacement by MCK solving method
-
 
         # Functions at previous time step
         u0d0 = Function(VV)             # Functions for velocity and displacement
@@ -152,9 +144,6 @@ class linearElastic:
         # Define structure traction
         sigma_s = Function(T_s_space)   # Structure traction normal to structure
 
-        #dfst = Function(VS)             # Function for displacement with 1st order
-
-
         if self.iContinueRun:
             hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
             hdf5checkpointDataInTemp.read(u0d0, "/u0d0/vector_0")
@@ -164,7 +153,6 @@ class linearElastic:
             hdf5checkpointDataInTemp.read(ud, "/ud/vector_0")
             hdf5checkpointDataInTemp.read(dmck, "/dmck/vector_0")
             hdf5checkpointDataInTemp.read(sigma_s, "/sigma_s/vector_0")
-            #hdf5checkpointDataInTemp.read(areaf, "/areaf/vector_0")
             hdf5checkpointDataInTemp.close()
             # Delete HDF5File object, closing file
             del hdf5checkpointDataInTemp
@@ -287,22 +275,22 @@ class linearElastic:
             # Define the stress terms and convection of the structure variational form
             if self.iNonLinearMethod:
                 if self.rank == 0: print ("{FENICS} [Defining non-linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by the constitutive law of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). Valid for large deformations but small strain] ...   ", end="", flush=True)
-                Form_s_SC = inner(theta * self.Piola_Kirchhoff_fst(d,gdim) + (1 - theta) * 
+                Form_s_SC = inner(self.thetaOS * self.Piola_Kirchhoff_fst(d,gdim) + (1 - self.thetaOS) * 
                             self.Piola_Kirchhoff_fst(d0,gdim), grad(psi)) * dx
-                Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
+                Form_s_SC -= inner(self.thetaOS*u + (1-self.thetaOS)*u0, phi ) * dx
             else:
                 if self.rank == 0: print ("{FENICS} [Defining linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation). Valid for small-scale deformations only] ...   ", end="", flush=True)
-                Form_s_SC = inner(theta * self.Hooke_stress(d,gdim) + (1 - theta) * 
+                Form_s_SC = inner(self.thetaOS * self.Hooke_stress(d,gdim) + (1 - self.thetaOS) * 
                             self.Hooke_stress(d0,gdim), grad(psi)) * dx
-                Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
+                Form_s_SC -= inner(self.thetaOS*u + (1-self.thetaOS)*u0, phi ) * dx
 
             # Define the body forces and surface tractions terms of the structure variational form
-            Form_s_ET = -( theta * self.J_(d,gdim) * inner( (self.b_for()), psi ) + 
-                        ( 1 - theta ) * self.J_(d0,gdim) * inner( (self.b_for()), psi ) ) * dx
-            Form_s_ET -= ( theta * self.J_(d,gdim) * inner( tF, psi ) + 
-                        ( 1 - theta ) * self.J_(d0,gdim) * inner( tF_, psi ) ) * ds(2)
-            Form_s_ET -= ( theta * self.J_(d,gdim) * inner( inv(self.F_(d,gdim)) * sigma_s * N, psi )+ 
-                        ( 1 - theta ) * (self.J_(d0,gdim)) * inner(inv(self.F_(d0,gdim)) * sigma_s * N, psi )) * ds(2)
+            Form_s_ET = -( self.thetaOS * self.J_(d,gdim) * inner( (self.b_for()), psi ) + 
+                        ( 1 - self.thetaOS ) * self.J_(d0,gdim) * inner( (self.b_for()), psi ) ) * dx
+            Form_s_ET -= ( self.thetaOS * self.J_(d,gdim) * inner( tF, psi ) + 
+                        ( 1 - self.thetaOS ) * self.J_(d0,gdim) * inner( tF_, psi ) ) * ds(2)
+            Form_s_ET -= ( self.thetaOS * self.J_(d,gdim) * inner( inv(self.F_(d,gdim)) * sigma_s * N, psi )+ 
+                        ( 1 - self.thetaOS ) * (self.J_(d0,gdim)) * inner(inv(self.F_(d0,gdim)) * sigma_s * N, psi )) * ds(2)
 
             # Define the final form of the structure variational form
             Form_s = Form_s_T + Form_s_SC + Form_s_ET
@@ -330,14 +318,14 @@ class linearElastic:
                                             a0mck, 
                                             gamma_gam)
 
-            Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,alpha_m_gam)
-            Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,alpha_f_gam)
-            Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,alpha_f_gam)
+            Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,self.alpha_m_gam)
+            Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,self.alpha_f_gam)
+            Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,self.alpha_f_gam)
             Form_s_M_Matrix = self.rho_s * inner(Form_s_Ga_Acce, chi) * dx
             Form_s_M_for_C_Matrix = self.rho_s * inner(Form_s_Ga_velo, chi) * dx
             Form_s_K_Matrix = inner(self.elastic_stress(Form_s_Ga_disp,gdim), sym(grad(chi))) * dx
             Form_s_K_for_C_Matrix = inner(self.elastic_stress(Form_s_Ga_velo,gdim), sym(grad(chi))) * dx
-            Form_s_C_Matrix = alpha_rdc * Form_s_M_for_C_Matrix + beta_rdc * Form_s_K_for_C_Matrix
+            Form_s_C_Matrix = self.alpha_rdc * Form_s_M_for_C_Matrix + self.beta_rdc * Form_s_K_for_C_Matrix
             Form_s_F_Ext = tF * ds(2)
 
             Form_s = Form_s_M_Matrix + Form_s_C_Matrix + Form_s_K_Matrix - Form_s_F_Ext

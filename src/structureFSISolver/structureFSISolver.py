@@ -721,10 +721,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
             mesh_original = Mesh(mesh)                    # Store original mesh
 
-        grid_dimension = mesh.geometry().dim()            # Geometry dimensions
-        grid_original_dimension = mesh_original.geometry().dim()      # Geometry dimensions for the original mesh
-        face_narmal = FacetNormal(mesh)                   # Face normal vector
-
         if self.iHDF5FileExport and self.iHDF5MeshExport:
             if self.rank == 0: print ("{FENICS} Exporting HDF5 mesh ...   ", end="", flush=True)
             hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
@@ -741,7 +737,20 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             plt.show()
             if self.rank == 0: print ("Done")
 
-        return mesh, mesh_original, grid_dimension, grid_original_dimension, face_narmal
+        return mesh, mesh_original
+
+
+    def Get_Grid_Dimension(self, mesh):
+
+        grid_dimension = mesh.geometry().dim()            # Geometry dimensions
+
+        return grid_dimension
+
+    def Get_Face_Narmal(self, mesh):
+
+        face_narmal = FacetNormal(mesh)                   # Face normal vector
+
+        return face_narmal
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define SubDomains and boundaries
