@@ -243,40 +243,12 @@ class linearElastic:
             self.dofs_push_list(boundariesOri, QOri, 2, gdimOri)
 
         xyz_fetch_list =  list(xyz_fetch)
-        xyz_fetch_list_total_group = []
-        #print ("{FEniCS***} out: len(dofs_fetch_list): ", len(dofs_fetch_list), " len(dofs_push_list): ", len(dofs_push_list))
 
         #===========================================
         #%% Define facet areas
         #===========================================
 
         areaf_vec = areaf.vector().get_local()
-
-
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        local = np.zeros(1)
-        total = np.zeros(1)
-
-        local[0] = len(xyz_fetch_list)
-        total[0] = 0
-
-        xyz_fetch_list_flat = [item for sublist in xyz_fetch_list for item in sublist]
-
-        # use MPI to get the totals 
-        self.LOCAL_COMM_WORLD.Reduce(local,total,op = MPI.SUM,root = 0)
-        self.LOCAL_COMM_WORLD.Bcast(total, root=0)
-
-        xyz_fetch_list_total_flat = np.empty(int(total[0]*3), dtype=np.float64)
-
-        xyz_fetch_list_total = self.LOCAL_COMM_WORLD.gather(xyz_fetch_list_flat, root = 0)
-        if self.rank == 0:
-            xyz_fetch_list_total_flat = np.asarray([item for sublist in xyz_fetch_list_total for item in sublist])
-
-        self.LOCAL_COMM_WORLD.Bcast(xyz_fetch_list_total_flat, root=0)
-        xyz_fetch_list_total_group = [ xyz_fetch_list_total_flat.tolist()[i:i+3]
-                                            for i in range(0, len(xyz_fetch_list_total_flat.tolist()), 3) ]
-
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         if (not self.iLoadAreaList):
             if self.rank == 0: print ("{FENICS} facet area calculating")
@@ -487,7 +459,7 @@ class linearElastic:
                                 dofs_to_xyz,
                                 dofs_push_list,
                                 dofs_to_xyz,
-                                xyz_fetch_list_total_group,
+                                xyz_fetch_list,
                                 t_step)
 
         #===========================================
