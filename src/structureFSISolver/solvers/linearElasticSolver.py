@@ -278,61 +278,33 @@ class linearElastic:
 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        if (not self.iContinueRun):
-            if (not self.iLoadAreaList):
-                if self.rank == 0: print ("{FENICS} facet area calculating")
+        if (not self.iLoadAreaList):
+            if self.rank == 0: print ("{FENICS} facet area calculating")
 
-                areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
-                                                    meshOri,
-                                                    QOri,
-                                                    boundariesOri,
-                                                    dofs_fetch_list,
-                                                    gdimOri,
-                                                    areaf_vec)
+            areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
+                                                meshOri,
+                                                QOri,
+                                                boundariesOri,
+                                                dofs_fetch_list,
+                                                gdimOri,
+                                                areaf_vec)
 
-                # Apply the facet area vectors
-                areaf.vector().set_local(areaf_vec)
-                areaf.vector().apply("insert")
-                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
-                else:
-                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
-                hdfOutTemp.write(areaf, "/areaf")
-                hdfOutTemp.close()
-
+            # Apply the facet area vectors
+            areaf.vector().set_local(areaf_vec)
+            areaf.vector().apply("insert")
+            if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
+                hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
             else:
-
-                hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
-                hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
-                hdf5meshAreaDataInTemp.close()
+                hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
+            hdfOutTemp.write(areaf, "/areaf")
+            hdfOutTemp.close()
 
         else:
-            if (not self.iLoadAreaList):
-                if self.rank == 0: print ("{FENICS} facet area calculating")
 
-                areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
-                                                    meshOri,
-                                                    QOri,
-                                                    boundariesOri,
-                                                    dofs_fetch_list,
-                                                    gdimOri,
-                                                    areaf_vec)
+            hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+            hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
+            hdf5meshAreaDataInTemp.close()
 
-                # Apply the facet area vectors
-                areaf.vector().set_local(areaf_vec)
-                areaf.vector().apply("insert")
-                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
-                else:
-                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
-                hdfOutTemp.write(areaf, "/areaf")
-                hdfOutTemp.close()
-
-            else:
-
-                hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
-                hdf5meshAreaDataInTemp.read(areaf, "/areaf/vector_0")
-                hdf5meshAreaDataInTemp.close()
 
         #===========================================
         #%% Prepare post-process files
