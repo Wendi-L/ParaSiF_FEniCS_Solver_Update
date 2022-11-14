@@ -173,21 +173,9 @@ class linearElastic:
         if self.rank == 0: print ("{FENICS} Creating 3D boundary conditions ...   ", end="", flush=True)
         if self.solving_method == 'STVK':
             bc1,bc2 = self.dirichletBCs.DirichletMixedBCs(VV,boundaries,1)
-            #bc1 = self.dirichletBCs.DirichletMixedBCs(VV,boundaries,1)
-            #!!!!->   
-            #bc3 = DirichletBC(VV.sub(0).sub(1), (0.0),boundaries, 8)
-            #bc4 = DirichletBC(VV.sub(1).sub(1), (0.0),boundaries, 8)
-            #!!!!<-  
-            #bcs = [bc1,bc2,bc3,bc4]
             bcs = [bc1,bc2]
         elif self.solving_method == 'MCK':
             bc1 = self.dirichletBCs.DirichletBCs(V,boundaries,1)
-        #!!!!->   
-            #bc2 = DirichletBC(V.sub(1), (0.0),boundaries, 8)
-            #bc3 = DirichletBC(V.sub(0), (0.0),boundaries, 8)
-            #bc2 = DirichletBC(V, ((0.0,0.0,0.0)),boundaries, 8)
-        #!!!!<-    
-            #bcs = [bc1,bc2]
             bcs = [bc1]
         if self.rank == 0: print ("Done")
 
