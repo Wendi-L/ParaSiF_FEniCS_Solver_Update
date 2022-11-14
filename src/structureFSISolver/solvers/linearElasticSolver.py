@@ -62,8 +62,8 @@ class linearElastic:
         #%% Time marching parameters define
         #===========================================
 
-        t = self.Start_Time
-        t_step = self.Time_Steps
+        t        = self.Start_Time
+        t_step   = self.Time_Steps
         i_sub_it = self.Start_Number_Sub_Iteration
 
         #===========================================
@@ -72,10 +72,7 @@ class linearElastic:
 
         mesh = self.Mesh_Generation()
         gdim = self.Get_Grid_Dimension(mesh)
-        N = self.Get_Face_Narmal(mesh)
-
-        meshOri = self.Mesh_Original_Generation(mesh)
-        gdimOri = self.Get_Grid_Dimension(meshOri)
+        N    = self.Get_Face_Narmal(mesh)
 
         #===========================================
         #%% Define coefficients
@@ -85,7 +82,7 @@ class linearElastic:
         k = Constant(self.dt)
 
         # Time lists
-        times = []
+        times    = []
         t_sub_it = 0
 
         # One-step theta value
@@ -115,12 +112,9 @@ class linearElastic:
 
         V_ele     =     VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc) # Displacement & Velocity Vector element
 
-        QOri      =     FunctionSpace(meshOri, "Lagrange", self.deg_fun_spc)         # Function space by original mesh
-
-        SO        =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc)            # Function space with updated mesh
-
-        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc)      # Vector function space
+        Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc)            # Function space with updated mesh
         VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
+        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc)
         T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc)      # Define nth order structure function spaces
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
@@ -133,41 +127,28 @@ class linearElastic:
 
         # Trial functions
         du, dd = TrialFunctions(VV)     # Trial functions for velocity and displacement
-        ddmck = TrialFunction(V)        # Trial function for displacement by MCK solving method
+        ddmck  = TrialFunction(V)        # Trial function for displacement by MCK solving method
 
         # Test functions
         psi, phi = TestFunctions(VV)    # Test functions for velocity and displacement
-        chi = TestFunction(V)           # Test function for displacement by MCK solving method
+        chi      = TestFunction(V)           # Test function for displacement by MCK solving method
 
         # Functions at present time step
-        ud = Function(VV)               # Functions for velocity and displacement
+        ud   = Function(VV)               # Functions for velocity and displacement
         u, d = split(ud)                # Split velocity and displacement functions
         dmck = Function(V)              # Function for displacement by MCK solving method
 
         # Functions at previous time step
-        u0d0 = Function(VV)             # Functions for velocity and displacement
+        u0d0   = Function(VV)             # Functions for velocity and displacement
         u0, d0 = split(u0d0)            # Split velocity and displacement functions
-        d0mck = Function(V)             # Function for displacement by MCK solving method
-        u0mck = Function(V)             # Function for velocity by MCK solving method
-        a0mck = Function(V)             # Function for acceleration by MCK solving method
+        d0mck  = Function(V)             # Function for displacement by MCK solving method
+        u0mck  = Function(V)             # Function for velocity by MCK solving method
+        a0mck  = Function(V)             # Function for acceleration by MCK solving method
 
         # Define structure traction
         sigma_s = Function(T_s_space)   # Structure traction normal to structure
 
-        if self.iContinueRun:
-            hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
-            hdf5checkpointDataInTemp.read(u0d0, "/u0d0/vector_0")
-            hdf5checkpointDataInTemp.read(d0mck, "/d0mck/vector_0")
-            hdf5checkpointDataInTemp.read(u0mck, "/u0mck/vector_0")
-            hdf5checkpointDataInTemp.read(a0mck, "/a0mck/vector_0")
-            hdf5checkpointDataInTemp.read(ud, "/ud/vector_0")
-            hdf5checkpointDataInTemp.read(dmck, "/dmck/vector_0")
-            hdf5checkpointDataInTemp.read(sigma_s, "/sigma_s/vector_0")
-            hdf5checkpointDataInTemp.close()
-            # Delete HDF5File object, closing file
-            del hdf5checkpointDataInTemp
-        else:
-            pass
+        self.Load_Functions_Continue_Run(u0d0,d0mck,u0mck,a0mck,ud,dmck,sigma_s)
 
         if self.rank == 0: print ("Done")
 
@@ -195,13 +176,13 @@ class linearElastic:
         #===========================================
 
         boundaries, boundariesOri, ds = \
-            self.SubDomains_Boundaries_Generation(  self.LOCAL_COMM_WORLD, 
-                                                    mesh, 
-                                                    meshOri, 
-                                                    gdim, 
-                                                    gdimOri, 
-                                                    V, 
-                                                    self.inputFolderPath, 
+            self.SubDomains_Boundaries_Generation(  self.LOCAL_COMM_WORLD,
+                                                    mesh,
+                                                    mesh,
+                                                    gdim,
+                                                    gdim,
+                                                    V,
+                                                    self.inputFolderPath,
                                                     self.outputFolderPath)
 
         #===========================================
@@ -233,12 +214,12 @@ class linearElastic:
         #%% Define DOFs and Coordinates mapping
         #===========================================  
 
-        dofs_to_xyz = self.dofs_to_xyz(QOri, gdimOri)
+        dofs_to_xyz = self.dofs_to_xyz(Q, gdim)
 
         dofs_fetch, dofs_fetch_list, xyz_fetch = \
-            self.dofs_fetch_list(boundariesOri, QOri, 2, gdimOri)
+            self.dofs_fetch_list(boundaries, Q, 2, gdim)
         dofs_push, dofs_push_list, xyz_push = \
-            self.dofs_push_list(boundariesOri, QOri, 2, gdimOri)
+            self.dofs_push_list(boundaries, Q, 2, gdim)
 
         xyz_fetch_list =  list(xyz_fetch)
 
@@ -246,11 +227,11 @@ class linearElastic:
         #%% Define facet areas
         #===========================================
 
-        self.facets_area_define(meshOri,
-                                QOri,
-                                boundariesOri,
+        self.facets_area_define(mesh,
+                                Q,
+                                boundaries,
                                 dofs_fetch_list,
-                                gdimOri)
+                                gdim)
 
         #===========================================
         #%% Prepare post-process files
@@ -414,7 +395,7 @@ class linearElastic:
                                 self.outputFolderPath,
                                 (t-self.dt),
                                 mesh,
-                                meshOri,
+                                mesh,
                                 u0d0,
                                 d0mck,
                                 u0mck,
@@ -553,20 +534,20 @@ class linearElastic:
                 self.Move_Mesh(V, d, d0, mesh)
 
                 if (not (self.iQuiet)):
-                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD, 
-                                            n_steps, 
-                                            t, 
-                                            mesh, 
-                                            gdim, 
-                                            V, 
-                                            tF, 
-                                            d, 
-                                            stress_file, 
-                                            disp_file, 
+                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD,
+                                            n_steps,
+                                            t,
+                                            mesh,
+                                            gdim,
+                                            V,
+                                            tF,
+                                            d,
+                                            stress_file,
+                                            disp_file,
                                             traction_file)
 
-                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD, 
-                                            d, 
+                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD,
+                                            d,
                                             self.outputFolderPath)
 
                     self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
@@ -587,21 +568,21 @@ class linearElastic:
             elif self.solving_method == 'MCK':
                 self.Move_Mesh(V, dmck, d0mck, mesh)
                 if (not (self.iQuiet)):
-                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD, 
-                                            n_steps, 
-                                            t, 
-                                            mesh, 
-                                            gdim, 
-                                            V, 
-                                            self.tF_apply, 
-                                            dmck, 
-                                            stress_file, 
-                                            disp_file, 
+                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD,
+                                            n_steps,
+                                            t,
+                                            mesh,
+                                            gdim,
+                                            V,
+                                            self.tF_apply,
+                                            dmck,
+                                            stress_file,
+                                            disp_file,
                                             traction_file)
 
                 if (not (self.iQuiet)):
-                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD, 
-                                            dmck, 
+                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD,
+                                            dmck,
                                             self.outputFolderPath)
 
             if (not (self.iQuiet)):
@@ -609,7 +590,7 @@ class linearElastic:
                                         self.outputFolderPath,
                                         t,
                                         mesh,
-                                        meshOri,
+                                        mesh,
                                         u0d0,
                                         d0mck,
                                         u0mck,

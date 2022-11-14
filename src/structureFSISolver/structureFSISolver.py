@@ -1701,6 +1701,29 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # Delete HDF5File object, closing file
         del hdf5checkpointDataOut
 
+    def Load_Functions_Continue_Run(self,
+                                    u0d0,
+                                    d0mck,
+                                    u0mck,
+                                    a0mck,
+                                    ud,
+                                    dmck,
+                                    sigma_s):
+        if self.iContinueRun:
+            hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
+            hdf5checkpointDataInTemp.read(u0d0, "/u0d0/vector_0")
+            hdf5checkpointDataInTemp.read(d0mck, "/d0mck/vector_0")
+            hdf5checkpointDataInTemp.read(u0mck, "/u0mck/vector_0")
+            hdf5checkpointDataInTemp.read(a0mck, "/a0mck/vector_0")
+            hdf5checkpointDataInTemp.read(ud, "/ud/vector_0")
+            hdf5checkpointDataInTemp.read(dmck, "/dmck/vector_0")
+            hdf5checkpointDataInTemp.read(sigma_s, "/sigma_s/vector_0")
+            hdf5checkpointDataInTemp.close()
+            # Delete HDF5File object, closing file
+            del hdf5checkpointDataInTemp
+        else:
+            pass
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
