@@ -162,15 +162,9 @@ class linearElastic:
         #%% Define SubDomains and boundaries
         #===========================================
 
-        boundaries, boundariesOri, ds = \
-            self.SubDomains_Boundaries_Generation(  self.LOCAL_COMM_WORLD,
-                                                    mesh,
-                                                    mesh,
-                                                    gdim,
-                                                    gdim,
-                                                    V,
-                                                    self.inputFolderPath,
-                                                    self.outputFolderPath)
+        boundaries = self.Boundaries_Generation_Fixed_Flex_Sym(mesh, gdim, V)
+
+        ds = self.Get_ds(mesh, boundaries)
 
         #===========================================
         #%% Define boundary conditions

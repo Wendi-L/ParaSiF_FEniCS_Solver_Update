@@ -768,15 +768,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Define SubDomains and boundaries
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def SubDomains_Boundaries_Generation(   self, 
-                                            MPI_COMM_WORLD, 
-                                            mesh, 
-                                            mesh_original, 
-                                            grid_dimension, 
-                                            grid_original_dimension, 
-                                            VectorFunctionSpace, 
-                                            InputFolderPath, 
-                                            OutputFolderPath):
+    def Boundaries_Generation_Fixed_Flex_Sym (self,
+                                              mesh,
+                                              grid_dimension,
+                                              VectorFunctionSpace):
 
         #===========================================
         #%% Define SubDomains
@@ -785,15 +780,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if self.iMeshLoad and self.iSubdomainsImport:
             if self.iLoadXML:
                 if self.rank == 0: print ("{FENICS} Loading XML subdomains ...   ", end="", flush=True)
-                subdomains = MeshFunction("size_t", mesh, InputFolderPath + "/Structure_FEniCS_physical_region.xml")
-                subdomainsOri = MeshFunction("size_t", mesh_original, InputFolderPath + "/Structure_FEniCS_physical_region.xml")
+                self.subdomains = MeshFunction("size_t", mesh, self.inputFolderPath + "/Structure_FEniCS_physical_region.xml")
             else:
                 if self.rank == 0: print ("{FENICS} Loading HDF5 subdomains ...   ", end="", flush=True)
-                subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
-                subdomainsOri = MeshFunction("size_t", mesh_original, mesh_original.topology().dim())
-                hdfInTemp = HDF5File(MPI_COMM_WORLD, InputFolderPath + "/mesh_boundary_and_values.h5", "r")
-                hdfInTemp.read(subdomains, "/subdomains")
-                hdfInTemp.read(subdomainsOri, "/subdomains")
+                self.subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
+                hdfInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                hdfInTemp.read(self.subdomains, "/subdomains")
                 hdfInTemp.close()
                 del hdfInTemp
 
@@ -807,17 +799,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             flex        =  self.flexSDomain
             symmetry    =  self.symmetrySDomain
 
-            fixedOri    =  self.fixedSDomain
-            flexOri     =  self.flexSDomain
-            symmetryOri =  self.symmetrySDomain
-
             if self.rank == 0: print ("Done")
 
         if self.iHDF5FileExport and self.iHDF5SubdomainsExport:
             if self.rank == 0: print ("{FENICS} Exporting HDF5 subdomains ...   ", end="", flush=True) 
-            subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
-            hdfOutTemp = HDF5File(MPI_COMM_WORLD, OutputFolderPath + "/mesh_boundary_and_values.h5", "a")
-            hdfOutTemp.write(subdomains, "/subdomains")
+            self.subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
+            hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
+            hdfOutTemp.write(self.subdomains, "/subdomains")
             hdfOutTemp.close()
             del hdfOutTemp
             if self.rank == 0: print ("Done")
@@ -829,16 +817,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if self.iMeshLoad and self.iBoundariesImport:
             if self.iLoadXML:
                 if self.rank == 0: print ("{FENICS} Loading XML boundaries ...   ", end="", flush=True)
-                boundaries = MeshFunction("size_t", mesh, InputFolderPath + "/Structure_FEniCS_facet_region.xml")
-                boundaries_original = MeshFunction("size_t", mesh_original, 
-                                      InputFolderPath + "/Structure_FEniCS_facet_region.xml")
+                boundaries = MeshFunction("size_t", mesh, self.inputFolderPath + "/Structure_FEniCS_facet_region.xml")
             else:
                 if self.rank == 0: print ("{FENICS} Loading HDF5 boundaries ...   ", end="", flush=True)
                 boundaries = MeshFunction("size_t", mesh, mesh.topology().dim()-1)
-                boundaries_original = MeshFunction("size_t", mesh_original, mesh_original.topology().dim()-1)
-                hdfInTemp = HDF5File(MPI_COMM_WORLD, InputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                hdfInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
                 hdfInTemp.read(boundaries, "/boundaries")
-                hdfInTemp.read(boundaries_original, "/boundaries")
                 hdfInTemp.close()
                 del hdfInTemp
             if self.rank == 0: print ("Done")
@@ -852,25 +836,15 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             fixed.mark(boundaries,1)
             flex.mark(boundaries,2)
             symmetry.mark(boundaries,3)
-
-            boundaries_original = MeshFunction("size_t",mesh_original,grid_original_dimension-1)
-
-            boundaries_original.set_all(0)
-            fixedOri.mark(boundaries_original,1)
-            flexOri.mark(boundaries_original,2)
-            symmetryOri.mark(boundaries_original,3)
-
             if self.rank == 0: print ("Done")
 
         if self.iHDF5FileExport and self.iHDF5BoundariesExport: 
             if self.rank == 0: print ("{FENICS} Exporting HDF5 boundaries ...   ", end="", flush=True)
-            hdfOutTemp = HDF5File(MPI_COMM_WORLD, OutputFolderPath + "/mesh_boundary_and_values.h5", "a")
+            hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
             hdfOutTemp.write(boundaries, "/boundaries")
             hdfOutTemp.close()
             del hdfOutTemp
             if self.rank == 0: print ("Done")
-
-        ds = Measure("ds", domain=mesh, subdomain_data=boundaries)
 
         if self.rank == 0: 
             print ("\n")
@@ -880,7 +854,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             print ("{FENICS} geometry dimension: ",grid_dimension)
             print ("\n")
 
-        return boundaries, boundaries_original, ds
+        return boundaries
+
+    def Get_ds(self, mesh, boundaries):
+
+        return Measure("ds", domain=mesh, subdomain_data=boundaries)
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Time marching parameters define
