@@ -420,16 +420,18 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Define MUI samplers and commit ZERO step
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def MUI_Sampler_Define( self, 
-                            dofs_fetch_list, 
-                            dofs_to_xyz_fetch,
+    def MUI_Sampler_Define( self,
+                            function_space,
+                            grid_dimension,
+                            dofs_fetch_list,
                             dofs_push_list,
-                            dofs_to_xyz_push,
-                            xyz_fetch_list_total_group,
+                            xyz_fetch,
                             Total_Time_Steps):
 
         if self.iMUICoupling:
             synchronised=False
+
+            dofs_to_xyz = self.dofs_to_xyz(function_space, grid_dimension)
 
             send_min_X = sys.float_info.max
             send_min_Y = sys.float_info.max
@@ -440,23 +442,23 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             send_max_Z = -sys.float_info.max
 
             for i, p in enumerate(dofs_push_list):
-                if (dofs_to_xyz_push[p][0] < send_min_X):
-                    send_min_X = dofs_to_xyz_push[p][0]
+                if (dofs_to_xyz[p][0] < send_min_X):
+                    send_min_X = dofs_to_xyz[p][0]
 
-                if (dofs_to_xyz_push[p][1] < send_min_Y):
-                    send_min_Y = dofs_to_xyz_push[p][1]
+                if (dofs_to_xyz[p][1] < send_min_Y):
+                    send_min_Y = dofs_to_xyz[p][1]
 
-                if (dofs_to_xyz_push[p][2] < send_min_Z):
-                    send_min_Z = dofs_to_xyz_push[p][2]
+                if (dofs_to_xyz[p][2] < send_min_Z):
+                    send_min_Z = dofs_to_xyz[p][2]
 
-                if (dofs_to_xyz_push[p][0] > send_max_X):
-                    send_max_X = dofs_to_xyz_push[p][0]
+                if (dofs_to_xyz[p][0] > send_max_X):
+                    send_max_X = dofs_to_xyz[p][0]
 
-                if (dofs_to_xyz_push[p][1] > send_max_Y):
-                    send_max_Y = dofs_to_xyz_push[p][1]
+                if (dofs_to_xyz[p][1] > send_max_Y):
+                    send_max_Y = dofs_to_xyz[p][1]
 
-                if (dofs_to_xyz_push[p][2] > send_max_Z):
-                    send_max_Z = dofs_to_xyz_push[p][2]
+                if (dofs_to_xyz[p][2] > send_max_Z):
+                    send_max_Z = dofs_to_xyz[p][2]
 
             if (send_max_X < send_min_X):
                 print("{** FENICS ERROR **} send_max_X: ", send_max_X, " smaller than send_min_X: ", send_min_X, " at rank: ", self.rank)
@@ -497,40 +499,40 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             point3dGlobalID = []
 
             for i, p in enumerate(dofs_fetch_list):
-                if (dofs_to_xyz_fetch[p][0] < recv_min_X):
-                    recv_min_X = dofs_to_xyz_fetch[p][0]
+                if (dofs_to_xyz[p][0] < recv_min_X):
+                    recv_min_X = dofs_to_xyz[p][0]
 
-                if (dofs_to_xyz_fetch[p][1] < recv_min_Y):
-                    recv_min_Y = dofs_to_xyz_fetch[p][1]
+                if (dofs_to_xyz[p][1] < recv_min_Y):
+                    recv_min_Y = dofs_to_xyz[p][1]
 
-                if (dofs_to_xyz_fetch[p][2] < recv_min_Z):
-                    recv_min_Z = dofs_to_xyz_fetch[p][2]
+                if (dofs_to_xyz[p][2] < recv_min_Z):
+                    recv_min_Z = dofs_to_xyz[p][2]
 
-                if (dofs_to_xyz_fetch[p][0] > recv_max_X):
-                    recv_max_X = dofs_to_xyz_fetch[p][0]
+                if (dofs_to_xyz[p][0] > recv_max_X):
+                    recv_max_X = dofs_to_xyz[p][0]
 
-                if (dofs_to_xyz_fetch[p][1] > recv_max_Y):
-                    recv_max_Y = dofs_to_xyz_fetch[p][1]
+                if (dofs_to_xyz[p][1] > recv_max_Y):
+                    recv_max_Y = dofs_to_xyz[p][1]
 
-                if (dofs_to_xyz_fetch[p][2] > recv_max_Z):
-                    recv_max_Z = dofs_to_xyz_fetch[p][2]
+                if (dofs_to_xyz[p][2] > recv_max_Z):
+                    recv_max_Z = dofs_to_xyz[p][2]
 
-                point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz_fetch[p][0],
-                                                                        dofs_to_xyz_fetch[p][1],
-                                                                        dofs_to_xyz_fetch[p][2]])
+                point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz[p][0],
+                                                                        dofs_to_xyz[p][1],
+                                                                        dofs_to_xyz[p][2]])
 
                 point_ID = -999
-                for ii, pp in enumerate(xyz_fetch_list_total_group):
-                    if (pp[0] == dofs_to_xyz_fetch[p][0]):
-                        if (pp[1] == dofs_to_xyz_fetch[p][1]):
-                            if (pp[2] == dofs_to_xyz_fetch[p][2]):
+                for ii, pp in enumerate(xyz_fetch):
+                    if (pp[0] == dofs_to_xyz[p][0]):
+                        if (pp[1] == dofs_to_xyz[p][1]):
+                            if (pp[2] == dofs_to_xyz[p][2]):
                                 point_ID = ii
                                 break
 
                 if (point_ID<0):
-                    print("{** FENICS ERROR **} cannot find point: ", dofs_to_xyz_fetch[p][0],
-                                                                        dofs_to_xyz_fetch[p][1],
-                                                                        dofs_to_xyz_fetch[p][2],
+                    print("{** FENICS ERROR **} cannot find point: ", dofs_to_xyz[p][0],
+                                                                        dofs_to_xyz[p][1],
+                                                                        dofs_to_xyz[p][2],
                                                                         " in Global xyz fetch list")
                 point3dList.append(point_fetch)
                 point3dGlobalID.append(point_ID)
@@ -908,30 +910,25 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # Convert dofs to coordinates
         return FunctionSpace.tabulate_dof_coordinates().reshape((-1, dimension))
 
-    def dofs_fetch_list(    self, 
-                            MeshFunction, 
-                            FunctionSpace, 
-                            boundary, 
-                            dimension):
-        dofs_fetch = self.get_subdomain_dofs(MeshFunction, FunctionSpace, boundary)
-        dofs_fetch_list = list(dofs_fetch)
-        xyz_fetch = np.zeros((len(dofs_fetch_list), dimension))
-        for i, p in enumerate(dofs_fetch_list):
-            xyz_fetch[i] = self.dofs_to_xyz(FunctionSpace, dimension)[p]
-        return dofs_fetch, dofs_fetch_list, xyz_fetch
+    def dofs_list(self,
+                  MeshFunction,
+                  FunctionSpace,
+                  boundary):
 
-    def dofs_push_list( self,
-                        MeshFunction,
-                        FunctionSpace,
-                        boundary,
-                        dimension):
-        dofs_push = self.get_subdomain_dofs(MeshFunction, FunctionSpace, boundary)
-        dofs_push_list = list(dofs_push)
-        xyz_push = np.zeros((len(dofs_push_list), dimension))
-        for i, p in enumerate(dofs_push_list):
-            xyz_push[i] = self.dofs_to_xyz(FunctionSpace, dimension)[p]
-        
-        return dofs_push, dofs_push_list, xyz_push
+        return list(self.get_subdomain_dofs(MeshFunction, FunctionSpace, boundary))
+
+    def xyz_np(self,
+               dofs_list,
+               FunctionSpace,
+               dimension):
+        xyz_np = np.zeros((len(dofs_list), dimension))
+        for i, p in enumerate(dofs_list):
+            xyz_np[i] = self.dofs_to_xyz(FunctionSpace, dimension)[p]
+        return xyz_np
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #%% Define facet areas
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def facets_area_list(   self, 
                             MPI_COMM_WORLD, 

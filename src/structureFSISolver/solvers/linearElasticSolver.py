@@ -183,14 +183,13 @@ class linearElastic:
         #%% Define DOFs and Coordinates mapping
         #===========================================  
 
-        dofs_to_xyz = self.dofs_to_xyz(Q, gdim)
+        dofs_fetch_list = self.dofs_list(boundaries, Q, 2)
 
-        dofs_fetch, dofs_fetch_list, xyz_fetch = \
-            self.dofs_fetch_list(boundaries, Q, 2, gdim)
-        dofs_push, dofs_push_list, xyz_push = \
-            self.dofs_push_list(boundaries, Q, 2, gdim)
+        xyz_fetch = self.xyz_np(dofs_fetch_list, Q, gdim)
 
-        xyz_fetch_list =  list(xyz_fetch)
+        dofs_push_list = self.dofs_list(boundaries, Q, 2)
+
+        xyz_push = self.xyz_np(dofs_push_list, Q, gdim)
 
         #===========================================
         #%% Define facet areas
@@ -379,11 +378,11 @@ class linearElastic:
         #%% Define MUI samplers and commit ZERO step
         #===========================================
 
-        self.MUI_Sampler_Define(dofs_fetch_list,
-                                dofs_to_xyz,
+        self.MUI_Sampler_Define(Q,
+                                gdim,
+                                dofs_fetch_list,
                                 dofs_push_list,
-                                dofs_to_xyz,
-                                xyz_fetch_list,
+                                xyz_fetch,
                                 t_step)
 
         #===========================================
