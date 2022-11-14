@@ -156,20 +156,7 @@ class linearElastic:
         #%% Define traction forces
         #===========================================
 
-        if self.iNonUniTraction:
-            if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
-            self.tF_apply = Function(V)
-            self.tF_apply_vec = self.tF_apply.vector().get_local()
-
-            if self.iMUIFetchForce:
-                force_dof_apply = Function(V)
-                force_dof_apply_vec = force_dof_apply.vector().get_local()
-        else:
-            if self.rank == 0: print ("{FENICS} Uniform traction applied")
-            self.tF_magnitude = Constant(0.0 *self.X_direction_vector() + 
-                                    0.0 *self.Y_direction_vector() +
-                                    0.0 *self.Z_direction_vector() )
-            self.tF_apply = self.tF_magnitude
+        self.Traction_Define(V)
 
         #===========================================
         #%% Define SubDomains and boundaries
@@ -457,7 +444,7 @@ class linearElastic:
                     print ("{FENICS} sub-iteration: ", i_sub_it)
                     print ("{FENICS} total sub-iterations to now: ", t_sub_it)
 
-                self.tractionAssign(xyz_fetch,
+                self.Traction_Assign(xyz_fetch,
                                     dofs_fetch_list,
                                     self.t_sampler,
                                     self.s_sampler,

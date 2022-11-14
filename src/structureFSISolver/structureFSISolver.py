@@ -1386,7 +1386,21 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         return (2.0*self.mu_s()*sym(grad(displacement_function))+ 
                 self.lamda_s()*tr(sym(grad(displacement_function)))*self.I(grid_dimension))
 
-    def tractionAssign(self,
+    def Traction_Define(self,
+                        VectorFunctionSpace):
+        if self.iNonUniTraction:
+            if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
+            self.tF_apply = Function(VectorFunctionSpace)
+            self.tF_apply_vec = self.tF_apply.vector().get_local()
+
+        else:
+            if self.rank == 0: print ("{FENICS} Uniform traction applied")
+            self.tF_magnitude = Constant(0.0 *self.X_direction_vector() +
+                                    0.0 *self.Y_direction_vector() +
+                                    0.0 *self.Z_direction_vector() )
+            self.tF_apply = self.tF_magnitude
+
+    def Traction_Assign(self,
                         xyz_fetch,
                         dofs_fetch_list,
                         t_sampler,
@@ -1424,6 +1438,9 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 self.tF_magnitude.assign(Constant((0.0)))
             if self.rank == 0:
                 print ("Done")
+
+
+
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Set form compiler options
