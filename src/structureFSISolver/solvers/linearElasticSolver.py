@@ -70,10 +70,12 @@ class linearElastic:
         #%% Solid Mesh input/generation
         #===========================================
 
-        mesh, meshOri= self.Mesh_Generation()
+        mesh = self.Mesh_Generation()
         gdim = self.Get_Grid_Dimension(mesh)
-        gdimOri= self.Get_Grid_Dimension(meshOri)
         N = self.Get_Face_Narmal(mesh)
+
+        meshOri = self.Mesh_Original_Generation(mesh)
+        gdimOri = self.Get_Grid_Dimension(meshOri)
 
         #===========================================
         #%% Define coefficients
@@ -86,15 +88,23 @@ class linearElastic:
         times = []
         t_sub_it = 0
 
-        # Generalized-alpha method parameters
-        gamma_gam   = Constant((1./2.) + self.alpha_m_gam - self.alpha_f_gam)
-        beta_gam    = Constant((1./4.) * (gamma_gam + (1./2.))**2)
+        # One-step theta value
+        theta = Constant(self.thetaOS)
 
-        sync = False
+        # Rayleigh damping coefficients
+        alpha_rdc = Constant(self.alpha_rdc)
+        beta_rdc  = Constant(self.beta_rdc)
+
+        # Generalized-alpha method parameters
+        # alpha_m_gam >= alpha_f_gam >= 0.5 for a better performance
+        alpha_m_gam = Constant(self.alpha_m_gam)
+        alpha_f_gam = Constant(self.alpha_f_gam)
+        gamma_gam   = Constant((1./2.) + alpha_m_gam - alpha_f_gam)
+        beta_gam    = Constant((1./4.) * (gamma_gam + (1./2.))**2)
 
         if self.rank == 0:
             print ("\n")
-            print ("{FENICS} One-step theta: ", float(self.thetaOS))
+            print ("{FENICS} One-step theta: ", float(theta))
             print ("\n")
 
         #===========================================
@@ -275,22 +285,22 @@ class linearElastic:
             # Define the stress terms and convection of the structure variational form
             if self.iNonLinearMethod:
                 if self.rank == 0: print ("{FENICS} [Defining non-linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by the constitutive law of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). Valid for large deformations but small strain] ...   ", end="", flush=True)
-                Form_s_SC = inner(self.thetaOS * self.Piola_Kirchhoff_fst(d,gdim) + (1 - self.thetaOS) * 
+                Form_s_SC = inner(theta * self.Piola_Kirchhoff_fst(d,gdim) + (1 - theta) *
                             self.Piola_Kirchhoff_fst(d0,gdim), grad(psi)) * dx
-                Form_s_SC -= inner(self.thetaOS*u + (1-self.thetaOS)*u0, phi ) * dx
+                Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
             else:
                 if self.rank == 0: print ("{FENICS} [Defining linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation). Valid for small-scale deformations only] ...   ", end="", flush=True)
-                Form_s_SC = inner(self.thetaOS * self.Hooke_stress(d,gdim) + (1 - self.thetaOS) * 
+                Form_s_SC = inner(theta * self.Hooke_stress(d,gdim) + (1 - theta) *
                             self.Hooke_stress(d0,gdim), grad(psi)) * dx
-                Form_s_SC -= inner(self.thetaOS*u + (1-self.thetaOS)*u0, phi ) * dx
+                Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
 
             # Define the body forces and surface tractions terms of the structure variational form
-            Form_s_ET = -( self.thetaOS * self.J_(d,gdim) * inner( (self.b_for()), psi ) + 
-                        ( 1 - self.thetaOS ) * self.J_(d0,gdim) * inner( (self.b_for()), psi ) ) * dx
-            Form_s_ET -= ( self.thetaOS * self.J_(d,gdim) * inner( tF, psi ) + 
-                        ( 1 - self.thetaOS ) * self.J_(d0,gdim) * inner( tF_, psi ) ) * ds(2)
-            Form_s_ET -= ( self.thetaOS * self.J_(d,gdim) * inner( inv(self.F_(d,gdim)) * sigma_s * N, psi )+ 
-                        ( 1 - self.thetaOS ) * (self.J_(d0,gdim)) * inner(inv(self.F_(d0,gdim)) * sigma_s * N, psi )) * ds(2)
+            Form_s_ET = -( theta * self.J_(d,gdim) * inner( (self.b_for()), psi ) +
+                        ( 1 - theta ) * self.J_(d0,gdim) * inner( (self.b_for()), psi ) ) * dx
+            Form_s_ET -= ( theta * self.J_(d,gdim) * inner( tF, psi ) +
+                        ( 1 - theta ) * self.J_(d0,gdim) * inner( tF_, psi ) ) * ds(2)
+            Form_s_ET -= ( theta * self.J_(d,gdim) * inner( inv(self.F_(d,gdim)) * sigma_s * N, psi )+
+                        ( 1 - theta ) * (self.J_(d0,gdim)) * inner(inv(self.F_(d0,gdim)) * sigma_s * N, psi )) * ds(2)
 
             # Define the final form of the structure variational form
             Form_s = Form_s_T + Form_s_SC + Form_s_ET
@@ -307,25 +317,25 @@ class linearElastic:
             # Define the traction terms of the structure variational form
             tF = dot(chi, self.tF_apply)
 
-            Form_s_Update_Acce = self.AMCK (ddmck, 
-                                            d0mck, 
+            Form_s_Update_Acce = self.AMCK (ddmck,
+                                            d0mck,
                                             u0mck,
                                             a0mck,
                                             beta_gam)
             
-            Form_s_Update_velo = self.UMCK (Form_s_Update_Acce, 
-                                            u0mck, 
-                                            a0mck, 
+            Form_s_Update_velo = self.UMCK (Form_s_Update_Acce,
+                                            u0mck,
+                                            a0mck,
                                             gamma_gam)
 
-            Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,self.alpha_m_gam)
-            Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,self.alpha_f_gam)
-            Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,self.alpha_f_gam)
+            Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,alpha_m_gam)
+            Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,alpha_f_gam)
+            Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,alpha_f_gam)
             Form_s_M_Matrix = self.rho_s * inner(Form_s_Ga_Acce, chi) * dx
             Form_s_M_for_C_Matrix = self.rho_s * inner(Form_s_Ga_velo, chi) * dx
             Form_s_K_Matrix = inner(self.elastic_stress(Form_s_Ga_disp,gdim), sym(grad(chi))) * dx
             Form_s_K_for_C_Matrix = inner(self.elastic_stress(Form_s_Ga_velo,gdim), sym(grad(chi))) * dx
-            Form_s_C_Matrix = self.alpha_rdc * Form_s_M_for_C_Matrix + self.beta_rdc * Form_s_K_for_C_Matrix
+            Form_s_C_Matrix = alpha_rdc * Form_s_M_for_C_Matrix + beta_rdc * Form_s_K_for_C_Matrix
             Form_s_F_Ext = tF * ds(2)
 
             Form_s = Form_s_M_Matrix + Form_s_C_Matrix + Form_s_K_Matrix - Form_s_F_Ext
@@ -519,14 +529,8 @@ class linearElastic:
                         pass
 
                 elif self.solving_method == 'MCK':
-                    # Starts the wall clock
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     # Compute and print the displacement of monitored point
                     self.print_Disp (self.LOCAL_COMM_WORLD, dmck)
-                    # Finish the wall clock on print disp
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                    # Starts the wall clock
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                     # MUI Push internal points and commit current steps
                     #if (self.iMUICoupling) and (len(xyz_push)!=0):
                     if (self.iMUICoupling):
@@ -537,8 +541,6 @@ class linearElastic:
 
                     else:
                         pass
-                    # Finish the wall clock on push
-                    if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
 
                 # Move to the next sub-iteration
                 i_sub_it += 1
@@ -583,13 +585,7 @@ class linearElastic:
                                             True)
 
             elif self.solving_method == 'MCK':
-                # Starts the wall clock
-                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 self.Move_Mesh(V, dmck, d0mck, mesh)
-                # Finish the wall clock on move mesh
-                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                # Starts the wall clock
-                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
                 if (not (self.iQuiet)):
                     self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD, 
                                             n_steps, 
@@ -602,18 +598,12 @@ class linearElastic:
                                             stress_file, 
                                             disp_file, 
                                             traction_file)
-                # Finish the wall clock on disp VTK export
-                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-                # Starts the wall clock
-                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
+
                 if (not (self.iQuiet)):
                     self.Export_Disp_txt(   self.LOCAL_COMM_WORLD, 
                                             dmck, 
                                             self.outputFolderPath)
-                # Finish the wall clock on disp txt export
-                if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-            # Starts the wall clock
-            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
+
             if (not (self.iQuiet)):
                 self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
                                         self.outputFolderPath,
@@ -629,10 +619,7 @@ class linearElastic:
                                         sigma_s,
                                         self.areaf,
                                         True)
-            # Finish the wall clock on checkpoint export
-            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
-            # Starts the wall clock
-            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
+
             # Assign the old function spaces
             if self.solving_method == 'STVK':
                 u0d0.assign(ud)
@@ -655,8 +642,7 @@ class linearElastic:
                     a0mck.vector()[:] = amck
                     u0mck.vector()[:] = umck
                     d0mck.vector()[:] = dmck.vector()
-            # Finish the wall clock on assign old function space
-            if (sync == True): self.LOCAL_COMM_WORLD.Barrier()
+
             # Move to next time step
             i_sub_it = 1
             t += self.dt

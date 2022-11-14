@@ -677,8 +677,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                        10, 10, 10)
                     hdfInTemp = HDF5File(mesh.mpi_comm(), self.inputFolderPath + "/checkpointData.h5", "r")
                     hdfInTemp.read(mesh, "/mesh", False)
-                    mesh_original = Mesh(mesh)                    # Store original mesh
-                    hdfInTemp.read(mesh_original, "/meshOri", False)
                     hdfInTemp.close()
                     del hdfInTemp
                     if self.rank == 0: print ("{FENICS} Done with loading HDF5 mesh")
@@ -689,7 +687,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                        Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)),
                        self.XMesh, self.YMesh, self.ZMesh)
                 if self.rank == 0: print ("{FENICS} Done with generating mesh")
-                mesh_original = Mesh(mesh)                    # Store original mesh
         else:
             # Simulation from zero
             if self.iMeshLoad:
@@ -719,8 +716,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                        self.XMesh, self.YMesh, self.ZMesh)
                 if self.rank == 0: print ("{FENICS} Done with generating mesh")
 
-            mesh_original = Mesh(mesh)                    # Store original mesh
-
         if self.iHDF5FileExport and self.iHDF5MeshExport:
             if self.rank == 0: print ("{FENICS} Exporting HDF5 mesh ...   ", end="", flush=True)
             hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
@@ -737,8 +732,25 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             plt.show()
             if self.rank == 0: print ("Done")
 
-        return mesh, mesh_original
+        return mesh
 
+    def Mesh_Original_Generation(self, mesh):
+        if self.iContinueRun:
+            # Restart simulation
+            if self.iMeshLoad:
+                # Load mesh from file
+                hdfInTemp = HDF5File(mesh.mpi_comm(), self.inputFolderPath + "/checkpointData.h5", "r")
+                mesh_original = Mesh(mesh)                    # Store original mesh
+                hdfInTemp.read(mesh_original, "/meshOri", False)
+                hdfInTemp.close()
+                del hdfInTemp
+            else:
+                # Generate mesh
+                mesh_original = Mesh(mesh)                    # Store original mesh
+        else:
+            mesh_original = Mesh(mesh)                    # Store original mesh
+
+        return mesh_original
 
     def Get_Grid_Dimension(self, mesh):
 
