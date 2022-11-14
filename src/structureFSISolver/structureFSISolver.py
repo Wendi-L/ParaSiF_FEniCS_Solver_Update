@@ -1650,6 +1650,16 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             print ("\n")
             print ("{FENICS} ********** STRUCTURAL-ELASTICITY SIMULATION COMPLETED **********")
 
+    def Create_Post_Process_Files(self):
+
+        if self.rank == 0: print ("{FENICS} Preparing post-process files ...   ", end="", flush=True)
+
+        self.disp_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/displacement.pvd")
+        self.stress_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/stress.pvd")
+        self.traction_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/surface_traction_structure.pvd")
+
+        if self.rank == 0: print ("Done")
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Setup checkpoint file
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -195,23 +195,13 @@ class linearElastic:
         #%% Define facet areas
         #===========================================
 
-        self.facets_area_define(mesh,
-                                Q,
-                                boundaries,
-                                dofs_fetch_list,
-                                gdim)
+        self.facets_area_define(mesh, Q, boundaries, dofs_fetch_list, gdim)
 
         #===========================================
         #%% Prepare post-process files
         #===========================================
 
-        if self.rank == 0: print ("{FENICS} Preparing post-process files ...   ", end="", flush=True)
-
-        disp_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/displacement.pvd")
-        stress_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/stress.pvd")
-        traction_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/surface_traction_structure.pvd")
-
-        if self.rank == 0: print ("Done")
+        self.Create_Post_Process_Files()
 
         #===========================================
         #%% Define the variational FORM 
@@ -510,9 +500,9 @@ class linearElastic:
                                             V,
                                             tF,
                                             d,
-                                            stress_file,
-                                            disp_file,
-                                            traction_file)
+                                            self.stress_file,
+                                            self.disp_file,
+                                            self.traction_file)
 
                     self.Export_Disp_txt(   self.LOCAL_COMM_WORLD,
                                             d,
@@ -544,9 +534,9 @@ class linearElastic:
                                             V,
                                             self.tF_apply,
                                             dmck,
-                                            stress_file,
-                                            disp_file,
-                                            traction_file)
+                                            self.stress_file,
+                                            self.disp_file,
+                                            self.traction_file)
 
                 if (not (self.iQuiet)):
                     self.Export_Disp_txt(   self.LOCAL_COMM_WORLD,
