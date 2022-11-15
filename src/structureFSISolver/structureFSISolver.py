@@ -1047,17 +1047,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
     def MUI_Fetch ( self,
                     dofs_to_xyz, 
-                    dofs_fetch_list, 
-                    Temporal_sampler,
-                    Spatial_sampler,
-                    total_Sub_Iteration, 
-                    temp_vec_function, 
-                    facet_area_vec_function):
+                    dofs_fetch_list,
+                    total_Sub_Iteration):
 
         totForceX = 0.0
         totForceY = 0.0
         totForceZ = 0.0
-        temp_vec_function_temp = temp_vec_function
+        temp_vec_function_temp = self.tF_apply_vec
 
         if self.iparallelFSICoupling:
             fetch_iteration = total_Sub_Iteration-1
@@ -1070,43 +1066,43 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             fetch_many("forceX", 
                                         dofs_to_xyz,
                                         fetch_iteration,
-                                        Spatial_sampler,
-                                        Temporal_sampler)
+                                        self.s_sampler,
+                                        self.t_sampler)
                 temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
                             fetch_many("forceY", 
                                         dofs_to_xyz,
                                         fetch_iteration,
-                                        Spatial_sampler,
-                                        Temporal_sampler)
+                                        self.s_sampler,
+                                        self.t_sampler)
                 temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
                             fetch_many("forceZ", 
                                         dofs_to_xyz,
                                         fetch_iteration,
-                                        Spatial_sampler,
-                                        Temporal_sampler)
+                                        self.s_sampler,
+                                        self.t_sampler)
 
                 for i, p in enumerate(dofs_fetch_list):
                     if self.iparallelFSICoupling:
-                        temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                        temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                        temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
+                        self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
+                        self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
+                        self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
                     else:
-                        temp_vec_function[0::3][p] = temp_vec_function_temp[0::3][p]
-                        temp_vec_function[1::3][p] = temp_vec_function_temp[1::3][p]
-                        temp_vec_function[2::3][p] = temp_vec_function_temp[2::3][p]
+                        self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
+                        self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
+                        self.tF_apply_vec[2::3][p] = temp_vec_function_temp[2::3][p]
 
-                    totForceX += temp_vec_function[0::3][p]
-                    totForceY += temp_vec_function[1::3][p]
-                    totForceZ += temp_vec_function[2::3][p]
+                    totForceX += self.tF_apply_vec[0::3][p]
+                    totForceY += self.tF_apply_vec[1::3][p]
+                    totForceZ += self.tF_apply_vec[2::3][p]
 
-                    if (facet_area_vec_function[p] == 0):
-                        temp_vec_function[0::3][p] = 0.
-                        temp_vec_function[1::3][p] = 0.
-                        temp_vec_function[2::3][p] = 0.
+                    if (self.areaf_vec[p] == 0):
+                        self.tF_apply_vec[0::3][p] = 0.
+                        self.tF_apply_vec[1::3][p] = 0.
+                        self.tF_apply_vec[2::3][p] = 0.
                     else:
-                        temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                        temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                        temp_vec_function[2::3][p] /= facet_area_vec_function[p]
+                        self.tF_apply_vec[0::3][p] /= self.areaf_vec[p]
+                        self.tF_apply_vec[1::3][p] /= self.areaf_vec[p]
+                        self.tF_apply_vec[2::3][p] /= self.areaf_vec[p]
 
             else:
                 if (fetch_iteration >= 0):
@@ -1114,43 +1110,41 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceX",
                                                     dofs_to_xyz[i], 
                                                     fetch_iteration,
-                                                    Spatial_sampler,
-                                                    Temporal_sampler)
+                                                    self.s_sampler,
+                                                    self.t_sampler)
 
                         temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceY", 
                                                     dofs_to_xyz[i], 
                                                     fetch_iteration,
-                                                    Spatial_sampler,
-                                                    Temporal_sampler)
+                                                    self.s_sampler,
+                                                    self.t_sampler)
 
                         temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceZ", 
                                                     dofs_to_xyz[i], 
                                                     fetch_iteration,
-                                                    Spatial_sampler,
-                                                    Temporal_sampler)
+                                                    self.s_sampler,
+                                                    self.t_sampler)
 
                         if self.iparallelFSICoupling:
-                            temp_vec_function[0::3][p] += (temp_vec_function_temp[0::3][p] - temp_vec_function[0::3][p])*self.initUndRelxCpl
-                            temp_vec_function[1::3][p] += (temp_vec_function_temp[1::3][p] - temp_vec_function[1::3][p])*self.initUndRelxCpl
-                            temp_vec_function[2::3][p] += (temp_vec_function_temp[2::3][p] - temp_vec_function[2::3][p])*self.initUndRelxCpl
+                            self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
+                            self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
+                            self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
                         else:
-                            temp_vec_function[0::3][p] = temp_vec_function_temp[0::3][p]
-                            temp_vec_function[1::3][p] = temp_vec_function_temp[1::3][p]
-                            temp_vec_function[2::3][p] = temp_vec_function_temp[2::3][p]
+                            self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
+                            self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
+                            self.tF_apply_vec[2::3][p] = temp_vec_function_temp[2::3][p]
 
-                        totForceX += temp_vec_function[0::3][p]
-                        totForceY += temp_vec_function[1::3][p]
-                        totForceZ += temp_vec_function[2::3][p]
+                        totForceX += self.tF_apply_vec[0::3][p]
+                        totForceY += self.tF_apply_vec[1::3][p]
+                        totForceZ += self.tF_apply_vec[2::3][p]
 
-                        temp_vec_function[0::3][p] /= facet_area_vec_function[p]
-                        temp_vec_function[1::3][p] /= facet_area_vec_function[p]
-                        temp_vec_function[2::3][p] /= facet_area_vec_function[p]
+                        self.tF_apply_vec[0::3][p] /= self.areaf_vec[p]
+                        self.tF_apply_vec[1::3][p] /= self.areaf_vec[p]
+                        self.tF_apply_vec[2::3][p] /= self.areaf_vec[p]
 
                     if self.iDebug:
                         print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, 
                                 "; at iteration: ", fetch_iteration, " at rank: ", self.rank)
-
-        return temp_vec_function
 
     def MUI_Push(   self,
                     dofs_to_xyz, 
@@ -1375,24 +1369,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                     0.0 *self.Z_direction_vector() )
             self.tF_apply = self.tF_magnitude
 
-    def Traction_Assign(self,
-                        xyz_fetch,
-                        dofs_fetch_list,
-                        t_sampler,
-                        s_sampler,
-                        t_sub_it,
-                        areaf_vec):
+    def Traction_Assign(self, xyz_fetch, dofs_fetch_list, t_sub_it, n_steps):
         # Assign traction forces at present time step
         if self.iNonUniTraction:
             if len(xyz_fetch)!=0:
                 # Execute only when there are DoFs need to exchange data in this rank.
-                self.tF_apply_vec = self.MUI_Fetch( xyz_fetch,
-                                                    dofs_fetch_list,
-                                                    t_sampler,
-                                                    s_sampler,
-                                                    t_sub_it,
-                                                    self.tF_apply_vec,
-                                                    areaf_vec)
+                self.MUI_Fetch(xyz_fetch, dofs_fetch_list, t_sub_it)
 
             if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
                 # Apply traction components. These calls do parallel communication
@@ -1405,7 +1387,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         else:
             if self.rank == 0: print ("{FENICS} Assigning uniform traction forces at present time step ...   ",
                                     end="", flush=True)
-            if t <= sForExtEndTime:
+            if t <= self.sForExtEndTime:
                 self.tF_magnitude.assign((Constant((self.sForExtX)/(self.YBeam*self.ZBeam))*self.X_direction_vector()) +
                                     (Constant((self.sForExtY)/(self.XBeam*self.ZBeam))*self.Y_direction_vector()) +
                                     (Constant((self.sForExtZ)/(self.XBeam*self.YBeam))*self.Z_direction_vector()))
@@ -1413,9 +1395,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 self.tF_magnitude.assign(Constant((0.0)))
             if self.rank == 0:
                 print ("Done")
-
-
-
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Set form compiler options
@@ -1788,7 +1767,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         # Finish the wall clock
         simtime = wallClock.toc()
-
         self.Post_Solving_Log(self.LOCAL_COMM_WORLD, simtime)
 
     # def Solver_OLD(self):

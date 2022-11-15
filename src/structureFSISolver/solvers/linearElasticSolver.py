@@ -392,11 +392,10 @@ class linearElastic:
 
             if self.rank == 0: 
                 print ("\n")
-                print ("\n")
-                print ("{FENICS} Time: ", t)
-                print ("{FENICS} Time Steps: ", n_steps)
+                print ("{FENICS} Time: ", t, " [s]; Time Step Number: ", n_steps)
 
-            if (self.iChangeSubIter):
+            # Change number of sub-iterations if needed
+            if self.iChangeSubIter:
                 if (t >= self.TChangeSubIter):
                     present_num_sub_iteration = self.num_sub_iteration_new
                 else:
@@ -407,19 +406,15 @@ class linearElastic:
             # Sub-iteration for coupling
             while i_sub_it <= present_num_sub_iteration:
 
+                # Increment of total sub-iterations
                 t_sub_it += 1
 
                 if self.rank == 0: 
                     print ("\n")
-                    print ("{FENICS} sub-iteration: ", i_sub_it)
-                    print ("{FENICS} total sub-iterations to now: ", t_sub_it)
+                    print ("{FENICS} Sub-iteration Number: ", i_sub_it, " Total sub-iterations to now: ", t_sub_it)
 
-                self.Traction_Assign(xyz_fetch,
-                                    dofs_fetch_list,
-                                    self.t_sampler,
-                                    self.s_sampler,
-                                    t_sub_it,
-                                    self.areaf_vec)
+                # Fetch and assign traction forces at present time step
+                self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps)
 
                 if (not ((self.iContinueRun) and (n_steps == 1))):
                     if self.solving_method == 'MCK':
@@ -480,7 +475,7 @@ class linearElastic:
                     else:
                         pass
 
-                # Move to the next sub-iteration
+                # Increment of sub-iterations
                 i_sub_it += 1
 
             if self.solving_method == 'STVK':
@@ -588,6 +583,5 @@ class linearElastic:
 
         # Wait for the other solver
         self.ifaces3d["threeDInterface0"].barrier(t_sub_it)
-
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
