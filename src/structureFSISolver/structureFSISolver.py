@@ -1192,6 +1192,19 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             if (self.rank == 0) and self.iDebug:
                 print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI))
 
+    def MUI_Commit_only(self, total_Sub_Iteration):
+
+        a = self.ifaces3d["threeDInterface0"].commit(total_Sub_Iteration)
+
+        if (self.rank == 0) and self.iDebug:
+            print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
+
+        if ((total_Sub_Iteration-self.forgetTStepsMUI) > 0):
+            a = self.ifaces3d["threeDInterface0"].forget(total_Sub_Iteration-self.forgetTStepsMUI)
+            self.ifaces3d["threeDInterface0"].set_memory(self.forgetTStepsMUI)
+            if (self.rank == 0) and self.iDebug:
+                print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI))
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define directional vectors
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1490,15 +1503,15 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             print ("{FENICS} Numbers of sub-iterations: ", self.num_sub_iteration, " [-]")
             print ("\n")
 
-    def print_Disp (self, MPI_COMM_WORLD, displacement_function):
+    def print_Disp (self, displacement_function):
         # Compute and print the displacement of monitored point
         d_DispSum = np.zeros(3)
         d_tempDenominator  = np.array([ self.size, 
                                         self.size, 
                                         self.size])
-        MPI_COMM_WORLD.Reduce((displacement_function(
-                                Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
-                                d_DispSum,op=MPI.SUM,root=0)
+        self.LOCAL_COMM_WORLD.Reduce((displacement_function(
+                                    Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
+                                    d_DispSum,op=MPI.SUM,root=0)
         d_Disp = np.divide(d_DispSum,d_tempDenominator)
         if self.rank == 0: 
             print ("{FENICS} Monitored point deflection [m]: ", d_Disp)

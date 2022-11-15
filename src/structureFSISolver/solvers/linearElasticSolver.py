@@ -449,29 +449,33 @@ class linearElastic:
                     u,d = ud.split(True)
 
                     # Compute and print the displacement of monitored point
-                    self.print_Disp (self.LOCAL_COMM_WORLD, d)
+                    self.print_Disp(d)
 
                     # MUI Push internal points and commit current steps
-                    #if (self.iMUICoupling) and (len(xyz_push)!=0):
                     if (self.iMUICoupling):
-                        self.MUI_Push(  xyz_push,
-                                        dofs_push_list, 
-                                        d, 
-                                        t_sub_it)
+                        if (len(xyz_push)!=0):
+                            self.MUI_Push(xyz_push,
+                                          dofs_push_list,
+                                          d,
+                                          t_sub_it)
+                        else:
+                            self.MUI_Commit_only(t_sub_it)
                     else:
                         pass
 
                 elif self.solving_method == 'MCK':
                     # Compute and print the displacement of monitored point
-                    self.print_Disp (self.LOCAL_COMM_WORLD, dmck)
-                    # MUI Push internal points and commit current steps
-                    #if (self.iMUICoupling) and (len(xyz_push)!=0):
-                    if (self.iMUICoupling):
-                        self.MUI_Push(  xyz_push,
-                                        dofs_push_list, 
-                                        dmck, 
-                                        t_sub_it)
+                    self.print_Disp(dmck)
 
+                    # MUI Push internal points and commit current steps
+                    if (self.iMUICoupling):
+                        if (len(xyz_push)!=0):
+                            self.MUI_Push(xyz_push,
+                                          dofs_push_list,
+                                          dmck,
+                                          t_sub_it)
+                        else:
+                            self.MUI_Commit_only(t_sub_it)
                     else:
                         pass
 
