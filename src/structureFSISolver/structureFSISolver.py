@@ -1665,11 +1665,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def Checkpoint_Output(  self, 
-                            MPI_COMM_WORLD, 
-                            OutputFolderPath, 
                             current_time, 
                             mesh, 
-                            mesh_original, 
                             ud_Functions_previous, 
                             d0mck_Functions_previous, 
                             u0mck_Functions_previous, 
@@ -1677,20 +1674,18 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             ud_Functions, 
                             dmck_Function, 
                             t_Function, 
-                            facet_area_Function, 
                             File_Exists=True):
 
-        # if File_Exists:
-            # import os
-            # if self.rank == 0:
-                # os.remove(OutputFolderPath + "/checkpointData_" + current_time +".h5")
-            # MPI_COMM_WORLD.Barrier()
-        # else:
-            # pass
+        if File_Exists:
+            import os
+            if self.rank == 0:
+                os.remove(self.outputFolderPath + "/checkpointData_" + str(current_time) +".h5")
+            self.LOCAL_COMM_WORLD.Barrier()
+        else:
+            pass
 
-        hdf5checkpointDataOut = HDF5File(MPI_COMM_WORLD, OutputFolderPath + "/checkpointData_" + str(current_time) +".h5", "w")
+        hdf5checkpointDataOut = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/checkpointData_" + str(current_time) +".h5", "w")
         hdf5checkpointDataOut.write(mesh, "/mesh")
-        hdf5checkpointDataOut.write(mesh_original, "/meshOri")
         hdf5checkpointDataOut.write(ud_Functions_previous, "/u0d0", current_time)
         hdf5checkpointDataOut.write(d0mck_Functions_previous, "/d0mck", current_time)
         hdf5checkpointDataOut.write(u0mck_Functions_previous, "/u0mck", current_time)
@@ -1698,7 +1693,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         hdf5checkpointDataOut.write(ud_Functions, "/ud", current_time)
         hdf5checkpointDataOut.write(dmck_Function, "/dmck", current_time)
         hdf5checkpointDataOut.write(t_Function, "/sigma_s", current_time)
-        hdf5checkpointDataOut.write(facet_area_Function, "/areaf")
+        hdf5checkpointDataOut.write(self.areaf, "/areaf")
         hdf5checkpointDataOut.close()
         # Delete HDF5File object, closing file
         del hdf5checkpointDataOut

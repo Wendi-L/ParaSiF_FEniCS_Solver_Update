@@ -247,7 +247,8 @@ class linearElastic:
             # Make functional into a vector function
             #Form_s = action(Form_s, ud)
 
-            Jaco = derivative(Form_s, ud) # Define Jacobin functions
+            # Define Jacobin functions
+            Jaco = derivative(Form_s, ud)
 
             if self.rank == 0: print ("Done")
 
@@ -344,15 +345,14 @@ class linearElastic:
                 solver.parameters["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations
                 solver.parameters["krylov_solver"]["monitor_convergence"] = self.monitor_convergence
                 solver.parameters["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess
+            else:
+                sys.exit("{FENICS} Error, linear solver value not recognized")
 
         #===========================================
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
-                                self.outputFolderPath,
-                                (t-self.dt),
-                                mesh,
+        self.Checkpoint_Output( (t-self.dt),
                                 mesh,
                                 u0d0,
                                 d0mck,
@@ -361,7 +361,6 @@ class linearElastic:
                                 ud,
                                 dmck,
                                 sigma_s,
-                                self.areaf,
                                 False)
 
         #===========================================
@@ -508,11 +507,8 @@ class linearElastic:
                                             d,
                                             self.outputFolderPath)
 
-                    self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
-                                            self.outputFolderPath,
-                                            t,
+                    self.Checkpoint_Output( t,
                                             mesh,
-                                            meshOri,
                                             u0d0,
                                             d0mck,
                                             u0mck,
@@ -520,8 +516,7 @@ class linearElastic:
                                             ud,
                                             dmck,
                                             sigma_s,
-                                            self.areaf,
-                                            True)
+                                            False)
 
             elif self.solving_method == 'MCK':
                 self.Move_Mesh(V, dmck, d0mck, mesh)
@@ -544,10 +539,7 @@ class linearElastic:
                                             self.outputFolderPath)
 
             if (not (self.iQuiet)):
-                self.Checkpoint_Output( self.LOCAL_COMM_WORLD,
-                                        self.outputFolderPath,
-                                        t,
-                                        mesh,
+                self.Checkpoint_Output( t,
                                         mesh,
                                         u0d0,
                                         d0mck,
@@ -556,8 +548,7 @@ class linearElastic:
                                         ud,
                                         dmck,
                                         sigma_s,
-                                        self.areaf,
-                                        True)
+                                        False)
 
             # Assign the old function spaces
             if self.solving_method == 'STVK':
