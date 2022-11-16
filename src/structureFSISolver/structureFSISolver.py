@@ -1263,12 +1263,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     def Acceleration_March_Term_Three(self, beta_gam):
         return (1 / (2*beta_gam))
 
-    def AMCK (  self, 
-                displacement_function, 
-                displacement_previous_function, 
-                velocity_previous_function,
-                acceleration_previous_function,
-                beta_gam):
+    def AMCK (self,
+              displacement_function,
+              displacement_previous_function,
+              velocity_previous_function,
+              acceleration_previous_function,
+              beta_gam):
         return (self.Acceleration_March_Term_Three(beta_gam) * 
                 (self.Acceleration_March_Term_One(displacement_function,
                 displacement_previous_function,velocity_previous_function) - 
@@ -1285,11 +1285,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                 gamma_gam):
         return (acceleration_function * gamma_gam * self.dt)
 
-    def UMCK (  self, 
-                acceleration_function, 
-                velocity_previous_function, 
-                acceleration_previous_function, 
-                gamma_gam):
+    def UMCK (self,
+              acceleration_function,
+              velocity_previous_function,
+              acceleration_previous_function,
+              gamma_gam):
         return (self.Velocity_March_Term_One(acceleration_previous_function,gamma_gam) + 
                 self.Velocity_March_Term_Two(acceleration_function,gamma_gam) + 
                 velocity_previous_function)
@@ -1427,11 +1427,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% ALE Move Mesh
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Move_Mesh ( self, 
-                    VectorFunctionSpace, 
-                    displacement_function, 
-                    displacement_function_previous, 
-                    mesh):
+    def Move_Mesh(self,
+                  VectorFunctionSpace,
+                  displacement_function,
+                  displacement_function_previous,
+                  mesh):
         dOffset = Function(VectorFunctionSpace)
         # Calculate offset of the displacement
         dOffset.vector()[:] = displacement_function.vector().get_local()- \
@@ -1516,16 +1516,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if self.rank == 0: 
             print ("{FENICS} Monitored point deflection [m]: ", d_Disp)
 
-    def Export_Disp_txt(    self, 
-                            MPI_COMM_WORLD, 
-                            displacement_function, 
-                            OutputFolderPath):
+    def Export_Disp_txt(self, displacement_function):
         if self.iExporttxt:
             pointMoniDispSum = np.zeros(3)
             tempDenominator  = np.array([self.size, 
                                          self.size, 
                                          self.size])
-            MPI_COMM_WORLD.Reduce((displacement_function(
+            self.LOCAL_COMM_WORLD.Reduce((displacement_function(
                                     Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
                                     pointMoniDispSum,op=MPI.SUM,root=0)
             pointMoniDisp = np.divide(pointMoniDispSum,tempDenominator)
@@ -1534,55 +1531,50 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             tempDenominator_b  = np.array([self.size, 
                                          self.size, 
                                          self.size])
-            MPI_COMM_WORLD.Reduce((displacement_function(
+            self.LOCAL_COMM_WORLD.Reduce((displacement_function(
                                     Point(self.pointMoniXb,self.pointMoniYb,self.pointMoniZb))),
                                     pointMoniDispSum_b,op=MPI.SUM,root=0)
             pointMoniDisp_b = np.divide(pointMoniDispSum_b,tempDenominator_b)
 
             for irank in range(self.size):
                 if self.rank == irank:
-                    ftxt_dispX = open(OutputFolderPath + "/tip-displacementX_" + str(irank)+ ".txt", "a")
+                    ftxt_dispX = open(self.outputFolderPath + "/tip-displacementX_" + str(irank)+ ".txt", "a")
                     ftxt_dispX.write(str(pointMoniDisp[0]))
                     ftxt_dispX.write("\n")
                     ftxt_dispX.close
 
-                    ftxt_dispY = open(OutputFolderPath + "/tip-displacementY_" + str(irank)+ ".txt", "a")
+                    ftxt_dispY = open(self.outputFolderPath + "/tip-displacementY_" + str(irank)+ ".txt", "a")
                     ftxt_dispY.write(str(pointMoniDisp[1]))
                     ftxt_dispY.write("\n")
                     ftxt_dispY.close
 
-                    ftxt_dispZ = open(OutputFolderPath + "/tip-displacementZ_" + str(irank)+ ".txt", "a")
+                    ftxt_dispZ = open(self.outputFolderPath + "/tip-displacementZ_" + str(irank)+ ".txt", "a")
                     ftxt_dispZ.write(str(pointMoniDisp[2]))
                     ftxt_dispZ.write("\n")
                     ftxt_dispZ.close
                     
-                    ftxt_dispXb = open(OutputFolderPath + "/tip-displacementXb_" + str(irank)+ ".txt", "a")
+                    ftxt_dispXb = open(self.outputFolderPath + "/tip-displacementXb_" + str(irank)+ ".txt", "a")
                     ftxt_dispXb.write(str(pointMoniDisp_b[0]))
                     ftxt_dispXb.write("\n")
                     ftxt_dispXb.close
 
-                    ftxt_dispYb = open(OutputFolderPath + "/tip-displacementYb_" + str(irank)+ ".txt", "a")
+                    ftxt_dispYb = open(self.outputFolderPath + "/tip-displacementYb_" + str(irank)+ ".txt", "a")
                     ftxt_dispYb.write(str(pointMoniDisp_b[1]))
                     ftxt_dispYb.write("\n")
                     ftxt_dispYb.close
 
-                    ftxt_dispZb = open(OutputFolderPath + "/tip-displacementZb_" + str(irank)+ ".txt", "a")
+                    ftxt_dispZb = open(self.outputFolderPath + "/tip-displacementZb_" + str(irank)+ ".txt", "a")
                     ftxt_dispZb.write(str(pointMoniDisp_b[2]))
                     ftxt_dispZb.write("\n")
                     ftxt_dispZb.close
 
-    def Export_Disp_vtk(    self, 
-                            MPI_COMM_WORLD, 
-                            Current_Time_Step, 
-                            current_time, 
-                            mesh, 
-                            grid_dimension, 
-                            VectorFunctionSpace, 
-                            traction_function, 
-                            displacement_function, 
-                            stress_file, 
-                            disp_file, 
-                            traction_file):
+    def Export_Disp_vtk(self,
+                        Current_Time_Step,
+                        current_time,
+                        mesh,
+                        grid_dimension,
+                        VectorFunctionSpace,
+                        displacement_function):
         # Export post-processing files
         if ((self.rank == 0) and self.iDebug):
             print ("\n")
@@ -1612,22 +1604,22 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             "representation": self.compRepresentation}))
             # Save stress solution to file
             sig.rename('Piola Kirchhoff sec Stress', 'stress')
-            stress_file << (sig, float(current_time))
+            self.stress_file << (sig, float(current_time))
 
             # Save displacement solution to file
             displacement_function.rename('Displacement', 'disp')
-            disp_file << (displacement_function, float(current_time))
+            self.disp_file << (displacement_function, float(current_time))
 
             # Compute traction
             traction = Function(VectorFunctionSpace, name="Traction")
-            traction.assign(project(traction_function, 
+            traction.assign(project(self.tF_apply,
                                     VectorFunctionSpace, 
                                     solver_type=self.prjsolver,
                                     form_compiler_parameters={"cpp_optimize": self.cppOptimize, 
                                     "representation": self.compRepresentation}))
             # Save traction solution to file
             traction.rename('traction', 'trac')
-            traction_file << (traction, float(current_time))
+            self.traction_file << (traction, float(current_time))
             if self.rank == 0: print ("Done")
         else:
             pass
@@ -1656,17 +1648,17 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Setup checkpoint file
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Checkpoint_Output(  self, 
-                            current_time, 
-                            mesh, 
-                            ud_Functions_previous, 
-                            d0mck_Functions_previous, 
-                            u0mck_Functions_previous, 
-                            a_Function_previous, 
-                            ud_Functions, 
-                            dmck_Function, 
-                            t_Function, 
-                            File_Exists=True):
+    def Checkpoint_Output(self,
+                          current_time,
+                          mesh,
+                          ud_Functions_previous,
+                          d0mck_Functions_previous,
+                          u0mck_Functions_previous,
+                          a_Function_previous,
+                          ud_Functions,
+                          dmck_Function,
+                          t_Function,
+                          File_Exists=True):
 
         if File_Exists:
             import os

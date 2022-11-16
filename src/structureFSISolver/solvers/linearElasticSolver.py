@@ -352,16 +352,7 @@ class linearElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output( (t-self.dt),
-                                mesh,
-                                u0d0,
-                                d0mck,
-                                u0mck,
-                                a0mck,
-                                ud,
-                                dmck,
-                                sigma_s,
-                                False)
+        self.Checkpoint_Output((t-self.dt), mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
@@ -487,103 +478,52 @@ class linearElastic:
                 u,d = ud.split(True)
                 u0,d0 = u0d0.split(True)
 
+                # Mesh motion
                 self.Move_Mesh(V, d, d0, mesh)
 
+                # Data output
                 if (not (self.iQuiet)):
-                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD,
-                                            n_steps,
-                                            t,
-                                            mesh,
-                                            gdim,
-                                            V,
-                                            tF,
-                                            d,
-                                            self.stress_file,
-                                            self.disp_file,
-                                            self.traction_file)
-
-                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD,
-                                            d,
-                                            self.outputFolderPath)
-
-                    self.Checkpoint_Output( t,
-                                            mesh,
-                                            u0d0,
-                                            d0mck,
-                                            u0mck,
-                                            a0mck,
-                                            ud,
-                                            dmck,
-                                            sigma_s,
-                                            False)
+                    self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, d)
+                    self.Export_Disp_txt(d)
+                    self.Checkpoint_Output(t, mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
 
             elif self.solving_method == 'MCK':
+                # Mesh motion
                 self.Move_Mesh(V, dmck, d0mck, mesh)
+
+                # Data output
                 if (not (self.iQuiet)):
-                    self.Export_Disp_vtk(   self.LOCAL_COMM_WORLD,
-                                            n_steps,
-                                            t,
-                                            mesh,
-                                            gdim,
-                                            V,
-                                            self.tF_apply,
-                                            dmck,
-                                            self.stress_file,
-                                            self.disp_file,
-                                            self.traction_file)
+                    self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, dmck)
+                    self.Export_Disp_txt(dmck)
+                    self.Checkpoint_Output(t, mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
 
-                if (not (self.iQuiet)):
-                    self.Export_Disp_txt(   self.LOCAL_COMM_WORLD,
-                                            dmck,
-                                            self.outputFolderPath)
-
-            if (not (self.iQuiet)):
-                self.Checkpoint_Output( t,
-                                        mesh,
-                                        u0d0,
-                                        d0mck,
-                                        u0mck,
-                                        a0mck,
-                                        ud,
-                                        dmck,
-                                        sigma_s,
-                                        False)
-
-            # Assign the old function spaces
+            # Function spaces time marching
             if self.solving_method == 'STVK':
+                # Assign the old function spaces
                 u0d0.assign(ud)
 
             elif self.solving_method == 'MCK':
-                if ((self.iQuiet) and (self.iMUIFetchValue == False) and (self.iUseRBF == False)):
-                    pass
-                else:
-                    amck = self.AMCK (  dmck.vector(),
-                                        d0mck.vector(),
-                                        u0mck.vector(),
-                                        a0mck.vector(),
-                                        beta_gam)
+                amck = self.AMCK (dmck.vector(), d0mck.vector(), u0mck.vector(), a0mck.vector(), beta_gam)
+                umck = self.UMCK (amck, u0mck.vector(), a0mck.vector(), gamma_gam)
 
-                    umck = self.UMCK (  amck,
-                                        u0mck.vector(),
-                                        a0mck.vector(),
-                                        gamma_gam)
+                a0mck.vector()[:] = amck
+                u0mck.vector()[:] = umck
+                d0mck.vector()[:] = dmck.vector()
 
-                    a0mck.vector()[:] = amck
-                    u0mck.vector()[:] = umck
-                    d0mck.vector()[:] = dmck.vector()
-
-            # Move to next time step
+            # Sub-iterator counter reset
             i_sub_it = 1
+            # Physical time marching
             t += self.dt
+
             # Finish the wall clock
             simtimePerStep = wallClockPerStep.toc()
             if self.rank == 0:
                 print ("\n")
                 print ("{FENICS} Simulation time per step: %g [s] at timestep: %i" % (simtimePerStep, n_steps))
 
-        #===========================================
-        #%% Calculate wall time
-        #===========================================
+        #===============================================
+        #%% MPI barrier to wait for all solver to finish
+        #===============================================
 
         # Wait for the other solver
         self.ifaces3d["threeDInterface0"].barrier(t_sub_it)
