@@ -50,13 +50,13 @@ import numpy as np
 from mpi4py import MPI
 import structureFSISolver
 
-class linearElastic:
+class hyperElastic:
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def linearElasticSolve(self):
+    def hyperElasticSolve(self):
 
         #===========================================
         #%% Time marching parameters define
@@ -171,8 +171,8 @@ class linearElastic:
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating 3D boundary conditions ...   ", end="", flush=True)
-        bc1 = self.dirichletBCs.DirichletBCs(V,boundaries,1)
-        bcs = [bc1]
+        bc1,bc2 = self.dirichletBCs.DirichletMixedBCs(VV,boundaries,1)
+        bcs = [bc1,bc2]
         if self.rank == 0: print ("Done")
 
         #===========================================
@@ -205,35 +205,44 @@ class linearElastic:
         #%% Jacobin functions of structure
         #===========================================
 
-        if self.rank == 0: print ("{FENICS} Defining variational FORM functions ...   ", end="", flush=True)
+        if self.rank == 0: print ("{FENICS} Defining variational FORM and Jacobin functions ...   ", end="", flush=True)
+
         # Define the traction terms of the structure variational form
-        tF = dot(chi, self.tF_apply)
+        tF = dot(self.F_(d,gdim).T, self.tF_apply)
+        tF_ = dot(self.F_(d0,gdim).T, self.tF_apply)
 
-        Form_s_Update_Acce = self.AMCK (ddmck,
-                                        d0mck,
-                                        u0mck,
-                                        a0mck,
-                                        beta_gam)
+        # Define the transient terms of the structure variational form
+        Form_s_T = (1/k)*self.rho_s*inner((u-u0), psi)*dx
+        Form_s_T += (1/k)*inner((d-d0), phi)*dx
 
-        Form_s_Update_velo = self.UMCK (Form_s_Update_Acce,
-                                        u0mck,
-                                        a0mck,
-                                        gamma_gam)
+        # Define the stress terms and convection of the structure variational form
+        if self.iNonLinearMethod:
+            if self.rank == 0: print ("{FENICS} [Defining non-linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by the constitutive law of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). Valid for large deformations but small strain] ...   ", end="", flush=True)
+            Form_s_SC = inner(theta * self.Piola_Kirchhoff_fst(d,gdim) + (1 - theta) *
+                        self.Piola_Kirchhoff_fst(d0,gdim), grad(psi)) * dx
+            Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
+        else:
+            if self.rank == 0: print ("{FENICS} [Defining linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation). Valid for small-scale deformations only] ...   ", end="", flush=True)
+            Form_s_SC = inner(theta * self.Hooke_stress(d,gdim) + (1 - theta) *
+                        self.Hooke_stress(d0,gdim), grad(psi)) * dx
+            Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
 
-        Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,alpha_m_gam)
-        Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,alpha_f_gam)
-        Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,alpha_f_gam)
-        Form_s_M_Matrix = self.rho_s * inner(Form_s_Ga_Acce, chi) * dx
-        Form_s_M_for_C_Matrix = self.rho_s * inner(Form_s_Ga_velo, chi) * dx
-        Form_s_K_Matrix = inner(self.elastic_stress(Form_s_Ga_disp,gdim), sym(grad(chi))) * dx
-        Form_s_K_for_C_Matrix = inner(self.elastic_stress(Form_s_Ga_velo,gdim), sym(grad(chi))) * dx
-        Form_s_C_Matrix = alpha_rdc * Form_s_M_for_C_Matrix + beta_rdc * Form_s_K_for_C_Matrix
-        Form_s_F_Ext = tF * ds(2)
+        # Define the body forces and surface tractions terms of the structure variational form
+        Form_s_ET = -( theta * self.J_(d,gdim) * inner( (self.b_for()), psi ) +
+                    ( 1 - theta ) * self.J_(d0,gdim) * inner( (self.b_for()), psi ) ) * dx
+        Form_s_ET -= ( theta * self.J_(d,gdim) * inner( tF, psi ) +
+                    ( 1 - theta ) * self.J_(d0,gdim) * inner( tF_, psi ) ) * ds(2)
+        Form_s_ET -= ( theta * self.J_(d,gdim) * inner( inv(self.F_(d,gdim)) * sigma_s * N, psi )+
+                    ( 1 - theta ) * (self.J_(d0,gdim)) * inner(inv(self.F_(d0,gdim)) * sigma_s * N, psi )) * ds(2)
 
-        Form_s = Form_s_M_Matrix + Form_s_C_Matrix + Form_s_K_Matrix - Form_s_F_Ext
+        # Define the final form of the structure variational form
+        Form_s = Form_s_T + Form_s_SC + Form_s_ET
 
-        Bilinear_Form = lhs(Form_s)
-        Linear_Form   = rhs(Form_s)
+        # Make functional into a vector function
+        #Form_s = action(Form_s, ud)
+
+        # Define Jacobin functions
+        Jaco = derivative(Form_s, ud)
 
         if self.rank == 0: print ("Done")
 
@@ -241,24 +250,41 @@ class linearElastic:
         #%% Initialize solver
         #===========================================
 
-        if self.linear_solver == 'LU':
-            Bilinear_Assemble, Linear_Assemble = assemble_system(Bilinear_Form, Linear_Form, bcs)
-            solver = LUSolver(Bilinear_Assemble, "mumps")
-            solver.parameters["symmetric"] = True
+        problem = NonlinearVariationalProblem(Form_s, ud, bcs=bcs, J=Jaco)
+        solver = NonlinearVariationalSolver(problem)
 
-        elif self.linear_solver == 'LinearVariational':
-            problem = LinearVariationalProblem(Bilinear_Form, Linear_Form, dmck, bcs)
-            solver = LinearVariationalSolver(problem)
-            # Set linear solver parameters
-            solver.parameters["linear_solver"] = self.prbsolver
-            solver.parameters["preconditioner"] = self.prbpreconditioner
-            solver.parameters["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance
-            solver.parameters["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance
-            solver.parameters["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations
-            solver.parameters["krylov_solver"]["monitor_convergence"] = self.monitor_convergence
-            solver.parameters["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess
+        info(solver.parameters, False)
+        if self.nonlinear_solver == "newton":
+            solver.parameters["nonlinear_solver"]= self.nonlinear_solver
+            solver.parameters["newton_solver"]["absolute_tolerance"] = self.prbAbsolute_tolerance
+            solver.parameters["newton_solver"]["relative_tolerance"] = self.prbRelative_tolerance
+            solver.parameters["newton_solver"]["maximum_iterations"] = self.prbMaximum_iterations
+            solver.parameters["newton_solver"]["relaxation_parameter"] = self.prbRelaxation_parameter
+            solver.parameters["newton_solver"]["linear_solver"] = self.prbsolver
+            solver.parameters["newton_solver"]["preconditioner"] = self.prbpreconditioner
+            solver.parameters["newton_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance
+            solver.parameters["newton_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance
+            solver.parameters["newton_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations
+            solver.parameters["newton_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence
+            solver.parameters["newton_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess
+            solver.parameters["newton_solver"]["krylov_solver"]['error_on_nonconvergence'] = self.error_on_nonconvergence
+        elif self.nonlinear_solver == "snes":
+            solver.parameters['nonlinear_solver'] = self.nonlinear_solver
+            solver.parameters['snes_solver']['line_search'] = self.lineSearch
+            solver.parameters['snes_solver']['linear_solver'] = self.prbsolver
+            solver.parameters['snes_solver']['preconditioner'] = self.prbpreconditioner
+            solver.parameters['snes_solver']['absolute_tolerance'] = self.prbAbsolute_tolerance
+            solver.parameters['snes_solver']['relative_tolerance'] = self.prbRelative_tolerance
+            solver.parameters['snes_solver']['maximum_iterations'] = self.prbMaximum_iterations
+            solver.parameters['snes_solver']['report'] = self.show_report
+            solver.parameters['snes_solver']['error_on_nonconvergence'] = self.error_on_nonconvergence
+            solver.parameters["snes_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance
+            solver.parameters["snes_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance
+            solver.parameters["snes_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations
+            solver.parameters["snes_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence
+            solver.parameters["snes_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess
         else:
-            sys.exit("{FENICS} Error, linear solver value not recognized")
+            sys.exit("{FENICS} Error, nonlinear solver value not recognized")
 
         #===========================================
         #%% Setup checkpoint data
@@ -320,16 +346,12 @@ class linearElastic:
                 self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps)
 
                 if (not ((self.iContinueRun) and (n_steps == 1))):
-
-                    # Assemble linear form
-                    Linear_Assemble = assemble(Linear_Form)
-                    [bc.apply(Linear_Assemble) for bc in bcs]
                     # Solving the structure functions inside the time loop
                     solver.solve()
 
-                    force_X = dot(self.tF_apply, self.X_direction_vector())*ds(2)
-                    force_Y = dot(self.tF_apply, self.Y_direction_vector())*ds(2)
-                    force_Z = dot(self.tF_apply, self.Z_direction_vector())*ds(2)
+                    force_X = dot(tF, self.X_direction_vector())*ds(2)
+                    force_Y = dot(tF, self.Y_direction_vector())*ds(2)
+                    force_Z = dot(tF, self.Z_direction_vector())*ds(2)
 
                     f_X_a = assemble(force_X)
                     f_Y_a = assemble(force_Y)
@@ -342,15 +364,18 @@ class linearElastic:
                 else:
                     pass
 
+                # Split function spaces
+                u,d = ud.split(True)
+
                 # Compute and print the displacement of monitored point
-                self.print_Disp(dmck)
+                self.print_Disp(d)
 
                 # MUI Push internal points and commit current steps
                 if (self.iMUICoupling):
                     if (len(xyz_push)!=0):
                         self.MUI_Push(xyz_push,
                                       dofs_push_list,
-                                      dmck,
+                                      d,
                                       t_sub_it)
                     else:
                         self.MUI_Commit_only(t_sub_it)
@@ -360,23 +385,21 @@ class linearElastic:
                 # Increment of sub-iterations
                 i_sub_it += 1
 
+            # Split function spaces
+            u,d = ud.split(True)
+            u0,d0 = u0d0.split(True)
+
             # Mesh motion
-            self.Move_Mesh(V, dmck, d0mck, mesh)
+            self.Move_Mesh(V, d, d0, mesh)
 
             # Data output
             if (not (self.iQuiet)):
-                self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, dmck)
-                self.Export_Disp_txt(dmck)
+                self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, d)
+                self.Export_Disp_txt(d)
                 self.Checkpoint_Output(t, mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
 
-            # Function spaces time marching
-
-            amck = self.AMCK (dmck.vector(), d0mck.vector(), u0mck.vector(), a0mck.vector(), beta_gam)
-            umck = self.UMCK (amck, u0mck.vector(), a0mck.vector(), gamma_gam)
-
-            a0mck.vector()[:] = amck
-            u0mck.vector()[:] = umck
-            d0mck.vector()[:] = dmck.vector()
+            # Assign the old function spaces
+            u0d0.assign(ud)
 
             # Sub-iterator counter reset
             i_sub_it = 1

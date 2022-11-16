@@ -61,6 +61,7 @@ import mui4py
 import structureFSISolver.cfgPrsFn
 import structureFSISolver.lameParm
 import structureFSISolver.solvers.linearElasticSolver
+import structureFSISolver.solvers.hyperElasticSolver
 
 #_________________________________________________________________________________________
 #
@@ -69,7 +70,8 @@ import structureFSISolver.solvers.linearElasticSolver
 
 class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                          structureFSISolver.lameParm.lameParm,
-                         structureFSISolver.solvers.linearElasticSolver.linearElastic):
+                         structureFSISolver.solvers.linearElasticSolver.linearElastic,
+                         structureFSISolver.solvers.hyperElasticSolver.hyperElastic):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solver initialize
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1699,10 +1701,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #===========================================
 
         if self.solving_method == 'STVK':
-            pass
+            self.hyperElasticSolve()
         elif self.solving_method == 'MCK':
             self.linearElasticSolve()
-
+        else:
+            sys.exit("{FENICS} Error, solving method not recognised")
         #===========================================
         #%% Calculate wall time
         #===========================================
