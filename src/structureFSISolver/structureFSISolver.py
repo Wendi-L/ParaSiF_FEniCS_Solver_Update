@@ -1,8 +1,8 @@
-""" 
+"""
     Parallel Partitioned Multi-physical Simulation Framework (ParaSiF)
 
-    Copyright (C) 2021 Engineering and Environment Group, Scientific 
-    Computing Department, Science and Technology Facilities Council, 
+    Copyright (C) 2021 Engineering and Environment Group, Scientific
+    Computing Department, Science and Technology Facilities Council,
     UK Research and Innovation. All rights reserved.
 
     This code is licensed under the GNU General Public License version 3
@@ -21,15 +21,15 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     *********************************************************************
-    
+
     @file structureFSISolver.py
-    
+
     @author W. Liu
-    
+
     @brief This is a part of the Parallel Partitioned Multi-physical Simu-
-    lation Framework provides FEniCS v2019.1.0 <-> MUI v1.2 <-> OpenFOAM v6 
+    lation Framework provides FEniCS v2019.1.0 <-> MUI v1.2 <-> OpenFOAM v6
     two-way coupling.
 
     Incompressible Navier-Stokes equations for fluid domain in OpenFOAM
@@ -66,19 +66,19 @@ import structureFSISolver.solvers.linearElasticSolver
 #
 #%% Main Structure Solver Class
 #_________________________________________________________________________________________
-    
+
 class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                          structureFSISolver.lameParm.lameParm,
                          structureFSISolver.solvers.linearElasticSolver.linearElastic):
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solver initialize
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def __init__(   self, 
-                    Configure, 
-                    FixedSubdomain, 
-                    FlexSubdomain, 
-                    SymmetrySubdomain, 
-                    DirichletBoundaryConditions):
+    def __init__(self,
+                 Configure,
+                 FixedSubdomain,
+                 FlexSubdomain,
+                 SymmetrySubdomain,
+                 DirichletBoundaryConditions):
 
         #===========================================
         #%% Obtain files and instances
@@ -96,7 +96,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         self.dirichletBCs = DirichletBoundaryConditions
 
         #===========================================
-        #%% Debug mode on/off switch 
+        #%% Debug mode on/off switch
         #===========================================
 
         # F-Switch off the debug level codes (if any); T-Switch on the debug level codes (if any).
@@ -105,7 +105,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         self.iQuiet = self.cfg['LOGGING'].getboolean('iQuiet')
 
         #===========================================
-        #%% MUI switches & parameters 
+        #%% MUI switches & parameters
         #===========================================
         # F-Switch off the MUI coupling function; T-Switch on the MUI coupling function.
         self.iMUICoupling = self.cfg['MUI'].getboolean('iMUICoupling')
@@ -283,7 +283,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         self.TChangeSubIter = float(self.cfg['TIME']['TChangeSubIter'])
         # New numbers of sub-iterations (integer) [-]
         self.num_sub_iteration_new = int(self.cfg['TIME']['num_sub_iteration_new'])
-        
+
         #===========================================
         #%% Time marching accurate control
         #===========================================
@@ -382,14 +382,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Initialize MPI by mpi4py/MUI for parallelized computation
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def MPI_Init (self):
-
+    def MUI_Init(self):
         if self.iMUICoupling:
-            # App common world claims 
+            # App common world claims
             self.LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
             # MUI parameters
             dimensionMUI = 3
-            data_types = {"dispX": mui4py.FLOAT64, 
+            data_types = {"dispX": mui4py.FLOAT64,
                           "dispY": mui4py.FLOAT64,
                           "dispZ": mui4py.FLOAT64,
                           "forceX": mui4py.FLOAT64,
@@ -407,7 +406,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             petsc4py.init(comm=self.LOCAL_COMM_WORLD)
 
         else:
-            # App common world claims    
+            # App common world claims
             self.LOCAL_COMM_WORLD = MPI.COMM_WORLD
 
         # Define local communicator rank
@@ -420,13 +419,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Define MUI samplers and commit ZERO step
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def MUI_Sampler_Define( self,
-                            function_space,
-                            grid_dimension,
-                            dofs_fetch_list,
-                            dofs_push_list,
-                            xyz_fetch,
-                            Total_Time_Steps):
+    def MUI_Sampler_Define(self,
+                           function_space,
+                           grid_dimension,
+                           dofs_fetch_list,
+                           dofs_push_list,
+                           xyz_fetch,
+                           Total_Time_Steps):
 
         if self.iMUICoupling:
             synchronised=False
@@ -635,14 +634,14 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             self.t_sampler = mui4py.ChronoSamplerExact()
 
             self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher,
-                                                    point3dList,
-                                                    self.basisFunc,
-                                                    self.iConservative,
-                                                    self.iPolynomial,
-                                                    self.iSmoothFunc,
-                                                    self.iReadMatrix,
-                                                    fileAddress,
-                                                    self.cutoffRBF)
+                                               point3dList,
+                                               self.basisFunc,
+                                               self.iConservative,
+                                               self.iPolynomial,
+                                               self.iSmoothFunc,
+                                               self.iReadMatrix,
+                                               fileAddress,
+                                               self.cutoffRBF)
 
             with open(fileAddress+'/pointID.dat', 'w') as f_pid:
                 for pid in point3dGlobalID:
@@ -723,62 +722,36 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
             hdfOutTemp.write(mesh, "/mesh")
             hdfOutTemp.close()
-            del hdfOutTemp               
+            del hdfOutTemp
             if self.rank == 0: print ("Done")
 
         if self.iInteractiveMeshShow:
             if self.rank == 0: print ("{FENICS} Interactive Mesh Show ...", end="", flush=True)
             import matplotlib.pyplot as plt
             plt.figure()
-            p = plot(mesh, title = "Mesh plot")        
+            p = plot(mesh, title = "Mesh plot")
             plt.show()
             if self.rank == 0: print ("Done")
 
         return mesh
 
-    def Mesh_Original_Generation(self, mesh):
-        if self.iContinueRun:
-            # Restart simulation
-            if self.iMeshLoad:
-                # Load mesh from file
-                hdfInTemp = HDF5File(mesh.mpi_comm(), self.inputFolderPath + "/checkpointData.h5", "r")
-                mesh_original = Mesh(mesh)                    # Store original mesh
-                hdfInTemp.read(mesh_original, "/meshOri", False)
-                hdfInTemp.close()
-                del hdfInTemp
-            else:
-                # Generate mesh
-                mesh_original = Mesh(mesh)                    # Store original mesh
-        else:
-            mesh_original = Mesh(mesh)                    # Store original mesh
-
-        return mesh_original
-
     def Get_Grid_Dimension(self, mesh):
-
-        grid_dimension = mesh.geometry().dim()            # Geometry dimensions
-
+        # Geometry dimensions
+        grid_dimension = mesh.geometry().dim()
         return grid_dimension
 
     def Get_Face_Narmal(self, mesh):
-
-        face_narmal = FacetNormal(mesh)                   # Face normal vector
-
+        # Face normal vector
+        face_narmal = FacetNormal(mesh)
         return face_narmal
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define SubDomains and boundaries
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Boundaries_Generation_Fixed_Flex_Sym (self,
-                                              mesh,
-                                              grid_dimension,
-                                              VectorFunctionSpace):
+    def Boundaries_Generation_Fixed_Flex_Sym (self, mesh, grid_dimension, VectorFunctionSpace):
 
-        #===========================================
-        #%% Define SubDomains
-        #===========================================
-
+        #Define SubDomains
         if self.iMeshLoad and self.iSubdomainsImport:
             if self.iLoadXML:
                 if self.rank == 0: print ("{FENICS} Loading XML subdomains ...   ", end="", flush=True)
@@ -812,10 +785,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             del hdfOutTemp
             if self.rank == 0: print ("Done")
 
-        #===========================================
-        #%% Define and mark mesh boundaries
-        #===========================================
-
+        #Define and mark mesh boundaries
         if self.iMeshLoad and self.iBoundariesImport:
             if self.iLoadXML:
                 if self.rank == 0: print ("{FENICS} Loading XML boundaries ...   ", end="", flush=True)
@@ -859,7 +829,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         return boundaries
 
     def Get_ds(self, mesh, boundaries):
-
         return Measure("ds", domain=mesh, subdomain_data=boundaries)
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -868,35 +837,35 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
     def Time_Marching_Parameters(self):
         if self.iContinueRun:
-            if True:
-                hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
-                self.Start_Time = hdf5checkpointDataInTemp.attributes("/ud/vector_0")["timestamp"] # Start time [s]
-                self.Start_Time += self.dt                                                         # Start time [s]
-                hdf5checkpointDataInTemp.close()
-                del hdf5checkpointDataInTemp                                                  # Delete HDF5File object, closing file
-                self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)                         # Time steps [-]
-            else:
-                self.Start_Time = self.dt                                                          # Start time [s]
-                self.Time_Steps = math.ceil(self.T/self.dt)                                        # Time steps [-]
+            hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
+            # Read start time [s]
+            self.Start_Time = self.dt + hdf5checkpointDataInTemp.attributes("/ud/vector_0")["timestamp"]
+            # Calculate time steps [-]
+            self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)
+            # Close file and delete HDF5File object
+            hdf5checkpointDataInTemp.close()
+            del hdf5checkpointDataInTemp
         else:
-            if (self.iResetStartTime):
-                self.Start_Time = self.newStartTime+self.dt                                        # Start time [s]
-                self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)                         # Time steps [-]
+            if self.iResetStartTime:
+                # Reset start time [s]
+                self.Start_Time = self.dt + self.newStartTime
+                # Calculate time steps [-]
+                self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)
             else:
-                self.Start_Time = self.dt                                                          # Start time [s]
-                self.Time_Steps = math.ceil(self.T/self.dt)                                        # Time steps [-]
-        self.Start_Number_Sub_Iteration = 1                                                    # Initialize sub-iterations counter
+                # Set start time [s]
+                self.Start_Time = self.dt
+                # Calculate time steps [-]
+                self.Time_Steps = math.ceil(self.T/self.dt)
+        # Initialise sub-iterations counter
+        self.Start_Number_Sub_Iteration = 1
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    #%% Define DOFs extract function 
-    #%% and 
+    #%% Define DOFs extract function
+    #%% and
     #%% DOFs-Coordinates mapping function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-    def get_subdomain_dofs( self, 
-                            MeshFunction, 
-                            VectorFunctionSpace, 
-                            boundary):
+
+    def get_subdomain_dofs(self, MeshFunction, VectorFunctionSpace, boundary):
         # Helper function to extract dofs from a subdomain.
         # This is only done once if the mesh do not change.
         # In this StructureFSISolver, we use this function 
@@ -910,17 +879,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # Convert dofs to coordinates
         return FunctionSpace.tabulate_dof_coordinates().reshape((-1, dimension))
 
-    def dofs_list(self,
-                  MeshFunction,
-                  FunctionSpace,
-                  boundary):
-
+    def dofs_list(self, MeshFunction, FunctionSpace, boundary):
         return list(self.get_subdomain_dofs(MeshFunction, FunctionSpace, boundary))
 
-    def xyz_np(self,
-               dofs_list,
-               FunctionSpace,
-               dimension):
+    def xyz_np(self, dofs_list, FunctionSpace, dimension):
         xyz_np = np.zeros((len(dofs_list), dimension))
         for i, p in enumerate(dofs_list):
             xyz_np[i] = self.dofs_to_xyz(FunctionSpace, dimension)[p]
@@ -930,15 +892,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Define facet areas
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def facets_area_list(   self, 
-                            MPI_COMM_WORLD, 
-                            mesh, 
-                            FunctionSpace, 
-                            boundary, 
-                            dofs_fetch_list, 
-                            dimension,
-                            temp_vec_function):
-
+    def facets_area_list_calculation(self,
+                                     mesh,
+                                     FunctionSpace,
+                                     boundary,
+                                     dofs_fetch_list,
+                                     dimension):
         areatotal = 0.0
         areatotal_local = 0.0
         cell2dofs = FunctionSpace.dofmap().cell_dofs
@@ -980,76 +939,49 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                             d_num+=1
                     if (len(d_list)!=0):
                         for ii, pp in enumerate(d_list):
-                            # temp_vec_function[pp] += area/d_num
-                            temp_vec_function[pp] += area/dofs_Per_Cell
+                            # self.areaf_vec[pp] += area/d_num
+                            self.areaf_vec[pp] += area/dofs_Per_Cell
 
-        for iii, ppp in enumerate(temp_vec_function):
-            areatotal += temp_vec_function[iii]
+        for iii, ppp in enumerate(self.areaf_vec):
+            areatotal += self.areaf_vec[iii]
 
         if (self.rank == 0) and self.iDebug:
             print("Total area of MUI fetched surface= ", areatotal, " m^2")
 
-        return temp_vec_function
-
     def facets_area_define(self,
-                        meshOri,
-                        QOri,
-                        boundariesOri,
-                        dofs_fetch_list,
-                        gdimOri):
-
-            self.areaf= Function(QOri)             # Function for facet area
-
+                           mesh,
+                           Q,
+                           boundaries,
+                           dofs_fetch_list,
+                           gdim):
+            # Define function for facet area
+            self.areaf= Function(Q)
             self.areaf_vec = self.areaf.vector().get_local()
 
-            if (not self.iLoadAreaList):
-                if self.rank == 0: print ("{FENICS} facet area calculating")
-
-                self.areaf_vec = self.facets_area_list(  self.LOCAL_COMM_WORLD,
-                                                    meshOri,
-                                                    QOri,
-                                                    boundariesOri,
-                                                    dofs_fetch_list,
-                                                    gdimOri,
-                                                    self.areaf_vec)
-
-                # Apply the facet area vectors
-                self.areaf.vector().set_local(self.areaf_vec)
-                self.areaf.vector().apply("insert")
-                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
-                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
-                else:
-                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
-                hdfOutTemp.write(self.areaf, "/areaf")
-                hdfOutTemp.close()
-
-            else:
-
+            if self.iLoadAreaList:
                 hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
                 hdf5meshAreaDataInTemp.read(self.areaf, "/areaf/vector_0")
                 hdf5meshAreaDataInTemp.close()
+            else:
+                if self.rank == 0: print ("{FENICS} facet area calculating")
+                # Calculate function for facet area
+                self.facets_area_list_calculation(mesh, Q, boundaries, dofs_fetch_list, gdim)
+                # Apply the facet area vectors
+                self.areaf.vector().set_local(self.areaf_vec)
+                self.areaf.vector().apply("insert")
+                # Facet area vectors I/O
+                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
+                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
+                    hdfOutTemp.write(self.areaf, "/areaf")
+                    hdfOutTemp.close()
+                else:
+                    pass
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    #%% Define MUI Fetch and Push 
+    #%% Define MUI Fetch and Push
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def f_p_steps ( self, 
-                    Current_Time_Step, 
-                    current_Sub_Iteration):
-        # MUI calculate fetch/push iteration steps
-        return ((Current_Time_Step - 1) * self.num_sub_iteration + current_Sub_Iteration)
-
-    def forget_p_steps (    self, 
-                            Current_Time_Step, 
-                            current_Sub_Iteration):
-        # MUI calculate forget iteration steps
-        return ((Current_Time_Step - self.forgetTStepsMUI - 1) * self.num_sub_iteration + current_Sub_Iteration)
-
-    def MUI_Fetch ( self,
-                    dofs_to_xyz, 
-                    dofs_fetch_list,
-                    total_Sub_Iteration):
-
+    def MUI_Fetch(self, dofs_to_xyz, dofs_fetch_list, total_Sub_Iteration):
         totForceX = 0.0
         totForceY = 0.0
         totForceZ = 0.0
@@ -1063,29 +995,32 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         if (fetch_iteration >= 0):
             if self.iMUIFetchMany:
                 temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
-                            fetch_many("forceX", 
-                                        dofs_to_xyz,
-                                        fetch_iteration,
-                                        self.s_sampler,
-                                        self.t_sampler)
+                            fetch_many("forceX",
+                                       dofs_to_xyz,
+                                       fetch_iteration,
+                                       self.s_sampler,
+                                       self.t_sampler)
                 temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
-                            fetch_many("forceY", 
-                                        dofs_to_xyz,
-                                        fetch_iteration,
-                                        self.s_sampler,
-                                        self.t_sampler)
+                            fetch_many("forceY",
+                                       dofs_to_xyz,
+                                       fetch_iteration,
+                                       self.s_sampler,
+                                       self.t_sampler)
                 temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
-                            fetch_many("forceZ", 
-                                        dofs_to_xyz,
-                                        fetch_iteration,
-                                        self.s_sampler,
-                                        self.t_sampler)
+                            fetch_many("forceZ",
+                                       dofs_to_xyz,
+                                       fetch_iteration,
+                                       self.s_sampler,
+                                       self.t_sampler)
 
                 for i, p in enumerate(dofs_fetch_list):
                     if self.iparallelFSICoupling:
-                        self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
-                        self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
-                        self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
+                        self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - \
+                                                       self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
+                        self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - \
+                                                       self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
+                        self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - \
+                                                       self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
                     else:
                         self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
                         self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
@@ -1107,28 +1042,34 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             else:
                 if (fetch_iteration >= 0):
                     for i, p in enumerate(dofs_fetch_list):
-                        temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceX",
-                                                    dofs_to_xyz[i], 
-                                                    fetch_iteration,
-                                                    self.s_sampler,
-                                                    self.t_sampler)
+                        temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].\
+                                    fetch("forceX",
+                                          dofs_to_xyz[i],
+                                          fetch_iteration,
+                                          self.s_sampler,
+                                          self.t_sampler)
 
-                        temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceY", 
-                                                    dofs_to_xyz[i], 
-                                                    fetch_iteration,
-                                                    self.s_sampler,
-                                                    self.t_sampler)
+                        temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].\
+                                    fetch("forceY",
+                                          dofs_to_xyz[i],
+                                          fetch_iteration,
+                                          self.s_sampler,
+                                          self.t_sampler)
 
-                        temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].fetch("forceZ", 
-                                                    dofs_to_xyz[i], 
-                                                    fetch_iteration,
-                                                    self.s_sampler,
-                                                    self.t_sampler)
+                        temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].\
+                                    fetch("forceZ",
+                                          dofs_to_xyz[i],
+                                          fetch_iteration,
+                                          self.s_sampler,
+                                          self.t_sampler)
 
                         if self.iparallelFSICoupling:
-                            self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
-                            self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
-                            self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
+                            self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - \
+                                                           self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
+                            self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - \
+                                                           self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
+                            self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - \
+                                                           self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
                         else:
                             self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
                             self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
@@ -1143,65 +1084,67 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         self.tF_apply_vec[2::3][p] /= self.areaf_vec[p]
 
                     if self.iDebug:
-                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ, 
+                        print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ,
                                 "; at iteration: ", fetch_iteration, " at rank: ", self.rank)
 
-    def MUI_Push(   self,
-                    dofs_to_xyz, 
-                    dofs_push, 
-                    displacement_function, 
-                    total_Sub_Iteration):
-
+    def MUI_Push(self, dofs_to_xyz, dofs_push, displacement_function, total_Sub_Iteration):
         d_vec_x = displacement_function.vector().get_local()[0::3]
         d_vec_y = displacement_function.vector().get_local()[1::3]
         d_vec_z = displacement_function.vector().get_local()[2::3]
 
         if self.iMUIPushMany:
             if self.iPushX:
-                self.ifaces3d["threeDInterface0"].push_many("dispX", dofs_to_xyz,
-                                                            (d_vec_x[dofs_push]))
+                self.ifaces3d["threeDInterface0"].\
+                            push_many("dispX", dofs_to_xyz, (d_vec_x[dofs_push]))
             if self.iPushY:
-                self.ifaces3d["threeDInterface0"].push_many("dispY", dofs_to_xyz,
-                                                        (d_vec_y[dofs_push]))
+                self.ifaces3d["threeDInterface0"].\
+                            push_many("dispY", dofs_to_xyz, (d_vec_y[dofs_push]))
             if self.iPushZ:
-                self.ifaces3d["threeDInterface0"].push_many("dispZ", dofs_to_xyz,
-                                                        (d_vec_z[dofs_push]))
-            a = self.ifaces3d["threeDInterface0"].commit(total_Sub_Iteration)
+                self.ifaces3d["threeDInterface0"].\
+                            push_many("dispZ", dofs_to_xyz, (d_vec_z[dofs_push]))
 
+            a = self.ifaces3d["threeDInterface0"].\
+                            commit(total_Sub_Iteration)
         else:
             if self.iPushX:
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].push("dispX", dofs_to_xyz[i],
-                                                            (d_vec_x[p]))
+                    self.ifaces3d["threeDInterface0"].\
+                            push("dispX", dofs_to_xyz[i], (d_vec_x[p]))
             if self.iPushY:
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].push("dispY", dofs_to_xyz[i],
-                                                            (d_vec_y[p]))
+                    self.ifaces3d["threeDInterface0"].\
+                            push("dispY", dofs_to_xyz[i], (d_vec_y[p]))
             if self.iPushZ:
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].push("dispZ", dofs_to_xyz[i],
-                                                            (d_vec_z[p]))
-            a = self.ifaces3d["threeDInterface0"].commit(total_Sub_Iteration)
+                    self.ifaces3d["threeDInterface0"].\
+                            push("dispZ", dofs_to_xyz[i], (d_vec_z[p]))
+
+            a = self.ifaces3d["threeDInterface0"].\
+                            commit(total_Sub_Iteration)
 
         if (self.rank == 0) and self.iDebug:
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
         if ((total_Sub_Iteration-self.forgetTStepsMUI) > 0):
-            a = self.ifaces3d["threeDInterface0"].forget(total_Sub_Iteration-self.forgetTStepsMUI)
-            self.ifaces3d["threeDInterface0"].set_memory(self.forgetTStepsMUI)
+            a = self.ifaces3d["threeDInterface0"].\
+                            forget(total_Sub_Iteration-self.forgetTStepsMUI)
+            self.ifaces3d["threeDInterface0"].\
+                            set_memory(self.forgetTStepsMUI)
             if (self.rank == 0) and self.iDebug:
                 print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI))
 
     def MUI_Commit_only(self, total_Sub_Iteration):
-
-        a = self.ifaces3d["threeDInterface0"].commit(total_Sub_Iteration)
+        a = self.ifaces3d["threeDInterface0"].\
+                            commit(total_Sub_Iteration)
 
         if (self.rank == 0) and self.iDebug:
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
         if ((total_Sub_Iteration-self.forgetTStepsMUI) > 0):
-            a = self.ifaces3d["threeDInterface0"].forget(total_Sub_Iteration-self.forgetTStepsMUI)
-            self.ifaces3d["threeDInterface0"].set_memory(self.forgetTStepsMUI)
+            a = self.ifaces3d["threeDInterface0"].\
+                            forget(total_Sub_Iteration-self.forgetTStepsMUI)
+            self.ifaces3d["threeDInterface0"].\
+                            set_memory(self.forgetTStepsMUI)
             if (self.rank == 0) and self.iDebug:
                 print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI))
 
@@ -1224,15 +1167,14 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def b_for (self):
-
-        b_for_ext = Constant((self.bForExtX, self.bForExtY, self.bForExtZ)) # Body external forces [N/m^3]
-
+        # Body external forces define [N/m^3]
+        b_for_ext = Constant((self.bForExtX, self.bForExtY, self.bForExtZ))
+        # Gravitational force define [N/m^3]
         if self.iGravForce:
-            g_force = Constant((0.0, (self.rho_s * (-9.81)), 0.0))          # Gravitational force [N/m^3]
+            g_force = Constant((0.0, (self.rho_s * (-9.81)), 0.0))
         else:
-            g_force = Constant((0.0, (0.0 * (-9.81)), 0.0))                 # Gravitational force [N/m^3]
-
-        return (b_for_ext + g_force)                                        # Body total forces [N/m^3]
+            g_force = Constant((0.0, (0.0 * (-9.81)), 0.0))
+        return (b_for_ext + g_force)
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define Lame parameters
@@ -1243,143 +1185,140 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         return (2.0*(self.mu_s())*self.nu_s/(1.0-2.0*self.nu_s))
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    #%% Define Generalized-alpha method functions
+    #%% Define Generalised-alpha method functions
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     # Define the acceleration at the present time step
-    def Acceleration_March_Term_One(self, 
-                                    displacement_function, 
-                                    displacement_previous_function, 
+    def Acceleration_March_Term_One(self,
+                                    displacement_function,
+                                    displacement_previous_function,
                                     velocity_previous_function):
-        return (2* (displacement_function - displacement_previous_function - 
-                (self.dt*velocity_previous_function))/
-                (self.dt**2))
+        return (2 * (displacement_function - displacement_previous_function -
+                     (self.dt * velocity_previous_function))/
+                     (self.dt**2))
 
-    def Acceleration_March_Term_Two(self, 
+    def Acceleration_March_Term_Two(self,
                                     acceleration_previous_function,
                                     beta_gam):
-        return ((1-(2*beta_gam)) * acceleration_previous_function)
+        return ((1 - (2 * beta_gam)) * acceleration_previous_function)
 
     def Acceleration_March_Term_Three(self, beta_gam):
-        return (1 / (2*beta_gam))
+        return (1 / (2 * beta_gam))
 
-    def AMCK (self,
-              displacement_function,
-              displacement_previous_function,
-              velocity_previous_function,
-              acceleration_previous_function,
-              beta_gam):
-        return (self.Acceleration_March_Term_Three(beta_gam) * 
-                (self.Acceleration_March_Term_One(displacement_function,
-                displacement_previous_function,velocity_previous_function) - 
-                self.Acceleration_March_Term_Two(acceleration_previous_function,beta_gam)))
+    def AMCK(self,
+             displacement_function,
+             displacement_previous_function,
+             velocity_previous_function,
+             acceleration_previous_function,
+             beta_gam):
+        return (self.Acceleration_March_Term_Three(beta_gam) *
+                    (self.Acceleration_March_Term_One(displacement_function,
+                    displacement_previous_function,
+                    velocity_previous_function) -
+                    self.Acceleration_March_Term_Two(acceleration_previous_function,beta_gam)))
 
     # Define the velocity at the present time step
-    def Velocity_March_Term_One(self, 
+    def Velocity_March_Term_One(self,
                                 acceleration_previous_function,
                                 gamma_gam):
-        return ((1-gamma_gam)*acceleration_previous_function * self.dt)
+        return ((1 - gamma_gam) * acceleration_previous_function * self.dt)
 
-    def Velocity_March_Term_Two(self, 
+    def Velocity_March_Term_Two(self,
                                 acceleration_function,
                                 gamma_gam):
         return (acceleration_function * gamma_gam * self.dt)
 
-    def UMCK (self,
-              acceleration_function,
-              velocity_previous_function,
-              acceleration_previous_function,
-              gamma_gam):
-        return (self.Velocity_March_Term_One(acceleration_previous_function,gamma_gam) + 
-                self.Velocity_March_Term_Two(acceleration_function,gamma_gam) + 
+    def UMCK(self,
+             acceleration_function,
+             velocity_previous_function,
+             acceleration_previous_function,
+             gamma_gam):
+        return (self.Velocity_March_Term_One(acceleration_previous_function, gamma_gam) +
+                self.Velocity_March_Term_Two(acceleration_function, gamma_gam) +
                 velocity_previous_function)
 
     # define the calculation of intermediate averages based on generalized alpha method
-    def Generalized_Alpha_Weights ( self,
-                                    present_function,
-                                    previous_function,
-                                    weights):
-        return (weights * previous_function + \
-               (1-weights) * present_function)
+    def Generalized_Alpha_Weights(self,
+                                  present_function,
+                                  previous_function,
+                                  weights):
+        return (weights * previous_function + (1 - weights) * present_function)
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define Stress, force gradient and its
     #%% determination functions
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def I (self, grid_dimension):
+    def I(self, grid_dimension):
         # Define the Identity matrix
-        return (Identity(grid_dimension))       
+        return (Identity(grid_dimension))
 
-    def F_ (self, displacement_function, grid_dimension):
+    def F_(self, displacement_function, grid_dimension):
         # Define the deformation gradient
-        return (self.I(grid_dimension)+nabla_grad(displacement_function))
+        return (self.I(grid_dimension) + nabla_grad(displacement_function))
 
-    def J_ (self, displacement_function, grid_dimension):
+    def J_(self, displacement_function, grid_dimension):
         # Define the determinant of the deformation gradient
         return det(self.F_(displacement_function,grid_dimension))
 
-    def C (self, displacement_function, grid_dimension):
+    def C(self, displacement_function, grid_dimension):
         # Define the right Cauchy-Green strain tensor
-        return ((self.F_(displacement_function,grid_dimension).T)*
-                self.F_(displacement_function,grid_dimension)) 
+        return ((self.F_(displacement_function, grid_dimension).T) *
+                self.F_(displacement_function, grid_dimension))
 
-    def E (self, displacement_function, grid_dimension):
+    def E(self, displacement_function, grid_dimension):
         # Define the non-linear Lagrangian Green strain tensor
-        return (0.5*(self.C(displacement_function,grid_dimension)-self.I(grid_dimension))) 
+        return (0.5 * (self.C(displacement_function, grid_dimension) - self.I(grid_dimension)))
 
-    def epsilon (self, displacement_function, grid_dimension):
+    def epsilon(self, displacement_function, grid_dimension):
         # Define the linear Lagrangian Green strain tensor
-        return (0.5*(nabla_grad(displacement_function)+
-                (nabla_grad(displacement_function).T))) 
+        return (0.5 * (nabla_grad(displacement_function) + (nabla_grad(displacement_function).T)))
 
     def Piola_Kirchhoff_sec(self, displacement_function, strain_tensor, grid_dimension):
-        # Define the Second Piola-Kirchhoff stress tensor by the constitutive law 
-        #   of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). 
+        # Define the Second Piola-Kirchhoff stress tensor by the constitutive law
+        #   of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation).
         #   Valid for large deformations but small strain.
-        return (self.lamda_s()*tr(strain_tensor(displacement_function,grid_dimension))*
-                self.I(grid_dimension)+2.0*self.mu_s()*
-                strain_tensor(displacement_function,grid_dimension))
+        return (self.lamda_s() * tr(strain_tensor(displacement_function, grid_dimension)) *
+                self.I(grid_dimension) + 2.0 * self.mu_s() *
+                strain_tensor(displacement_function, grid_dimension))
 
-    def cauchy_stress (self, displacement_function, strain_tensor, grid_dimension):
+    def cauchy_stress(self, displacement_function, strain_tensor, grid_dimension):
         # Define the Cauchy stress tensor
-        return ((1/self.J_(displacement_function,grid_dimension))*
-                (self.F_(displacement_function,grid_dimension))*
-                (self.Piola_Kirchhoff_sec(displacement_function,strain_tensor,grid_dimension))*
-                (self.F_(displacement_function,grid_dimension).T))
+        return ((1 / self.J_(displacement_function, grid_dimension)) *
+                (self.F_(displacement_function, grid_dimension)) *
+                (self.Piola_Kirchhoff_sec(displacement_function, strain_tensor,grid_dimension)) *
+                (self.F_(displacement_function, grid_dimension).T))
 
     def Piola_Kirchhoff_fst(self, displacement_function, grid_dimension):
-        # Define the First Piola-Kirchhoff stress tensor by the constitutive law 
-        #   of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). 
+        # Define the First Piola-Kirchhoff stress tensor by the constitutive law
+        #   of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation).
         #   Valid for large deformations but small strain.
-        return (self.J_(displacement_function,grid_dimension)*
-                self.cauchy_stress(displacement_function,self.E,grid_dimension)*
-                inv(self.F_(displacement_function,grid_dimension).T))
+        return (self.J_(displacement_function, grid_dimension) *
+                self.cauchy_stress(displacement_function, self.E,grid_dimension) *
+                inv(self.F_(displacement_function, grid_dimension).T))
 
     def Hooke_stress(self, displacement_function, grid_dimension):
-        # Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation). 
+        # Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation).
         #   Valid for small-scale deformations only.
-        return (self.J_(displacement_function,grid_dimension)*
-                self.cauchy_stress(displacement_function,self.epsilon,grid_dimension)*
-                inv(self.F_(displacement_function,grid_dimension).T))
+        return (self.J_(displacement_function, grid_dimension) *
+                self.cauchy_stress(displacement_function, self.epsilon, grid_dimension) *
+                inv(self.F_(displacement_function, grid_dimension).T))
 
-    def elastic_stress (self, displacement_function, grid_dimension):
+    def elastic_stress(self, displacement_function, grid_dimension):
         # Define the elastic stress tensor
-        return (2.0*self.mu_s()*sym(grad(displacement_function))+ 
-                self.lamda_s()*tr(sym(grad(displacement_function)))*self.I(grid_dimension))
+        return (2.0 * self.mu_s() * sym(grad(displacement_function)) +
+                self.lamda_s() * tr(sym(grad(displacement_function))) * self.I(grid_dimension))
 
-    def Traction_Define(self,
-                        VectorFunctionSpace):
+    def Traction_Define(self, VectorFunctionSpace):
         if self.iNonUniTraction:
             if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
             self.tF_apply = Function(VectorFunctionSpace)
             self.tF_apply_vec = self.tF_apply.vector().get_local()
-
         else:
             if self.rank == 0: print ("{FENICS} Uniform traction applied")
             self.tF_magnitude = Constant(0.0 *self.X_direction_vector() +
                                     0.0 *self.Y_direction_vector() +
-                                    0.0 *self.Z_direction_vector() )
+                                    0.0 *self.Z_direction_vector())
             self.tF_apply = self.tF_magnitude
 
     def Traction_Assign(self, xyz_fetch, dofs_fetch_list, t_sub_it, n_steps):
@@ -1388,7 +1327,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             if len(xyz_fetch)!=0:
                 # Execute only when there are DoFs need to exchange data in this rank.
                 self.MUI_Fetch(xyz_fetch, dofs_fetch_list, t_sub_it)
-
             if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
                 # Apply traction components. These calls do parallel communication
                 self.tF_apply.vector().set_local(self.tF_apply_vec)
@@ -1396,14 +1334,19 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             else:
                 # Do not apply the fetched value, i.e. one-way coupling
                 pass
-
         else:
             if self.rank == 0: print ("{FENICS} Assigning uniform traction forces at present time step ...   ",
                                     end="", flush=True)
-            if t <= self.sForExtEndTime:
-                self.tF_magnitude.assign((Constant((self.sForExtX)/(self.YBeam*self.ZBeam))*self.X_direction_vector()) +
-                                    (Constant((self.sForExtY)/(self.XBeam*self.ZBeam))*self.Y_direction_vector()) +
-                                    (Constant((self.sForExtZ)/(self.XBeam*self.YBeam))*self.Z_direction_vector()))
+            if (t <= self.sForExtEndTime):
+                self.tF_magnitude.assign((Constant((self.sForExtX) /
+                                                   (self.YBeam * self.ZBeam)) *
+                                                   self.X_direction_vector()) +
+                                                   (Constant((self.sForExtY) /
+                                                   (self.XBeam*self.ZBeam)) *
+                                                   self.Y_direction_vector()) +
+                                                   (Constant((self.sForExtZ) /
+                                                   (self.XBeam*self.YBeam)) *
+                                                   self.Z_direction_vector()))
             else:
                 self.tF_magnitude.assign(Constant((0.0)))
             if self.rank == 0:
@@ -1434,12 +1377,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                   mesh):
         dOffset = Function(VectorFunctionSpace)
         # Calculate offset of the displacement
-        dOffset.vector()[:] = displacement_function.vector().get_local()- \
+        dOffset.vector()[:] = displacement_function.vector().get_local() - \
                               displacement_function_previous.vector().get_local()
         # Move the mesh by ALE function
         ALE.move(mesh, dOffset)
-        # A cached search tree needs to be explicitly updated after 
-        #   moving/deforming a mesh and before evaluating any function (even by assembler) 
+        # A cached search tree needs to be explicitly updated after
+        #   moving/deforming a mesh and before evaluating any function (even by assembler)
         #   without cell argument
         mesh.bounding_box_tree().build(mesh)
 
@@ -1447,9 +1390,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Print log information
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Pre_Solving_Log(self, MPI_COMM_WORLD):
-
-        if self.rank == 0: 
+    def Pre_Solving_Log(self):
+        if self.rank == 0:
             print ("\n")
             print ("{FENICS} ********** STRUCTURAL-ELASTICITY SIMULATION BEGIN **********")
             print ("\n")
@@ -1460,7 +1402,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             if self.iMUICoupling:
                 print ("{FENICS} ### !!! MUI COUPLING ON !!! ###")
                 print ("\n")
-                
+
             print ("{FENICS} Current Date and Time: ", datetime.datetime.now())
             print ("{FENICS} System Host Name: ", socket.gethostbyaddr(socket.gethostname())[0])
             print ("\n")
@@ -1506,21 +1448,21 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     def print_Disp (self, displacement_function):
         # Compute and print the displacement of monitored point
         d_DispSum = np.zeros(3)
-        d_tempDenominator  = np.array([ self.size, 
-                                        self.size, 
+        d_tempDenominator  = np.array([ self.size,
+                                        self.size,
                                         self.size])
         self.LOCAL_COMM_WORLD.Reduce((displacement_function(
                                     Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
                                     d_DispSum,op=MPI.SUM,root=0)
         d_Disp = np.divide(d_DispSum,d_tempDenominator)
-        if self.rank == 0: 
+        if self.rank == 0:
             print ("{FENICS} Monitored point deflection [m]: ", d_Disp)
 
     def Export_Disp_txt(self, displacement_function):
         if self.iExporttxt:
             pointMoniDispSum = np.zeros(3)
-            tempDenominator  = np.array([self.size, 
-                                         self.size, 
+            tempDenominator  = np.array([self.size,
+                                         self.size,
                                          self.size])
             self.LOCAL_COMM_WORLD.Reduce((displacement_function(
                                     Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
@@ -1528,8 +1470,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             pointMoniDisp = np.divide(pointMoniDispSum,tempDenominator)
 
             pointMoniDispSum_b = np.zeros(3)
-            tempDenominator_b  = np.array([self.size, 
-                                         self.size, 
+            tempDenominator_b  = np.array([self.size,
+                                         self.size,
                                          self.size])
             self.LOCAL_COMM_WORLD.Reduce((displacement_function(
                                     Point(self.pointMoniXb,self.pointMoniYb,self.pointMoniZb))),
@@ -1552,7 +1494,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                     ftxt_dispZ.write(str(pointMoniDisp[2]))
                     ftxt_dispZ.write("\n")
                     ftxt_dispZ.close
-                    
+
                     ftxt_dispXb = open(self.outputFolderPath + "/tip-displacementXb_" + str(irank)+ ".txt", "a")
                     ftxt_dispXb.write(str(pointMoniDisp_b[0]))
                     ftxt_dispXb.write("\n")
@@ -1578,12 +1520,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # Export post-processing files
         if ((self.rank == 0) and self.iDebug):
             print ("\n")
-            print ("{FENICS} time steps: ", Current_Time_Step, 
-                    " output_interval: ", self.output_interval, 
+            print ("{FENICS} time steps: ", Current_Time_Step,
+                    " output_interval: ", self.output_interval,
                     " %: ", (Current_Time_Step % self.output_interval))
 
         if (Current_Time_Step % self.output_interval) == 0:
-            if self.rank == 0: 
+            if self.rank == 0:
                 print ("\n")
                 print ("{FENICS} Export files at ", current_time, " [s] ...   ", end="", flush=True)
 
@@ -1592,15 +1534,15 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             sig = Function(Vsig, name="Stress")
             if self.iNonLinearMethod:
                 sig.assign(project(self.Piola_Kirchhoff_sec(
-                            displacement_function,self.E,grid_dimension), 
+                            displacement_function,self.E,grid_dimension),
                             Vsig, solver_type=self.prjsolver,
-                            form_compiler_parameters={"cpp_optimize": self.cppOptimize, 
+                            form_compiler_parameters={"cpp_optimize": self.cppOptimize,
                             "representation": self.compRepresentation}))
             else:
                 sig.assign(project(self.Piola_Kirchhoff_sec(
-                            displacement_function,self.epsilon,grid_dimension), 
+                            displacement_function,self.epsilon,grid_dimension),
                             Vsig, solver_type=self.prjsolver,
-                            form_compiler_parameters={"cpp_optimize": self.cppOptimize, 
+                            form_compiler_parameters={"cpp_optimize": self.cppOptimize,
                             "representation": self.compRepresentation}))
             # Save stress solution to file
             sig.rename('Piola Kirchhoff sec Stress', 'stress')
@@ -1613,9 +1555,9 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             # Compute traction
             traction = Function(VectorFunctionSpace, name="Traction")
             traction.assign(project(self.tF_apply,
-                                    VectorFunctionSpace, 
+                                    VectorFunctionSpace,
                                     solver_type=self.prjsolver,
-                                    form_compiler_parameters={"cpp_optimize": self.cppOptimize, 
+                                    form_compiler_parameters={"cpp_optimize": self.cppOptimize,
                                     "representation": self.compRepresentation}))
             # Save traction solution to file
             traction.rename('traction', 'trac')
@@ -1624,8 +1566,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         else:
             pass
 
-    def Post_Solving_Log(self, MPI_COMM_WORLD, simtime):
-
+    def Post_Solving_Log(self, simtime):
         if self.rank == 0:
             print ("\n")
             print ("{FENICS} Current Date and Time: ", datetime.datetime.now())
@@ -1635,13 +1576,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             print ("{FENICS} ********** STRUCTURAL-ELASTICITY SIMULATION COMPLETED **********")
 
     def Create_Post_Process_Files(self):
-
         if self.rank == 0: print ("{FENICS} Preparing post-process files ...   ", end="", flush=True)
-
         self.disp_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/displacement.pvd")
         self.stress_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/stress.pvd")
         self.traction_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/surface_traction_structure.pvd")
-
         if self.rank == 0: print ("Done")
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1659,7 +1597,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                           dmck_Function,
                           t_Function,
                           File_Exists=True):
-
         if File_Exists:
             import os
             if self.rank == 0:
@@ -1720,10 +1657,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         wallClock.tic()
 
         #===========================================
-        #%% Initialize MPI by mpi4py/MUI for parallelized computation
+        #%% Initialise MPI by mpi4py/MUI for
+        #%%   parallelised computation
         #===========================================
 
-        self.MPI_Init()
+        self.MUI_Init()
 
         #===========================================
         #%% Set target folder
@@ -1741,7 +1679,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #%% Print log information
         #===========================================
 
-        self.Pre_Solving_Log(self.LOCAL_COMM_WORLD)
+        self.Pre_Solving_Log()
 
         #===========================================
         #%% Set form compiler options
@@ -1754,7 +1692,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #===========================================
 
         self.Time_Marching_Parameters()
-
         self.Time_Marching_Log()
 
         #===========================================
@@ -1772,7 +1709,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         # Finish the wall clock
         simtime = wallClock.toc()
-        self.Post_Solving_Log(self.LOCAL_COMM_WORLD, simtime)
+        self.Post_Solving_Log(simtime)
 
     # def Solver_OLD(self):
         # #===========================================
