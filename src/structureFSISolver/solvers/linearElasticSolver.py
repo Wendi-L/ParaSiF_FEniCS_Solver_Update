@@ -1,8 +1,8 @@
-""" 
+"""
     Parallel Partitioned Multi-physical Simulation Framework (ParaSiF)
 
-    Copyright (C) 2021 Engineering and Environment Group, Scientific 
-    Computing Department, Science and Technology Facilities Council, 
+    Copyright (C) 2021 Engineering and Environment Group, Scientific
+    Computing Department, Science and Technology Facilities Council,
     UK Research and Innovation. All rights reserved.
 
     This code is licensed under the GNU General Public License version 3
@@ -21,15 +21,15 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     *********************************************************************
-    
+
     @file structureFSISolver.py
-    
+
     @author W. Liu
-    
+
     @brief This is a part of the Parallel Partitioned Multi-physical Simu-
-    lation Framework provides FEniCS v2019.1.0 <-> MUI v1.2 <-> OpenFOAM v6 
+    lation Framework provides FEniCS v2019.1.0 <-> MUI v1.2 <-> OpenFOAM v6
     two-way coupling.
 
     Incompressible Navier-Stokes equations for fluid domain in OpenFOAM
@@ -119,9 +119,9 @@ class linearElastic:
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
-        #===========================================
+        #=======================================================
         #%% Define functions, test functions and trail functions
-        #===========================================
+        #=======================================================
 
         if self.rank == 0: print ("{FENICS} Creating functions, test functions and trail functions ...   ", end="", flush=True)
 
@@ -204,8 +204,8 @@ class linearElastic:
         self.Create_Post_Process_Files()
 
         #===========================================
-        #%% Define the variational FORM 
-        #%% and 
+        #%% Define the variational FORM
+        #%% and
         #%% Jacobin functions of structure
         #===========================================
 
@@ -262,7 +262,7 @@ class linearElastic:
                                             u0mck,
                                             a0mck,
                                             beta_gam)
-            
+
             Form_s_Update_velo = self.UMCK (Form_s_Update_Acce,
                                             u0mck,
                                             a0mck,
