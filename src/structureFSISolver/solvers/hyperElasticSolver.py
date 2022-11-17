@@ -88,17 +88,6 @@ class hyperElastic:
         # One-step theta value
         theta = Constant(self.thetaOS)
 
-        # Rayleigh damping coefficients
-        alpha_rdc = Constant(self.alpha_rdc)
-        beta_rdc  = Constant(self.beta_rdc)
-
-        # Generalized-alpha method parameters
-        # alpha_m_gam >= alpha_f_gam >= 0.5 for a better performance
-        alpha_m_gam = Constant(self.alpha_m_gam)
-        alpha_f_gam = Constant(self.alpha_f_gam)
-        gamma_gam   = Constant((1./2.) + alpha_m_gam - alpha_f_gam)
-        beta_gam    = Constant((1./4.) * (gamma_gam + (1./2.))**2)
-
         if self.rank == 0:
             print ("\n")
             print ("{FENICS} One-step theta: ", float(theta))
@@ -125,30 +114,21 @@ class hyperElastic:
 
         if self.rank == 0: print ("{FENICS} Creating functions, test functions and trail functions ...   ", end="", flush=True)
 
-        # Trial functions
-        du, dd = TrialFunctions(VV)     # Trial functions for velocity and displacement
-        ddmck  = TrialFunction(V)        # Trial function for displacement by MCK solving method
-
         # Test functions
         psi, phi = TestFunctions(VV)    # Test functions for velocity and displacement
-        chi      = TestFunction(V)           # Test function for displacement by MCK solving method
 
         # Functions at present time step
         ud   = Function(VV)               # Functions for velocity and displacement
         u, d = split(ud)                # Split velocity and displacement functions
-        dmck = Function(V)              # Function for displacement by MCK solving method
 
         # Functions at previous time step
         u0d0   = Function(VV)             # Functions for velocity and displacement
         u0, d0 = split(u0d0)            # Split velocity and displacement functions
-        d0mck  = Function(V)             # Function for displacement by MCK solving method
-        u0mck  = Function(V)             # Function for velocity by MCK solving method
-        a0mck  = Function(V)             # Function for acceleration by MCK solving method
 
         # Define structure traction
         sigma_s = Function(T_s_space)   # Structure traction normal to structure
 
-        self.Load_Functions_Continue_Run_Nonlinear(u0d0,d0mck,u0mck,a0mck,ud,dmck,sigma_s)
+        self.Load_Functions_Continue_Run_Nonlinear(u0d0,ud,sigma_s)
 
         if self.rank == 0: print ("Done")
 
@@ -290,18 +270,13 @@ class hyperElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output_Nonlinear((t-self.dt), mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
+        self.Checkpoint_Output_Nonlinear((t-self.dt), mesh, u0d0, ud, sigma_s, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
         #===========================================
 
-        self.MUI_Sampler_Define(Q,
-                                gdim,
-                                dofs_fetch_list,
-                                dofs_push_list,
-                                xyz_fetch,
-                                t_step)
+        self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_fetch, t_step)
 
         #===========================================
         #%% Define time loops
@@ -373,10 +348,7 @@ class hyperElastic:
                 # MUI Push internal points and commit current steps
                 if (self.iMUICoupling):
                     if (len(xyz_push)!=0):
-                        self.MUI_Push(xyz_push,
-                                      dofs_push_list,
-                                      d,
-                                      t_sub_it)
+                        self.MUI_Push(xyz_push, dofs_push_list, d, t_sub_it)
                     else:
                         self.MUI_Commit_only(t_sub_it)
                 else:
@@ -396,7 +368,7 @@ class hyperElastic:
             if (not (self.iQuiet)):
                 self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, d)
                 self.Export_Disp_txt(d)
-                self.Checkpoint_Output_Nonlinear(t, mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
+                self.Checkpoint_Output_Nonlinear(t, mesh, u0d0, ud, sigma_s, False)
 
             # Assign the old function spaces
             u0d0.assign(ud)

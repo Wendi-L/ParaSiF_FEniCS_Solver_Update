@@ -1606,6 +1606,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         hdf5checkpointDataOut = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/checkpointData_" + str(current_time) +".h5", "w")
         hdf5checkpointDataOut.write(mesh, "/mesh")
+        hdf5checkpointDataOut.write(u0mck_Functions_previous, "/u0mck", current_time)
         hdf5checkpointDataOut.write(d0mck_Functions_previous, "/d0mck", current_time)
         hdf5checkpointDataOut.write(a_Function_previous, "/a0mck", current_time)
         hdf5checkpointDataOut.write(dmck_Function, "/dmck", current_time)
@@ -1632,16 +1633,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             pass
 
     def Checkpoint_Output_Nonlinear(self,
-                          current_time,
-                          mesh,
-                          ud_Functions_previous,
-                          d0mck_Functions_previous,
-                          u0mck_Functions_previous,
-                          a_Function_previous,
-                          ud_Functions,
-                          dmck_Function,
-                          t_Function,
-                          File_Exists=True):
+                                    current_time,
+                                    mesh,
+                                    ud_Functions_previous,
+                                    ud_Functions,
+                                    t_Function,
+                                    File_Exists=True):
         if File_Exists:
             import os
             if self.rank == 0:
@@ -1653,33 +1650,18 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         hdf5checkpointDataOut = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/checkpointData_" + str(current_time) +".h5", "w")
         hdf5checkpointDataOut.write(mesh, "/mesh")
         hdf5checkpointDataOut.write(ud_Functions_previous, "/u0d0", current_time)
-        hdf5checkpointDataOut.write(d0mck_Functions_previous, "/d0mck", current_time)
-        hdf5checkpointDataOut.write(u0mck_Functions_previous, "/u0mck", current_time)
-        hdf5checkpointDataOut.write(a_Function_previous, "/a0mck", current_time)
         hdf5checkpointDataOut.write(ud_Functions, "/ud", current_time)
-        hdf5checkpointDataOut.write(dmck_Function, "/dmck", current_time)
         hdf5checkpointDataOut.write(t_Function, "/sigma_s", current_time)
         hdf5checkpointDataOut.write(self.areaf, "/areaf")
         hdf5checkpointDataOut.close()
         # Delete HDF5File object, closing file
         del hdf5checkpointDataOut
 
-    def Load_Functions_Continue_Run_Nonlinear(self,
-                                    u0d0,
-                                    d0mck,
-                                    u0mck,
-                                    a0mck,
-                                    ud,
-                                    dmck,
-                                    sigma_s):
+    def Load_Functions_Continue_Run_Nonlinear(self, u0d0, ud, sigma_s):
         if self.iContinueRun:
             hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
             hdf5checkpointDataInTemp.read(u0d0, "/u0d0/vector_0")
-            hdf5checkpointDataInTemp.read(d0mck, "/d0mck/vector_0")
-            hdf5checkpointDataInTemp.read(u0mck, "/u0mck/vector_0")
-            hdf5checkpointDataInTemp.read(a0mck, "/a0mck/vector_0")
             hdf5checkpointDataInTemp.read(ud, "/ud/vector_0")
-            hdf5checkpointDataInTemp.read(dmck, "/dmck/vector_0")
             hdf5checkpointDataInTemp.read(sigma_s, "/sigma_s/vector_0")
             hdf5checkpointDataInTemp.close()
             # Delete HDF5File object, closing file
