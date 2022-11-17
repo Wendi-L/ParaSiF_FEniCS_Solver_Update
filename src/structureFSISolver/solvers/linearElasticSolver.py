@@ -78,9 +78,6 @@ class linearElastic:
         #%% Define coefficients
         #===========================================
 
-        # Time step constants
-        k = Constant(self.dt)
-
         # Time lists
         times    = []
         t_sub_it = 0
