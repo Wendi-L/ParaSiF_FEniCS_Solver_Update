@@ -111,18 +111,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #===========================================
         # F-Switch off the MUI coupling function; T-Switch on the MUI coupling function.
         self.iMUICoupling = self.cfg['MUI'].getboolean('iMUICoupling')
-        # F-Switch off the MUI Multidomain function; T-Switch on the MUI Multidomain function.
-        self.iMultidomain = self.cfg['MUI'].getboolean('iMultidomain')
-        # F-Switch off the MUI Fetch Moment; T-Switch on the MUI Fetch Moment.
-        self.iMUIFetchMoment = self.cfg['MUI'].getboolean('iMUIFetchMoment')
         # F-Switch off the MUI Fetch; T-Switch on the MUI Fetch.
         self.iMUIFetchValue = self.cfg['MUI'].getboolean('iMUIFetchValue')
         # F-Use normal fetch function; T-Use fetch_many function.
         self.iMUIFetchMany = self.cfg['MUI'].getboolean('iMUIFetchMany')
-        # F-Use Fetch Traction function; T-Use Fetch Force function.
-        self.iMUIFetchForce = self.cfg['MUI'].getboolean('iMUIFetchForce')
-        # F-Use nearest neighbout spatial sampler; T-Use RBF spatial sampler.
-        self.iUseRBF = self.cfg['MUI'].getboolean('iUseRBF')
         # F-The mesh is not evenly spaced; T-The mesh is evenly spaced.
         self.iLoadAreaList = self.cfg['MUI'].getboolean('iLoadAreaList')
         # Factor for area list calculation (float)
@@ -143,8 +135,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         self.cutoffRBF = float(self.cfg['MUI']['cutoffRBF'])
         # F-The RBF matrix will write to file; T-The RBF matrix will read from file.
         self.iReadMatrix = self.cfg['MUI'].getboolean('iReadMatrix')
-        # RBF fetch area extend values (float)
-        self.fetchExtendRBF = float(self.cfg['MUI']['fetchExtendRBF'])
         # F-Switch off the RBF spatial sampler polynomial terms; T-Switch on the RBF spatial sampler polynomial terms.
         self.iPolynomial = self.cfg['MUI'].getboolean('iPolynomial')
         # Select of basis functions of the RBF spatial sampler (integer)
@@ -153,18 +143,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         self.iSmoothFunc = self.cfg['MUI'].getboolean('iSmoothFunc')
         # Numbers of time steps to forget for MUI push (integer)
         self.forgetTStepsMUI = int(self.cfg['MUI']['forgetTStepsMUI'])
-        # ipushLimitMUI
-        self.ipushLimitMUI = self.cfg['MUI'].getboolean('ipushLimitMUI')
         # F-Serial FSI coupling mode; T-Parallel FSI coupling mode.
         self.iparallelFSICoupling = self.cfg['MUI'].getboolean('iparallelFSICoupling')
         # Initial under relaxation factor for IQNILS (float)
-        self.initUndRelxCpl = float(self.cfg['MUI']['initUndRelxCpl'])
-        # Maximum under relaxation factor for IQNILS (float)
-        self.undRelxCplMax = float(self.cfg['MUI']['undRelxCplMax'])
-        # Iterations for Aitken cycles for IQNILS (integer)
-        self.aitkenIterationN = int(self.cfg['MUI']['aitkenIterationN'])
-        # F-Using local Alpha for IQNILS; T-Using global Alpha for IQNILS.
-        self.globalAlphaInput = self.cfg['MUI'].getboolean('globalAlphaInput')
+        self.undRelxCpl = float(self.cfg['MUI']['undRelxCpl'])
 
         #===========================================
         #%% Global solver define
@@ -223,8 +205,6 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
         # Function space degree order
         self.deg_fun_spc = int(self.cfg['ORDER']['deg_fun_spc'])
-        # Expression degree (if any)
-        self.deg_exp = int(self.cfg['ORDER']['deg_exp'])
 
         #===========================================
         #%% Target folder input
@@ -1018,11 +998,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 for i, p in enumerate(dofs_fetch_list):
                     if self.iparallelFSICoupling:
                         self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - \
-                                                       self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
+                                                       self.tF_apply_vec[0::3][p])*self.undRelxCpl
                         self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - \
-                                                       self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
+                                                       self.tF_apply_vec[1::3][p])*self.undRelxCpl
                         self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - \
-                                                       self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
+                                                       self.tF_apply_vec[2::3][p])*self.undRelxCpl
                     else:
                         self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
                         self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
@@ -1067,11 +1047,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
                         if self.iparallelFSICoupling:
                             self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - \
-                                                           self.tF_apply_vec[0::3][p])*self.initUndRelxCpl
+                                                           self.tF_apply_vec[0::3][p])*self.undRelxCpl
                             self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - \
-                                                           self.tF_apply_vec[1::3][p])*self.initUndRelxCpl
+                                                           self.tF_apply_vec[1::3][p])*self.undRelxCpl
                             self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - \
-                                                           self.tF_apply_vec[2::3][p])*self.initUndRelxCpl
+                                                           self.tF_apply_vec[2::3][p])*self.undRelxCpl
                         else:
                             self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
                             self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
