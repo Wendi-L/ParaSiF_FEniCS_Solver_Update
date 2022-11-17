@@ -1588,7 +1588,50 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #%% Setup checkpoint file
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def Checkpoint_Output(self,
+    def Checkpoint_Output_Linear(self,
+                                 current_time,
+                                 mesh,
+                                 d0mck_Functions_previous,
+                                 u0mck_Functions_previous,
+                                 a_Function_previous,
+                                 dmck_Function,
+                                 File_Exists=True):
+        if File_Exists:
+            import os
+            if self.rank == 0:
+                os.remove(self.outputFolderPath + "/checkpointData_" + str(current_time) +".h5")
+            self.LOCAL_COMM_WORLD.Barrier()
+        else:
+            pass
+
+        hdf5checkpointDataOut = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/checkpointData_" + str(current_time) +".h5", "w")
+        hdf5checkpointDataOut.write(mesh, "/mesh")
+        hdf5checkpointDataOut.write(d0mck_Functions_previous, "/d0mck", current_time)
+        hdf5checkpointDataOut.write(a_Function_previous, "/a0mck", current_time)
+        hdf5checkpointDataOut.write(dmck_Function, "/dmck", current_time)
+        hdf5checkpointDataOut.write(self.areaf, "/areaf")
+        hdf5checkpointDataOut.close()
+        # Delete HDF5File object, closing file
+        del hdf5checkpointDataOut
+
+    def Load_Functions_Continue_Run_Linear(self,
+                                           d0mck,
+                                           u0mck,
+                                           a0mck,
+                                           dmck):
+        if self.iContinueRun:
+            hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
+            hdf5checkpointDataInTemp.read(d0mck, "/d0mck/vector_0")
+            hdf5checkpointDataInTemp.read(u0mck, "/u0mck/vector_0")
+            hdf5checkpointDataInTemp.read(a0mck, "/a0mck/vector_0")
+            hdf5checkpointDataInTemp.read(dmck, "/dmck/vector_0")
+            hdf5checkpointDataInTemp.close()
+            # Delete HDF5File object, closing file
+            del hdf5checkpointDataInTemp
+        else:
+            pass
+
+    def Checkpoint_Output_Nonlinear(self,
                           current_time,
                           mesh,
                           ud_Functions_previous,
@@ -1621,7 +1664,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # Delete HDF5File object, closing file
         del hdf5checkpointDataOut
 
-    def Load_Functions_Continue_Run(self,
+    def Load_Functions_Continue_Run_Nonlinear(self,
                                     u0d0,
                                     d0mck,
                                     u0mck,

@@ -148,7 +148,7 @@ class hyperElastic:
         # Define structure traction
         sigma_s = Function(T_s_space)   # Structure traction normal to structure
 
-        self.Load_Functions_Continue_Run(u0d0,d0mck,u0mck,a0mck,ud,dmck,sigma_s)
+        self.Load_Functions_Continue_Run_Nonlinear(u0d0,d0mck,u0mck,a0mck,ud,dmck,sigma_s)
 
         if self.rank == 0: print ("Done")
 
@@ -290,7 +290,7 @@ class hyperElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output((t-self.dt), mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
+        self.Checkpoint_Output_Nonlinear((t-self.dt), mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
@@ -396,7 +396,7 @@ class hyperElastic:
             if (not (self.iQuiet)):
                 self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, d)
                 self.Export_Disp_txt(d)
-                self.Checkpoint_Output(t, mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
+                self.Checkpoint_Output_Nonlinear(t, mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
 
             # Assign the old function spaces
             u0d0.assign(ud)

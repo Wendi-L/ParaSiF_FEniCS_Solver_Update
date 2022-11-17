@@ -82,9 +82,6 @@ class linearElastic:
         times    = []
         t_sub_it = 0
 
-        # One-step theta value
-        theta = Constant(self.thetaOS)
-
         # Rayleigh damping coefficients
         alpha_rdc = Constant(self.alpha_rdc)
         beta_rdc  = Constant(self.beta_rdc)
@@ -96,23 +93,13 @@ class linearElastic:
         gamma_gam   = Constant((1./2.) + alpha_m_gam - alpha_f_gam)
         beta_gam    = Constant((1./4.) * (gamma_gam + (1./2.))**2)
 
-        if self.rank == 0:
-            print ("\n")
-            print ("{FENICS} One-step theta: ", float(theta))
-            print ("\n")
-
         #===========================================
         #%% Define function spaces
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
-
-        V_ele     =     VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc) # Displacement & Velocity Vector element
-
         Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc)            # Function space with updated mesh
-        VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
         V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc)
-        T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc)      # Define nth order structure function spaces
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -123,29 +110,20 @@ class linearElastic:
         if self.rank == 0: print ("{FENICS} Creating functions, test functions and trail functions ...   ", end="", flush=True)
 
         # Trial functions
-        du, dd = TrialFunctions(VV)     # Trial functions for velocity and displacement
         ddmck  = TrialFunction(V)        # Trial function for displacement by MCK solving method
 
         # Test functions
-        psi, phi = TestFunctions(VV)    # Test functions for velocity and displacement
         chi      = TestFunction(V)           # Test function for displacement by MCK solving method
 
         # Functions at present time step
-        ud   = Function(VV)               # Functions for velocity and displacement
-        u, d = split(ud)                # Split velocity and displacement functions
         dmck = Function(V)              # Function for displacement by MCK solving method
 
         # Functions at previous time step
-        u0d0   = Function(VV)             # Functions for velocity and displacement
-        u0, d0 = split(u0d0)            # Split velocity and displacement functions
         d0mck  = Function(V)             # Function for displacement by MCK solving method
         u0mck  = Function(V)             # Function for velocity by MCK solving method
         a0mck  = Function(V)             # Function for acceleration by MCK solving method
 
-        # Define structure traction
-        sigma_s = Function(T_s_space)   # Structure traction normal to structure
-
-        self.Load_Functions_Continue_Run(u0d0,d0mck,u0mck,a0mck,ud,dmck,sigma_s)
+        self.Load_Functions_Continue_Run_Linear(d0mck,u0mck,a0mck,dmck)
 
         if self.rank == 0: print ("Done")
 
@@ -206,16 +184,8 @@ class linearElastic:
         # Define the traction terms of the structure variational form
         tF = dot(chi, self.tF_apply)
 
-        Form_s_Update_Acce = self.AMCK (ddmck,
-                                        d0mck,
-                                        u0mck,
-                                        a0mck,
-                                        beta_gam)
-
-        Form_s_Update_velo = self.UMCK (Form_s_Update_Acce,
-                                        u0mck,
-                                        a0mck,
-                                        gamma_gam)
+        Form_s_Update_Acce = self.AMCK (ddmck, d0mck, u0mck, a0mck, beta_gam)
+        Form_s_Update_velo = self.UMCK (Form_s_Update_Acce, u0mck, a0mck, gamma_gam)
 
         Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,alpha_m_gam)
         Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,alpha_f_gam)
@@ -261,18 +231,13 @@ class linearElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output((t-self.dt), mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
+        self.Checkpoint_Output_Linear((t-self.dt), mesh, d0mck, u0mck, a0mck, dmck, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
         #===========================================
 
-        self.MUI_Sampler_Define(Q,
-                                gdim,
-                                dofs_fetch_list,
-                                dofs_push_list,
-                                xyz_fetch,
-                                t_step)
+        self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_fetch, t_step)
 
         #===========================================
         #%% Define time loops
@@ -345,10 +310,7 @@ class linearElastic:
                 # MUI Push internal points and commit current steps
                 if (self.iMUICoupling):
                     if (len(xyz_push)!=0):
-                        self.MUI_Push(xyz_push,
-                                      dofs_push_list,
-                                      dmck,
-                                      t_sub_it)
+                        self.MUI_Push(xyz_push, dofs_push_list, dmck, t_sub_it)
                     else:
                         self.MUI_Commit_only(t_sub_it)
                 else:
@@ -364,7 +326,7 @@ class linearElastic:
             if (not (self.iQuiet)):
                 self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, dmck)
                 self.Export_Disp_txt(dmck)
-                self.Checkpoint_Output(t, mesh, u0d0, d0mck, u0mck, a0mck, ud, dmck, sigma_s, False)
+                self.Checkpoint_Output_Linear(t, mesh, d0mck, u0mck, a0mck, dmck, False)
 
             # Function spaces time marching
 
