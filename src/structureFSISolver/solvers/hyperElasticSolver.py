@@ -79,14 +79,14 @@ class hyperElastic:
         #===========================================
 
         # Time step constants
-        k = Constant(self.dt)
+        k = Constant(self.dt())
 
         # Time lists
         times    = []
         t_sub_it = 0
 
         # One-step theta value
-        theta = Constant(self.thetaOS)
+        theta = Constant(self.thetaOS())
 
         if self.rank == 0:
             print ("\n")
@@ -99,12 +99,12 @@ class hyperElastic:
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
 
-        V_ele     =     VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc) # Displacement & Velocity Vector element
+        V_ele     =     VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc()) # Displacement & Velocity Vector element
 
-        Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc)            # Function space with updated mesh
+        Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc())            # Function space with updated mesh
         VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
-        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc)
-        T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc)      # Define nth order structure function spaces
+        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc())
+        T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc())      # Define nth order structure function spaces
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -192,11 +192,11 @@ class hyperElastic:
         tF_ = dot(self.F_(d0,gdim).T, self.tF_apply)
 
         # Define the transient terms of the structure variational form
-        Form_s_T = (1/k)*self.rho_s*inner((u-u0), psi)*dx
+        Form_s_T = (1/k)*self.rho_s()*inner((u-u0), psi)*dx
         Form_s_T += (1/k)*inner((d-d0), phi)*dx
 
         # Define the stress terms and convection of the structure variational form
-        if self.iNonLinearMethod:
+        if self.iNonLinearMethod():
             if self.rank == 0: print ("{FENICS} [Defining non-linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by the constitutive law of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). Valid for large deformations but small strain] ...   ", end="", flush=True)
             Form_s_SC = inner(theta * self.Piola_Kirchhoff_fst(d,gdim) + (1 - theta) *
                         self.Piola_Kirchhoff_fst(d0,gdim), grad(psi)) * dx
@@ -234,35 +234,35 @@ class hyperElastic:
         solver = NonlinearVariationalSolver(problem)
 
         info(solver.parameters, False)
-        if self.nonlinear_solver == "newton":
-            solver.parameters["nonlinear_solver"]= self.nonlinear_solver
-            solver.parameters["newton_solver"]["absolute_tolerance"] = self.prbAbsolute_tolerance
-            solver.parameters["newton_solver"]["relative_tolerance"] = self.prbRelative_tolerance
-            solver.parameters["newton_solver"]["maximum_iterations"] = self.prbMaximum_iterations
-            solver.parameters["newton_solver"]["relaxation_parameter"] = self.prbRelaxation_parameter
-            solver.parameters["newton_solver"]["linear_solver"] = self.prbsolver
-            solver.parameters["newton_solver"]["preconditioner"] = self.prbpreconditioner
-            solver.parameters["newton_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance
-            solver.parameters["newton_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance
-            solver.parameters["newton_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations
-            solver.parameters["newton_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence
-            solver.parameters["newton_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess
-            solver.parameters["newton_solver"]["krylov_solver"]['error_on_nonconvergence'] = self.error_on_nonconvergence
-        elif self.nonlinear_solver == "snes":
-            solver.parameters['nonlinear_solver'] = self.nonlinear_solver
-            solver.parameters['snes_solver']['line_search'] = self.lineSearch
-            solver.parameters['snes_solver']['linear_solver'] = self.prbsolver
-            solver.parameters['snes_solver']['preconditioner'] = self.prbpreconditioner
-            solver.parameters['snes_solver']['absolute_tolerance'] = self.prbAbsolute_tolerance
-            solver.parameters['snes_solver']['relative_tolerance'] = self.prbRelative_tolerance
-            solver.parameters['snes_solver']['maximum_iterations'] = self.prbMaximum_iterations
-            solver.parameters['snes_solver']['report'] = self.show_report
-            solver.parameters['snes_solver']['error_on_nonconvergence'] = self.error_on_nonconvergence
-            solver.parameters["snes_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance
-            solver.parameters["snes_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance
-            solver.parameters["snes_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations
-            solver.parameters["snes_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence
-            solver.parameters["snes_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess
+        if self.nonlinear_solver() == "newton":
+            solver.parameters["nonlinear_solver"]= self.nonlinear_solver()
+            solver.parameters["newton_solver"]["absolute_tolerance"] = self.prbAbsolute_tolerance()
+            solver.parameters["newton_solver"]["relative_tolerance"] = self.prbRelative_tolerance()
+            solver.parameters["newton_solver"]["maximum_iterations"] = self.prbMaximum_iterations()
+            solver.parameters["newton_solver"]["relaxation_parameter"] = self.prbRelaxation_parameter()
+            solver.parameters["newton_solver"]["linear_solver"] = self.prbsolver()
+            solver.parameters["newton_solver"]["preconditioner"] = self.prbpreconditioner()
+            solver.parameters["newton_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance()
+            solver.parameters["newton_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance()
+            solver.parameters["newton_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations()
+            solver.parameters["newton_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence()
+            solver.parameters["newton_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess()
+            solver.parameters["newton_solver"]["krylov_solver"]['error_on_nonconvergence'] = self.error_on_nonconvergence()
+        elif self.nonlinear_solver() == "snes":
+            solver.parameters['nonlinear_solver'] = self.nonlinear_solver()
+            solver.parameters['snes_solver']['line_search'] = self.lineSearch()
+            solver.parameters['snes_solver']['linear_solver'] = self.prbsolver()
+            solver.parameters['snes_solver']['preconditioner'] = self.prbpreconditioner()
+            solver.parameters['snes_solver']['absolute_tolerance'] = self.prbAbsolute_tolerance()
+            solver.parameters['snes_solver']['relative_tolerance'] = self.prbRelative_tolerance()
+            solver.parameters['snes_solver']['maximum_iterations'] = self.prbMaximum_iterations()
+            solver.parameters['snes_solver']['report'] = self.show_report()
+            solver.parameters['snes_solver']['error_on_nonconvergence'] = self.error_on_nonconvergence()
+            solver.parameters["snes_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance()
+            solver.parameters["snes_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance()
+            solver.parameters["snes_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations()
+            solver.parameters["snes_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence()
+            solver.parameters["snes_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess()
         else:
             sys.exit("{FENICS} Error, nonlinear solver value not recognized")
 
@@ -270,7 +270,7 @@ class hyperElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output_Nonlinear((t-self.dt), mesh, u0d0, ud, sigma_s, False)
+        self.Checkpoint_Output_Nonlinear((t-self.dt()), mesh, u0d0, ud, sigma_s, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
@@ -283,7 +283,7 @@ class hyperElastic:
         #===========================================
 
         # Time-stepping
-        while t <= self.T:
+        while t <= self.T():
 
             # create an instance of the TicToc wall clock class
             wallClockPerStep = structureFSISolver.tictoc.TicToc()
@@ -299,13 +299,13 @@ class hyperElastic:
                 print ("{FENICS} Time: ", t, " [s]; Time Step Number: ", n_steps)
 
             # Change number of sub-iterations if needed
-            if self.iChangeSubIter:
-                if (t >= self.TChangeSubIter):
-                    present_num_sub_iteration = self.num_sub_iteration_new
+            if self.iChangeSubIter():
+                if (t >= self.TChangeSubIter()):
+                    present_num_sub_iteration = self.num_sub_iteration_new()
                 else:
-                    present_num_sub_iteration = self.num_sub_iteration
+                    present_num_sub_iteration = self.num_sub_iteration()
             else:
-                present_num_sub_iteration = self.num_sub_iteration
+                present_num_sub_iteration = self.num_sub_iteration()
 
             # Sub-iteration for coupling
             while i_sub_it <= present_num_sub_iteration:
@@ -320,7 +320,7 @@ class hyperElastic:
                 # Fetch and assign traction forces at present time step
                 self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps)
 
-                if (not ((self.iContinueRun) and (n_steps == 1))):
+                if (not ((self.iContinueRun()) and (n_steps == 1))):
                     # Solving the structure functions inside the time loop
                     solver.solve()
 
@@ -346,7 +346,7 @@ class hyperElastic:
                 self.print_Disp(d)
 
                 # MUI Push internal points and commit current steps
-                if (self.iMUICoupling):
+                if (self.iMUICoupling()):
                     if (len(xyz_push)!=0):
                         self.MUI_Push(xyz_push, dofs_push_list, d, t_sub_it)
                     else:
@@ -365,7 +365,7 @@ class hyperElastic:
             self.Move_Mesh(V, d, d0, mesh)
 
             # Data output
-            if (not (self.iQuiet)):
+            if (not (self.iQuiet())):
                 self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, d)
                 self.Export_Disp_txt(d)
                 self.Checkpoint_Output_Nonlinear(t, mesh, u0d0, ud, sigma_s, False)
@@ -376,7 +376,7 @@ class hyperElastic:
             # Sub-iterator counter reset
             i_sub_it = 1
             # Physical time marching
-            t += self.dt
+            t += self.dt()
 
             # Finish the wall clock
             simtimePerStep = wallClockPerStep.toc()

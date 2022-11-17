@@ -44,5 +44,5 @@ class lameParm:
 
     def mu_s (self):
     # Define the Lamé's second parameter(shear modulus)
-        return (self.E_s()/(2.0*(1.0 + self.nu_s)))
+        return (self.E_s()/(2.0*(1.0 + self.nu_s())))
 

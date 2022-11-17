@@ -83,13 +83,13 @@ class linearElastic:
         t_sub_it = 0
 
         # Rayleigh damping coefficients
-        alpha_rdc = Constant(self.alpha_rdc)
-        beta_rdc  = Constant(self.beta_rdc)
+        alpha_rdc = Constant(self.alpha_rdc())
+        beta_rdc  = Constant(self.beta_rdc())
 
         # Generalized-alpha method parameters
         # alpha_m_gam >= alpha_f_gam >= 0.5 for a better performance
-        alpha_m_gam = Constant(self.alpha_m_gam)
-        alpha_f_gam = Constant(self.alpha_f_gam)
+        alpha_m_gam = Constant(self.alpha_m_gam())
+        alpha_f_gam = Constant(self.alpha_f_gam())
         gamma_gam   = Constant((1./2.) + alpha_m_gam - alpha_f_gam)
         beta_gam    = Constant((1./4.) * (gamma_gam + (1./2.))**2)
 
@@ -98,8 +98,8 @@ class linearElastic:
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
-        Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc)            # Function space with updated mesh
-        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc)
+        Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc())            # Function space with updated mesh
+        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc())
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -190,8 +190,8 @@ class linearElastic:
         Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,alpha_m_gam)
         Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,alpha_f_gam)
         Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,alpha_f_gam)
-        Form_s_M_Matrix = self.rho_s * inner(Form_s_Ga_Acce, chi) * dx
-        Form_s_M_for_C_Matrix = self.rho_s * inner(Form_s_Ga_velo, chi) * dx
+        Form_s_M_Matrix = self.rho_s() * inner(Form_s_Ga_Acce, chi) * dx
+        Form_s_M_for_C_Matrix = self.rho_s() * inner(Form_s_Ga_velo, chi) * dx
         Form_s_K_Matrix = inner(self.elastic_stress(Form_s_Ga_disp,gdim), sym(grad(chi))) * dx
         Form_s_K_for_C_Matrix = inner(self.elastic_stress(Form_s_Ga_velo,gdim), sym(grad(chi))) * dx
         Form_s_C_Matrix = alpha_rdc * Form_s_M_for_C_Matrix + beta_rdc * Form_s_K_for_C_Matrix
@@ -208,22 +208,22 @@ class linearElastic:
         #%% Initialize solver
         #===========================================
 
-        if self.linear_solver == 'LU':
+        if self.linear_solver() == 'LU':
             Bilinear_Assemble, Linear_Assemble = assemble_system(Bilinear_Form, Linear_Form, bcs)
             solver = LUSolver(Bilinear_Assemble, "mumps")
             solver.parameters["symmetric"] = True
 
-        elif self.linear_solver == 'LinearVariational':
+        elif self.linear_solver() == 'LinearVariational':
             problem = LinearVariationalProblem(Bilinear_Form, Linear_Form, dmck, bcs)
             solver = LinearVariationalSolver(problem)
             # Set linear solver parameters
-            solver.parameters["linear_solver"] = self.prbsolver
-            solver.parameters["preconditioner"] = self.prbpreconditioner
-            solver.parameters["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance
-            solver.parameters["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance
-            solver.parameters["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations
-            solver.parameters["krylov_solver"]["monitor_convergence"] = self.monitor_convergence
-            solver.parameters["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess
+            solver.parameters["linear_solver"] = self.prbsolver()
+            solver.parameters["preconditioner"] = self.prbpreconditioner()
+            solver.parameters["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance()
+            solver.parameters["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance()
+            solver.parameters["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations()
+            solver.parameters["krylov_solver"]["monitor_convergence"] = self.monitor_convergence()
+            solver.parameters["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess()
         else:
             sys.exit("{FENICS} Error, linear solver value not recognized")
 
@@ -231,7 +231,7 @@ class linearElastic:
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output_Linear((t-self.dt), mesh, d0mck, u0mck, a0mck, dmck, False)
+        self.Checkpoint_Output_Linear((t-self.dt()), mesh, d0mck, u0mck, a0mck, dmck, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
@@ -244,7 +244,7 @@ class linearElastic:
         #===========================================
 
         # Time-stepping
-        while t <= self.T:
+        while t <= self.T():
 
             # create an instance of the TicToc wall clock class
             wallClockPerStep = structureFSISolver.tictoc.TicToc()
@@ -260,13 +260,13 @@ class linearElastic:
                 print ("{FENICS} Time: ", t, " [s]; Time Step Number: ", n_steps)
 
             # Change number of sub-iterations if needed
-            if self.iChangeSubIter:
-                if (t >= self.TChangeSubIter):
-                    present_num_sub_iteration = self.num_sub_iteration_new
+            if self.iChangeSubIter():
+                if (t >= self.TChangeSubIter()):
+                    present_num_sub_iteration = self.num_sub_iteration_new()
                 else:
-                    present_num_sub_iteration = self.num_sub_iteration
+                    present_num_sub_iteration = self.num_sub_iteration()
             else:
-                present_num_sub_iteration = self.num_sub_iteration
+                present_num_sub_iteration = self.num_sub_iteration()
 
             # Sub-iteration for coupling
             while i_sub_it <= present_num_sub_iteration:
@@ -281,7 +281,7 @@ class linearElastic:
                 # Fetch and assign traction forces at present time step
                 self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps)
 
-                if (not ((self.iContinueRun) and (n_steps == 1))):
+                if (not ((self.iContinueRun()) and (n_steps == 1))):
 
                     # Assemble linear form
                     Linear_Assemble = assemble(Linear_Form)
@@ -308,7 +308,7 @@ class linearElastic:
                 self.print_Disp(dmck)
 
                 # MUI Push internal points and commit current steps
-                if (self.iMUICoupling):
+                if (self.iMUICoupling()):
                     if (len(xyz_push)!=0):
                         self.MUI_Push(xyz_push, dofs_push_list, dmck, t_sub_it)
                     else:
@@ -323,7 +323,7 @@ class linearElastic:
             self.Move_Mesh(V, dmck, d0mck, mesh)
 
             # Data output
-            if (not (self.iQuiet)):
+            if (not (self.iQuiet())):
                 self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, dmck)
                 self.Export_Disp_txt(dmck)
                 self.Checkpoint_Output_Linear(t, mesh, d0mck, u0mck, a0mck, dmck, False)
@@ -340,7 +340,7 @@ class linearElastic:
             # Sub-iterator counter reset
             i_sub_it = 1
             # Physical time marching
-            t += self.dt
+            t += self.dt()
 
             # Finish the wall clock
             simtimePerStep = wallClockPerStep.toc()

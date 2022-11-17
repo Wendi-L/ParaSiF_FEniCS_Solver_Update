@@ -97,275 +97,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         # Obtain dirichlet boundary condition instances
         self.dirichletBCs = DirichletBoundaryConditions
 
-        #===========================================
-        #%% Debug mode on/off switch
-        #===========================================
-
-        # F-Switch off the debug level codes (if any); T-Switch on the debug level codes (if any).
-        self.iDebug = self.cfg['LOGGING'].getboolean('iDebug')
-        # F-Switch off the Quiet; T-Switch on the Quiet.
-        self.iQuiet = self.cfg['LOGGING'].getboolean('iQuiet')
-
-        #===========================================
-        #%% MUI switches & parameters
-        #===========================================
-        # F-Switch off the MUI coupling function; T-Switch on the MUI coupling function.
-        self.iMUICoupling = self.cfg['MUI'].getboolean('iMUICoupling')
-        # F-Switch off the MUI Fetch; T-Switch on the MUI Fetch.
-        self.iMUIFetchValue = self.cfg['MUI'].getboolean('iMUIFetchValue')
-        # F-Use normal fetch function; T-Use fetch_many function.
-        self.iMUIFetchMany = self.cfg['MUI'].getboolean('iMUIFetchMany')
-        # F-The mesh is not evenly spaced; T-The mesh is evenly spaced.
-        self.iLoadAreaList = self.cfg['MUI'].getboolean('iLoadAreaList')
-        # Factor for area list calculation (float)
-        self.areaListFactor = float(self.cfg['MUI']['areaListFactor'])
-        # F-Use normal push function; T-Use push_many function.
-        self.iMUIPushMany = self.cfg['MUI'].getboolean('iMUIPushMany')
-        # F-Not push X; T-Push X.
-        self.iPushX = self.cfg['MUI'].getboolean('iPushX')
-        # F-Not push Y; T-Push Y.
-        self.iPushY = self.cfg['MUI'].getboolean('iPushY')
-        # F-Not push Z; T-Push Z.
-        self.iPushZ = self.cfg['MUI'].getboolean('iPushZ')
-        # Spatial sampler search radius (float)
-        self.rMUIFetcher = float(self.cfg['MUI']['rMUIFetcher'])
-        # F-Use RBF spatial sampler consistent mode; T-Use RBF spatial sampler conservative mode.
-        self.iConservative = self.cfg['MUI'].getboolean('iConservative')
-        # RBF spatial sampler cutoff value (float)
-        self.cutoffRBF = float(self.cfg['MUI']['cutoffRBF'])
-        # F-The RBF matrix will write to file; T-The RBF matrix will read from file.
-        self.iReadMatrix = self.cfg['MUI'].getboolean('iReadMatrix')
-        # F-Switch off the RBF spatial sampler polynomial terms; T-Switch on the RBF spatial sampler polynomial terms.
-        self.iPolynomial = self.cfg['MUI'].getboolean('iPolynomial')
-        # Select of basis functions of the RBF spatial sampler (integer)
-        self.basisFunc = int(self.cfg['MUI']['basisFunc'])
-        # F-Switch off the RBF spatial sampler smooth function; T-Switch on the RBF spatial sampler smooth function.
-        self.iSmoothFunc = self.cfg['MUI'].getboolean('iSmoothFunc')
-        # Numbers of time steps to forget for MUI push (integer)
-        self.forgetTStepsMUI = int(self.cfg['MUI']['forgetTStepsMUI'])
-        # F-Serial FSI coupling mode; T-Parallel FSI coupling mode.
-        self.iparallelFSICoupling = self.cfg['MUI'].getboolean('iparallelFSICoupling')
-        # Initial under relaxation factor for IQNILS (float)
-        self.undRelxCpl = float(self.cfg['MUI']['undRelxCpl'])
-
-        #===========================================
-        #%% Global solver define
-        #===========================================
-
-        # define the solving Method; "STVK" "MCK"
-        self.solving_method = self.cfg['SOLVER']['solving_method']
-        # define the linear solver; "LU" "LinearVariational"
-        self.linear_solver = self.cfg['SOLVER']['linear_solver']
-        # define the non-linear solver; "snes" "newton"
-        self.nonlinear_solver = self.cfg['SOLVER']['nonlinear_solver']
-        # define the linear solver for the problem
-        self.prbsolver = self.cfg['SOLVER']['prbsolver']
-        # define the solver for project between domains
-        self.prjsolver = self.cfg['SOLVER']['prjsolver']
-        # define the pre-conditioner for the problem
-        self.prbpreconditioner = self.cfg['SOLVER']['prbpreconditioner']
-        # define the line search for the snes solver
-        self.lineSearch = self.cfg['SOLVER']['lineSearch']
-        # define the relative tolerance for the problem
-        self.prbRelative_tolerance = float(self.cfg['SOLVER']['prbRelative_tolerance'])
-        # define the absolute tolerance for the problem
-        self.prbAbsolute_tolerance = float(self.cfg['SOLVER']['prbAbsolute_tolerance'])
-        # define the maximum iterations for the problem
-        self.prbMaximum_iterations = int(self.cfg['SOLVER']['prbMaximum_iterations'])
-        # define the relaxation parameter for the problem
-        self.prbRelaxation_parameter = float(self.cfg['SOLVER']['prbRelaxation_parameter'])
-        # define the representation of the compiler
-        self.compRepresentation = self.cfg['SOLVER']['compRepresentation']
-        # switch on the C++ code optimization
-        self.cppOptimize = self.cfg['SOLVER'].getboolean('cppOptimize')
-        # switch on optimization of the compiler
-        self.optimize = self.cfg['SOLVER'].getboolean('optimize')
-        # switch on extrapolation WARRING: Please set it 'FALSE' for Parallel Interpolation
-        self.allow_extrapolation = self.cfg['SOLVER'].getboolean('allow_extrapolation')
-        # Ghost cell mode: "shared_facet"; "shared_vertex"; "none"
-        self.ghost_mode = self.cfg['SOLVER']['ghost_mode']
-        # switch on error of non convergence
-        self.error_on_nonconvergence = self.cfg['SOLVER'].getboolean('error_on_nonconvergence')
-        # define the maximum iterations for the krylov solver
-        self.krylov_maximum_iterations = int(self.cfg['SOLVER']['krylov_maximum_iterations'])
-        # define the relative tolerance for the krylov solver
-        self.krylov_prbRelative_tolerance = float(self.cfg['SOLVER']['krylov_prbRelative_tolerance'])
-        # define the absolute tolerance for the krylov solver
-        self.krylov_prbAbsolute_tolerance = float(self.cfg['SOLVER']['krylov_prbAbsolute_tolerance'])
-        # switch on monitor convergence for the krylov solver
-        self.monitor_convergence = self.cfg['SOLVER'].getboolean('monitor_convergence')
-        # switch on nonzero initial guess for the krylov solver
-        self.nonzero_initial_guess = self.cfg['SOLVER'].getboolean('nonzero_initial_guess')
-        # switch on report for the krylov solver
-        self.show_report = self.cfg['SOLVER'].getboolean('show_report')
-
-        #===========================================
-        #%% Global degree orders
-        #===========================================
-
-        # Function space degree order
-        self.deg_fun_spc = int(self.cfg['ORDER']['deg_fun_spc'])
-
-        #===========================================
-        #%% Target folder input
-        #===========================================
-
-        # F-Input/output folder directories are relative paths; T-Input/output folder directories are absolute paths.
-        self.iAbspath = self.cfg['FOLDER'].getboolean('iAbspath')
-        self.outputFolderName = self.cfg['FOLDER']['outputFolderName']
-        self.inputFolderName = self.cfg['FOLDER']['inputFolderName']
-
-        #===========================================
-        #%% Solid mechanical parameters input
-        #===========================================
-
-        # Density of solid [kg/m^3]
-        self.rho_s = float(self.cfg['MECHANICAL']['rho_s'])
-        # Poisson ratio [-]
-        self.nu_s = float(self.cfg['MECHANICAL']['nu_s'])
-
-        #===========================================
-        #%% Solid body external forces input
-        #===========================================
-
-        # Body external forces in x-axis direction [N/m^3]
-        self.bForExtX = float(self.cfg['EXTFORCE']['bForExtX'])
-        # Body external forces in y-axis direction [N/m^3]
-        self.bForExtY = float(self.cfg['EXTFORCE']['bForExtY'])
-        # Body external forces in z-axis direction [N/m^3]
-        self.bForExtZ = float(self.cfg['EXTFORCE']['bForExtZ'])
-        # Surface external forces in x-axis direction [N/m^2]
-        self.sForExtX = float(self.cfg['EXTFORCE']['sForExtX'])
-        # Surface external forces in y-axis direction [N/m^2]
-        self.sForExtY = float(self.cfg['EXTFORCE']['sForExtY'])
-        # Surface external forces in z-axis direction [N/m^2]
-        self.sForExtZ = float(self.cfg['EXTFORCE']['sForExtZ'])
-        # Surface external forces end time [s]
-        self.sForExtEndTime = float(self.cfg['EXTFORCE']['sForExtEndTime'])
-
-        #===========================================
-        #%% Time marching parameter input
-        #===========================================
-
-        # End time [s]
-        self.T = float(self.cfg['TIME']['T'])
-        # Time step size [s]
-        self.dt = float(self.cfg['TIME']['dt'])
-        # Numbers of sub-iterations (integer) [-]
-        self.num_sub_iteration = int(self.cfg['TIME']['num_sub_iteration'])
-        # F-Run from initial time step; T-Continue run based on previous results.
-        self.iContinueRun = self.cfg['TIME'].getboolean('iContinueRun')
-        # F-Run from initial time; T-Run from a different time.
-        self.iResetStartTime = self.cfg['TIME'].getboolean('iResetStartTime')
-        # New start time (when iResetStartTime = True) [s]
-        self.newStartTime = float(self.cfg['TIME']['newStartTime'])
-        # F-sub-iteration remains the same; T-change the sub-iteration number.
-        self.iChangeSubIter = self.cfg['TIME'].getboolean('iChangeSubIter')
-        # Time to change the sub-iteration [s]
-        self.TChangeSubIter = float(self.cfg['TIME']['TChangeSubIter'])
-        # New numbers of sub-iterations (integer) [-]
-        self.num_sub_iteration_new = int(self.cfg['TIME']['num_sub_iteration_new'])
-
-        #===========================================
-        #%% Time marching accurate control
-        #===========================================
-
-        # One-step theta value, valid only on STVK solver
-        self.thetaOS = float(self.cfg['TIMEMARCHCOEF']['thetaOS'])
-        # Rayleigh damping coefficients, valid only on MCK solver
-        self.alpha_rdc = float(self.cfg['TIMEMARCHCOEF']['alpha_rdc'])
-        self.beta_rdc = float(self.cfg['TIMEMARCHCOEF']['beta_rdc'])
-        # Generalized-alpha method parameters, valid only on MCK solver
-        # alpha_m_gam <= alpha_f_gam <= 0.5 for a better performance
-        # Suggested values for alpha_m_gam: 0.0 or 0.4
-        # Suggested values for alpha_f_gam: 0.0 or 0.2
-        self.alpha_m_gam = float(self.cfg['TIMEMARCHCOEF']['alpha_m_gam'])
-        self.alpha_f_gam = float(self.cfg['TIMEMARCHCOEF']['alpha_f_gam'])
-
-        #===========================================
-        #%% Post-processing parameter input
-        #===========================================
-
-        # Output file intervals (integer) [-]
-        self.output_interval = int(self.cfg['POSTPROCESS']['output_interval'])
-        # X-axis coordinate of the monitoring point [m]
-        self.pointMoniX = float(self.cfg['POSTPROCESS']['pointMoniX'])
-        # Y-axis coordinate of the monitoring point [m]
-        self.pointMoniY = float(self.cfg['POSTPROCESS']['pointMoniY'])
-        # Z-axis coordinate of the monitoring point [m]
-        self.pointMoniZ = float(self.cfg['POSTPROCESS']['pointMoniZ'])
-        # X-axis coordinate of the monitoring point [m]
-        self.pointMoniXb = float(self.cfg['POSTPROCESS']['pointMoniXb'])
-        # Y-axis coordinate of the monitoring point [m]
-        self.pointMoniYb = float(self.cfg['POSTPROCESS']['pointMoniYb'])
-        # Z-axis coordinate of the monitoring point [m]
-        self.pointMoniZb = float(self.cfg['POSTPROCESS']['pointMoniZb'])
-
-        #===========================================
-        #%% Solid Model dimension input
-        #===========================================
-
-        # x coordinate of the original point of the beam [m]
-        self.OBeamX = float(self.cfg['GEOMETRY']['OBeamX'])
-        # y coordinate of the original point of the beam [m]
-        self.OBeamY = float(self.cfg['GEOMETRY']['OBeamY'])
-        # z coordinate of the original point of the beam [m]
-        self.OBeamZ = float(self.cfg['GEOMETRY']['OBeamZ'])
-        # length of the beam [m]
-        self.XBeam = float(self.cfg['GEOMETRY']['XBeam'])
-        # width of the beam [m]
-        self.YBeam = float(self.cfg['GEOMETRY']['YBeam'])
-        # thick of the beam [m]
-        self.ZBeam = float(self.cfg['GEOMETRY']['ZBeam'])
-
-        #===========================================
-        #%% Solid calculation selection
-        #===========================================
-
-        # F-Generate mesh; T-Load mesh from file.
-        self.iMeshLoad = self.cfg['CALMODE'].getboolean('iMeshLoad')
-        # F-Linear Hooke's law; T-Non-linear St. Vernant-Kirchhoff material model.
-        self.iNonLinearMethod = self.cfg['CALMODE'].getboolean('iNonLinearMethod')
-        # F-The HDF5 File Export function closed; T-The HDF5 File Export function opened.
-        self.iHDF5FileExport = self.cfg['CALMODE'].getboolean('iHDF5FileExport')
-        # F-Load mesh from HDF5 file; T-Load mesh from XML file (when iMeshLoad = T).
-        self.iLoadXML = self.cfg['CALMODE'].getboolean('iLoadXML')
-        # F-Do not show the generated mesh; T-Show the generated mesh interactively.
-        self.iInteractiveMeshShow = self.cfg['CALMODE'].getboolean('iInteractiveMeshShow')
-        # F-The HDF5 Mesh Export function closed; T-The HDF5 Mesh Export function opened (when iHDF5FileExport = T).
-        self.iHDF5MeshExport = self.cfg['CALMODE'].getboolean('iHDF5MeshExport')
-        # F-The HDF5 Subdomains Export function closed; T-The HDF5 Subdomains Export function opened (when iHDF5FileExport = T).
-        self.iHDF5SubdomainsExport = self.cfg['CALMODE'].getboolean('iHDF5SubdomainsExport')
-        # F-The HDF5 Boundaries Export function closed; T-The HDF5 Boundaries Export function opened (when iHDF5FileExport = T).
-        self.iHDF5BoundariesExport = self.cfg['CALMODE'].getboolean('iHDF5BoundariesExport')
-        # F-The Subdomains Import function closed; T-The Subdomains Import function opened.
-        self.iSubdomainsImport = self.cfg['CALMODE'].getboolean('iSubdomainsImport')
-        # F-The Boundaries Import function closed; T-The Boundaries Import function opened.
-        self.iBoundariesImport = self.cfg['CALMODE'].getboolean('iBoundariesImport')
-        # F-The txt export of time list and max displacement closed; T-The txt export of time list and max displacement opened.
-        self.iExporttxt = self.cfg['CALMODE'].getboolean('iExporttxt')
-        # F-Apply uniform traction force; T-Apply non-uniform traction force.
-        self.iNonUniTraction = self.cfg['CALMODE'].getboolean('iNonUniTraction')
-        # F-The gravitational force not included; T-The gravitational force included.
-        self.iGravForce = self.cfg['CALMODE'].getboolean('iGravForce')
-
-        #===========================================
-        #%% Solid Mesh numbers input
-        #===========================================
-
-        # cell numbers along the length of the beam, valid when iMeshLoad=False (integer) [-]
-        self.XMesh = int(self.cfg['MESH']['XMesh'])
-        # cell numbers along the width of the beam, valid when iMeshLoad=False (integer) [-]
-        self.YMesh = int(self.cfg['MESH']['YMesh'])
-        # cell numbers along the thick of the beam, valid when iMeshLoad=False (integer) [-]
-        self.ZMesh = int(self.cfg['MESH']['ZMesh'])
-
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Initialize MPI by mpi4py/MUI for parallelized computation
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def MUI_Init(self):
-        if self.iMUICoupling:
+        if self.iMUICoupling():
             # App common world claims
             self.LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
             # MUI parameters
@@ -409,7 +146,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                            xyz_fetch,
                            Total_Time_Steps):
 
-        if self.iMUICoupling:
+        if self.iMUICoupling():
             synchronised=False
 
             dofs_to_xyz = self.dofs_to_xyz(function_space, grid_dimension)
@@ -456,7 +193,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                                 [send_max_X, send_max_Y, send_max_Z])
 
                 # Announce the MUI send span
-                self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration, span_push, synchronised)
+                self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration(), span_push, synchronised)
 
                 print("{FENICS} at rank: ", self.rank, " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
                 print("{FENICS} at rank: ", self.rank, " send_max_Y: ", send_max_Y, " send_min_Y: ", send_min_Y)
@@ -533,7 +270,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                                  [recv_max_X, recv_max_Y, recv_max_Z])
 
                 # Announce the MUI receive span
-                self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration*10, span_fetch, synchronised)
+                self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration()*10, span_fetch, synchronised)
 
                 print("{FENICS} at rank: ", self.rank, " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
                 print("{FENICS} at rank: ", self.rank, " recv_max_Y: ", recv_max_Y, " recv_min_Y: ", recv_min_Y)
@@ -547,12 +284,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             # Spatial/temporal samplers
             if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
 
-            fileAddress=self.outputFolderName + '/RBFMatrix/' + str(self.rank)
+            fileAddress=self.outputFolderName() + '/RBFMatrix/' + str(self.rank)
             os.makedirs(fileAddress)
 
-            if (self.iReadMatrix):
+            if (self.iReadMatrix()):
                 print ("{FENICS} Reading RBF matrix from ", self.rank)
-                sourcefileAddress=self.inputFolderName + '/RBFMatrix'
+                sourcefileAddress=self.inputFolderName() + '/RBFMatrix'
 
                 # search line number of the pointID
                 numberOfFolders = 0
@@ -607,7 +344,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
             else:
                 if self.rank == 0:
-                    with open(self.outputFolderName + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
+                    with open(self.outputFolderName() + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
                         f_ps.write("%i\n" % self.size)
 
             # Best practice suggestion: for a better performance on the RBF method, always switch on the smoothFunc when structure Dofs are more than
@@ -615,15 +352,15 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
             self.t_sampler = mui4py.ChronoSamplerExact()
 
-            self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher,
+            self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher(),
                                                point3dList,
-                                               self.basisFunc,
-                                               self.iConservative,
-                                               self.iPolynomial,
-                                               self.iSmoothFunc,
-                                               self.iReadMatrix,
+                                               self.basisFunc(),
+                                               self.iConservative(),
+                                               self.iPolynomial(),
+                                               self.iSmoothFunc(),
+                                               self.iReadMatrix(),
                                                fileAddress,
-                                               self.cutoffRBF)
+                                               self.cutoffRBF())
 
             with open(fileAddress+'/pointID.dat', 'w') as f_pid:
                 for pid in point3dGlobalID:
@@ -640,11 +377,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def Mesh_Generation(self):
-        if self.iContinueRun:
+        if self.iContinueRun():
             # Restart simulation
-            if self.iMeshLoad:
+            if self.iMeshLoad():
                 # Load mesh from file
-                if self.iLoadXML:
+                if self.iLoadXML():
                     # Load mesh from XML file
                     if self.rank == 0: print ("{FENICS} Loading XML mesh ...   ")
                     mesh = Mesh(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/Structure_FEniCS.xml")
@@ -666,15 +403,15 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             else:
                 # Generate mesh
                 if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
-                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ),
-                       Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)),
-                       self.XMesh, self.YMesh, self.ZMesh)
+                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX(), self.OBeamY(), self.OBeamZ()),
+                       Point((self.OBeamX()+self.XBeam()), (self.OBeamY()+self.YBeam()), (self.OBeamZ()+self.ZBeam())),
+                       self.XMesh(), self.YMesh(), self.ZMesh())
                 if self.rank == 0: print ("{FENICS} Done with generating mesh")
         else:
             # Simulation from zero
-            if self.iMeshLoad:
+            if self.iMeshLoad():
                 # Load mesh from file
-                if self.iLoadXML:
+                if self.iLoadXML():
                     if self.rank == 0: print ("{FENICS} Loading XML mesh ...   ")
                     mesh = Mesh(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/Structure_FEniCS.xml")
                     if self.rank == 0: print ("{FENICS} Done with loading XML mesh")
@@ -694,12 +431,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             else:
                 # Generate mesh
                 if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
-                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX, self.OBeamY, self.OBeamZ),
-                       Point((self.OBeamX+self.XBeam), (self.OBeamY+self.YBeam), (self.OBeamZ+self.ZBeam)),
-                       self.XMesh, self.YMesh, self.ZMesh)
+                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX(), self.OBeamY(), self.OBeamZ()),
+                       Point((self.OBeamX()+self.XBeam()), (self.OBeamY()+self.YBeam()), (self.OBeamZ()+self.ZBeam())),
+                       self.XMesh(), self.YMesh(), self.ZMesh())
                 if self.rank == 0: print ("{FENICS} Done with generating mesh")
 
-        if self.iHDF5FileExport and self.iHDF5MeshExport:
+        if self.iHDF5FileExport() and self.iHDF5MeshExport():
             if self.rank == 0: print ("{FENICS} Exporting HDF5 mesh ...   ", end="", flush=True)
             hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
             hdfOutTemp.write(mesh, "/mesh")
@@ -707,7 +444,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             del hdfOutTemp
             if self.rank == 0: print ("Done")
 
-        if self.iInteractiveMeshShow:
+        if self.iInteractiveMeshShow():
             if self.rank == 0: print ("{FENICS} Interactive Mesh Show ...", end="", flush=True)
             import matplotlib.pyplot as plt
             plt.figure()
@@ -734,8 +471,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     def Boundaries_Generation_Fixed_Flex_Sym (self, mesh, grid_dimension, VectorFunctionSpace):
 
         #Define SubDomains
-        if self.iMeshLoad and self.iSubdomainsImport:
-            if self.iLoadXML:
+        if self.iMeshLoad() and self.iSubdomainsImport():
+            if self.iLoadXML():
                 if self.rank == 0: print ("{FENICS} Loading XML subdomains ...   ", end="", flush=True)
                 self.subdomains = MeshFunction("size_t", mesh, self.inputFolderPath + "/Structure_FEniCS_physical_region.xml")
             else:
@@ -758,7 +495,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
             if self.rank == 0: print ("Done")
 
-        if self.iHDF5FileExport and self.iHDF5SubdomainsExport:
+        if self.iHDF5FileExport() and self.iHDF5SubdomainsExport():
             if self.rank == 0: print ("{FENICS} Exporting HDF5 subdomains ...   ", end="", flush=True) 
             self.subdomains = MeshFunction("size_t", mesh, mesh.topology().dim())
             hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
@@ -768,8 +505,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             if self.rank == 0: print ("Done")
 
         #Define and mark mesh boundaries
-        if self.iMeshLoad and self.iBoundariesImport:
-            if self.iLoadXML:
+        if self.iMeshLoad() and self.iBoundariesImport():
+            if self.iLoadXML():
                 if self.rank == 0: print ("{FENICS} Loading XML boundaries ...   ", end="", flush=True)
                 boundaries = MeshFunction("size_t", mesh, self.inputFolderPath + "/Structure_FEniCS_facet_region.xml")
             else:
@@ -792,7 +529,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             symmetry.mark(boundaries,3)
             if self.rank == 0: print ("Done")
 
-        if self.iHDF5FileExport and self.iHDF5BoundariesExport: 
+        if self.iHDF5FileExport() and self.iHDF5BoundariesExport():
             if self.rank == 0: print ("{FENICS} Exporting HDF5 boundaries ...   ", end="", flush=True)
             hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
             hdfOutTemp.write(boundaries, "/boundaries")
@@ -818,26 +555,26 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def Time_Marching_Parameters(self):
-        if self.iContinueRun:
+        if self.iContinueRun():
             hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
             # Read start time [s]
-            self.Start_Time = self.dt + hdf5checkpointDataInTemp.attributes("/ud/vector_0")["timestamp"]
+            self.Start_Time = self.dt() + hdf5checkpointDataInTemp.attributes("/ud/vector_0")["timestamp"]
             # Calculate time steps [-]
-            self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)
+            self.Time_Steps = math.ceil((self.T() - self.Start_Time)/self.dt())
             # Close file and delete HDF5File object
             hdf5checkpointDataInTemp.close()
             del hdf5checkpointDataInTemp
         else:
-            if self.iResetStartTime:
+            if self.iResetStartTime():
                 # Reset start time [s]
-                self.Start_Time = self.dt + self.newStartTime
+                self.Start_Time = self.dt() + self.newStartTime()
                 # Calculate time steps [-]
-                self.Time_Steps = math.ceil((self.T - self.Start_Time)/self.dt)
+                self.Time_Steps = math.ceil((self.T() - self.Start_Time)/self.dt())
             else:
                 # Set start time [s]
-                self.Start_Time = self.dt
+                self.Start_Time = self.dt()
                 # Calculate time steps [-]
-                self.Time_Steps = math.ceil(self.T/self.dt)
+                self.Time_Steps = math.ceil(self.T()/self.dt())
         # Initialise sub-iterations counter
         self.Start_Number_Sub_Iteration = 1
 
@@ -886,10 +623,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         ones = np.array([1,1,1])
 
         dpc_help_number = 0
-        if (self.deg_fun_spc != 1):
-            for i in range(2, self.deg_fun_spc+1):
+        if (self.deg_fun_spc() != 1):
+            for i in range(2, self.deg_fun_spc()+1):
                 dpc_help_number += i
-        dofs_Per_Cell=3+dpc_help_number+(self.deg_fun_spc-1)
+        dofs_Per_Cell=3+dpc_help_number+(self.deg_fun_spc()-1)
 
         for f in facets(mesh):
             if boundary[f.index()] == 2:
@@ -910,7 +647,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 det1=np.linalg.det(row1)
                 det2=np.linalg.det(row2)
                 det3=np.linalg.det(row3)
-                area = 0.5*math.sqrt(det1*det1 + det2*det2 + det3*det3)*self.areaListFactor
+                area = 0.5*math.sqrt(det1*det1 + det2*det2 + det3*det3)*self.areaListFactor()
                 for c in cells(f):
                     c_dofs = cell2dofs(c.index())
                     d_list=[]
@@ -927,7 +664,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         for iii, ppp in enumerate(self.areaf_vec):
             areatotal += self.areaf_vec[iii]
 
-        if (self.rank == 0) and self.iDebug:
+        if (self.rank == 0) and self.iDebug():
             print("Total area of MUI fetched surface= ", areatotal, " m^2")
 
     def facets_area_define(self,
@@ -940,7 +677,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             self.areaf= Function(Q)
             self.areaf_vec = self.areaf.vector().get_local()
 
-            if self.iLoadAreaList:
+            if self.iLoadAreaList():
                 hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
                 hdf5meshAreaDataInTemp.read(self.areaf, "/areaf/vector_0")
                 hdf5meshAreaDataInTemp.close()
@@ -952,7 +689,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 self.areaf.vector().set_local(self.areaf_vec)
                 self.areaf.vector().apply("insert")
                 # Facet area vectors I/O
-                if (self.iHDF5FileExport) and (self.iHDF5MeshExport):
+                if (self.iHDF5FileExport()) and (self.iHDF5MeshExport()):
                     hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
                     hdfOutTemp.write(self.areaf, "/areaf")
                     hdfOutTemp.close()
@@ -969,13 +706,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         totForceZ = 0.0
         temp_vec_function_temp = self.tF_apply_vec
 
-        if self.iparallelFSICoupling:
+        if self.iparallelFSICoupling():
             fetch_iteration = total_Sub_Iteration-1
         else:
             fetch_iteration = total_Sub_Iteration
 
         if (fetch_iteration >= 0):
-            if self.iMUIFetchMany:
+            if self.iMUIFetchMany():
                 temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
                             fetch_many("forceX",
                                        dofs_to_xyz,
@@ -996,13 +733,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                        self.t_sampler)
 
                 for i, p in enumerate(dofs_fetch_list):
-                    if self.iparallelFSICoupling:
+                    if self.iparallelFSICoupling():
                         self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - \
-                                                       self.tF_apply_vec[0::3][p])*self.undRelxCpl
+                                                       self.tF_apply_vec[0::3][p])*self.undRelxCpl()
                         self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - \
-                                                       self.tF_apply_vec[1::3][p])*self.undRelxCpl
+                                                       self.tF_apply_vec[1::3][p])*self.undRelxCpl()
                         self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - \
-                                                       self.tF_apply_vec[2::3][p])*self.undRelxCpl
+                                                       self.tF_apply_vec[2::3][p])*self.undRelxCpl()
                     else:
                         self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
                         self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
@@ -1045,13 +782,13 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                           self.s_sampler,
                                           self.t_sampler)
 
-                        if self.iparallelFSICoupling:
+                        if self.iparallelFSICoupling():
                             self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - \
-                                                           self.tF_apply_vec[0::3][p])*self.undRelxCpl
+                                                           self.tF_apply_vec[0::3][p])*self.undRelxCpl()
                             self.tF_apply_vec[1::3][p] += (temp_vec_function_temp[1::3][p] - \
-                                                           self.tF_apply_vec[1::3][p])*self.undRelxCpl
+                                                           self.tF_apply_vec[1::3][p])*self.undRelxCpl()
                             self.tF_apply_vec[2::3][p] += (temp_vec_function_temp[2::3][p] - \
-                                                           self.tF_apply_vec[2::3][p])*self.undRelxCpl
+                                                           self.tF_apply_vec[2::3][p])*self.undRelxCpl()
                         else:
                             self.tF_apply_vec[0::3][p] = temp_vec_function_temp[0::3][p]
                             self.tF_apply_vec[1::3][p] = temp_vec_function_temp[1::3][p]
@@ -1065,7 +802,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         self.tF_apply_vec[1::3][p] /= self.areaf_vec[p]
                         self.tF_apply_vec[2::3][p] /= self.areaf_vec[p]
 
-                    if self.iDebug:
+                    if self.iDebug():
                         print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ,
                                 "; at iteration: ", fetch_iteration, " at rank: ", self.rank)
 
@@ -1074,29 +811,29 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         d_vec_y = displacement_function.vector().get_local()[1::3]
         d_vec_z = displacement_function.vector().get_local()[2::3]
 
-        if self.iMUIPushMany:
-            if self.iPushX:
+        if self.iMUIPushMany():
+            if self.iPushX():
                 self.ifaces3d["threeDInterface0"].\
                             push_many("dispX", dofs_to_xyz, (d_vec_x[dofs_push]))
-            if self.iPushY:
+            if self.iPushY():
                 self.ifaces3d["threeDInterface0"].\
                             push_many("dispY", dofs_to_xyz, (d_vec_y[dofs_push]))
-            if self.iPushZ:
+            if self.iPushZ():
                 self.ifaces3d["threeDInterface0"].\
                             push_many("dispZ", dofs_to_xyz, (d_vec_z[dofs_push]))
 
             a = self.ifaces3d["threeDInterface0"].\
                             commit(total_Sub_Iteration)
         else:
-            if self.iPushX:
+            if self.iPushX():
                 for i, p in enumerate(dofs_push):
                     self.ifaces3d["threeDInterface0"].\
                             push("dispX", dofs_to_xyz[i], (d_vec_x[p]))
-            if self.iPushY:
+            if self.iPushY():
                 for i, p in enumerate(dofs_push):
                     self.ifaces3d["threeDInterface0"].\
                             push("dispY", dofs_to_xyz[i], (d_vec_y[p]))
-            if self.iPushZ:
+            if self.iPushZ():
                 for i, p in enumerate(dofs_push):
                     self.ifaces3d["threeDInterface0"].\
                             push("dispZ", dofs_to_xyz[i], (d_vec_z[p]))
@@ -1104,31 +841,31 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             a = self.ifaces3d["threeDInterface0"].\
                             commit(total_Sub_Iteration)
 
-        if (self.rank == 0) and self.iDebug:
+        if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
-        if ((total_Sub_Iteration-self.forgetTStepsMUI) > 0):
+        if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
             a = self.ifaces3d["threeDInterface0"].\
-                            forget(total_Sub_Iteration-self.forgetTStepsMUI)
+                            forget(total_Sub_Iteration-self.forgetTStepsMUI())
             self.ifaces3d["threeDInterface0"].\
-                            set_memory(self.forgetTStepsMUI)
-            if (self.rank == 0) and self.iDebug:
-                print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI))
+                            set_memory(self.forgetTStepsMUI())
+            if (self.rank == 0) and self.iDebug():
+                print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI()))
 
     def MUI_Commit_only(self, total_Sub_Iteration):
         a = self.ifaces3d["threeDInterface0"].\
                             commit(total_Sub_Iteration)
 
-        if (self.rank == 0) and self.iDebug:
+        if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
-        if ((total_Sub_Iteration-self.forgetTStepsMUI) > 0):
+        if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
             a = self.ifaces3d["threeDInterface0"].\
-                            forget(total_Sub_Iteration-self.forgetTStepsMUI)
+                            forget(total_Sub_Iteration-self.forgetTStepsMUI())
             self.ifaces3d["threeDInterface0"].\
-                            set_memory(self.forgetTStepsMUI)
-            if (self.rank == 0) and self.iDebug:
-                print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI))
+                            set_memory(self.forgetTStepsMUI())
+            if (self.rank == 0) and self.iDebug():
+                print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI()))
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define directional vectors
@@ -1150,10 +887,10 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
     def b_for (self):
         # Body external forces define [N/m^3]
-        b_for_ext = Constant((self.bForExtX, self.bForExtY, self.bForExtZ))
+        b_for_ext = Constant((self.bForExtX(), self.bForExtY(), self.bForExtZ()))
         # Gravitational force define [N/m^3]
-        if self.iGravForce:
-            g_force = Constant((0.0, (self.rho_s * (-9.81)), 0.0))
+        if self.iGravForce():
+            g_force = Constant((0.0, (self.rho_s() * (-9.81)), 0.0))
         else:
             g_force = Constant((0.0, (0.0 * (-9.81)), 0.0))
         return (b_for_ext + g_force)
@@ -1164,7 +901,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
     # Define the Lamé's first parameter
     def lamda_s (self):
-        return (2.0*(self.mu_s())*self.nu_s/(1.0-2.0*self.nu_s))
+        return (2.0*(self.mu_s())*self.nu_s()/(1.0-2.0*self.nu_s()))
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define Generalised-alpha method functions
@@ -1176,8 +913,8 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                     displacement_previous_function,
                                     velocity_previous_function):
         return (2 * (displacement_function - displacement_previous_function -
-                     (self.dt * velocity_previous_function))/
-                     (self.dt**2))
+                     (self.dt() * velocity_previous_function))/
+                     (self.dt()**2))
 
     def Acceleration_March_Term_Two(self,
                                     acceleration_previous_function,
@@ -1203,12 +940,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     def Velocity_March_Term_One(self,
                                 acceleration_previous_function,
                                 gamma_gam):
-        return ((1 - gamma_gam) * acceleration_previous_function * self.dt)
+        return ((1 - gamma_gam) * acceleration_previous_function * self.dt())
 
     def Velocity_March_Term_Two(self,
                                 acceleration_function,
                                 gamma_gam):
-        return (acceleration_function * gamma_gam * self.dt)
+        return (acceleration_function * gamma_gam * self.dt())
 
     def UMCK(self,
              acceleration_function,
@@ -1292,7 +1029,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                 self.lamda_s() * tr(sym(grad(displacement_function))) * self.I(grid_dimension))
 
     def Traction_Define(self, VectorFunctionSpace):
-        if self.iNonUniTraction:
+        if self.iNonUniTraction():
             if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
             self.tF_apply = Function(VectorFunctionSpace)
             self.tF_apply_vec = self.tF_apply.vector().get_local()
@@ -1305,11 +1042,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
 
     def Traction_Assign(self, xyz_fetch, dofs_fetch_list, t_sub_it, n_steps):
         # Assign traction forces at present time step
-        if self.iNonUniTraction:
+        if self.iNonUniTraction():
             if len(xyz_fetch)!=0:
                 # Execute only when there are DoFs need to exchange data in this rank.
                 self.MUI_Fetch(xyz_fetch, dofs_fetch_list, t_sub_it)
-            if (self.iMUIFetchValue) and (not ((self.iContinueRun) and (n_steps == 1))):
+            if (self.iMUIFetchValue()) and (not ((self.iContinueRun()) and (n_steps == 1))):
                 # Apply traction components. These calls do parallel communication
                 self.tF_apply.vector().set_local(self.tF_apply_vec)
                 self.tF_apply.vector().apply("insert")
@@ -1319,15 +1056,15 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         else:
             if self.rank == 0: print ("{FENICS} Assigning uniform traction forces at present time step ...   ",
                                     end="", flush=True)
-            if (t <= self.sForExtEndTime):
-                self.tF_magnitude.assign((Constant((self.sForExtX) /
-                                                   (self.YBeam * self.ZBeam)) *
+            if (t <= self.sForExtEndTime()):
+                self.tF_magnitude.assign((Constant((self.sForExtX()) /
+                                                   (self.YBeam() * self.ZBeam())) *
                                                    self.X_direction_vector()) +
-                                                   (Constant((self.sForExtY) /
-                                                   (self.XBeam*self.ZBeam)) *
+                                                   (Constant((self.sForExtY()) /
+                                                   (self.XBeam()*self.ZBeam())) *
                                                    self.Y_direction_vector()) +
-                                                   (Constant((self.sForExtZ) /
-                                                   (self.XBeam*self.YBeam)) *
+                                                   (Constant((self.sForExtZ()) /
+                                                   (self.XBeam()*self.YBeam())) *
                                                    self.Z_direction_vector()))
             else:
                 self.tF_magnitude.assign(Constant((0.0)))
@@ -1339,11 +1076,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def Set_Compiler_Options(self):
-        parameters["allow_extrapolation"] = self.allow_extrapolation
-        parameters["form_compiler"]["optimize"] = self.optimize
-        parameters["form_compiler"]["cpp_optimize"] = self.cppOptimize
-        parameters["form_compiler"]["representation"] = self.compRepresentation
-        parameters["ghost_mode"] = self.ghost_mode
+        parameters["allow_extrapolation"] = self.allow_extrapolation()
+        parameters["form_compiler"]["optimize"] = self.optimize()
+        parameters["form_compiler"]["cpp_optimize"] = self.cppOptimize()
+        parameters["form_compiler"]["representation"] = self.compRepresentation()
+        parameters["ghost_mode"] = self.ghost_mode()
         parameters["mesh_partitioner"] = "SCOTCH"
         parameters["partitioning_approach"] = "PARTITION"
         info(parameters, False)
@@ -1377,11 +1114,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             print ("\n")
             print ("{FENICS} ********** STRUCTURAL-ELASTICITY SIMULATION BEGIN **********")
             print ("\n")
-            if self.iDebug:
+            if self.iDebug():
                 print ("{FENICS} ### !!! DEBUG LEVEL ON !!! ###")
                 print ("\n")
 
-            if self.iMUICoupling:
+            if self.iMUICoupling():
                 print ("{FENICS} ### !!! MUI COUPLING ON !!! ###")
                 print ("\n")
 
@@ -1390,29 +1127,29 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             print ("\n")
 
             print ("{FENICS} Solver info: ")
-            if self.solving_method == 'STVK':
-                print ("{FENICS} Solver for the problem: ", self.prbsolver)
-                print ("{FENICS} Solver for project between domains: ", self.prjsolver)
-                print ("{FENICS} Pre-conditioner for the problem: ", self.prbpreconditioner)
-                print ("{FENICS} Relative tolerance: ", self.prbRelative_tolerance)
-                print ("{FENICS} Absolute tolerance: ", self.prbAbsolute_tolerance)
-                print ("{FENICS} Maximum iterations: ", self.prbMaximum_iterations)
-                print ("{FENICS} Relaxation parameter: ", self.prbRelaxation_parameter)
-                print ("{FENICS} Representation of the compiler: ", self.compRepresentation)
-                print ("{FENICS} C++ code optimization: ", self.cppOptimize)
-                print ("{FENICS} optimization of the compiler: ", self.optimize)
-                print ("{FENICS} Extrapolation: ", self.allow_extrapolation)
-                print ("{FENICS} Ghost cell mode: ", self.ghost_mode)
-                print ("{FENICS} Error of non convergence: ", self.error_on_nonconvergence)
-            elif self.solving_method == 'MCK':
-                print ("{FENICS} Solver for the problem: ", self.prbsolver)
-                print ("{FENICS} Solver for project between domains: ", self.prjsolver)
+            if self.solving_method() == 'STVK':
+                print ("{FENICS} Solver for the problem: ", self.prbsolver())
+                print ("{FENICS} Solver for project between domains: ", self.prjsolver())
+                print ("{FENICS} Pre-conditioner for the problem: ", self.prbpreconditioner())
+                print ("{FENICS} Relative tolerance: ", self.prbRelative_tolerance())
+                print ("{FENICS} Absolute tolerance: ", self.prbAbsolute_tolerance())
+                print ("{FENICS} Maximum iterations: ", self.prbMaximum_iterations())
+                print ("{FENICS} Relaxation parameter: ", self.prbRelaxation_parameter())
+                print ("{FENICS} Representation of the compiler: ", self.compRepresentation())
+                print ("{FENICS} C++ code optimization: ", self.cppOptimize())
+                print ("{FENICS} optimization of the compiler: ", self.optimize())
+                print ("{FENICS} Extrapolation: ", self.allow_extrapolation())
+                print ("{FENICS} Ghost cell mode: ", self.ghost_mode())
+                print ("{FENICS} Error of non convergence: ", self.error_on_nonconvergence())
+            elif self.solving_method() == 'MCK':
+                print ("{FENICS} Solver for the problem: ", self.prbsolver())
+                print ("{FENICS} Solver for project between domains: ", self.prjsolver())
             print ("\n")
 
             print ("{FENICS} Input parameters: ")
             print ("{FENICS} E: ", self.E_s(), "[Pa]")
-            print ("{FENICS} rho: ", self.rho_s, "[kg/m^3]")
-            print ("{FENICS} nu: ", self.nu_s, "[-]")
+            print ("{FENICS} rho: ", self.rho_s(), "[kg/m^3]")
+            print ("{FENICS} nu: ", self.nu_s(), "[-]")
             print ("\n")
         else:
             pass
@@ -1420,11 +1157,11 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
     def Time_Marching_Log(self):
         if self.rank == 0: 
             print ("\n")
-            print ("{FENICS} Total time: ", self.T, " [s]")
-            print ("{FENICS} Time step size: ", self.dt, " [s]")
+            print ("{FENICS} Total time: ", self.T(), " [s]")
+            print ("{FENICS} Time step size: ", self.dt(), " [s]")
             print ("{FENICS} Time steps: ", self.Start_Time, " [-]")
             print ("{FENICS} Start time: ", self.Time_Steps, " [s]")
-            print ("{FENICS} Numbers of sub-iterations: ", self.num_sub_iteration, " [-]")
+            print ("{FENICS} Numbers of sub-iterations: ", self.num_sub_iteration(), " [-]")
             print ("\n")
 
     def print_Disp (self, displacement_function):
@@ -1434,20 +1171,20 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                         self.size,
                                         self.size])
         self.LOCAL_COMM_WORLD.Reduce((displacement_function(
-                                    Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
+                                    Point(self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()))),
                                     d_DispSum,op=MPI.SUM,root=0)
         d_Disp = np.divide(d_DispSum,d_tempDenominator)
         if self.rank == 0:
             print ("{FENICS} Monitored point deflection [m]: ", d_Disp)
 
     def Export_Disp_txt(self, displacement_function):
-        if self.iExporttxt:
+        if self.iExporttxt():
             pointMoniDispSum = np.zeros(3)
             tempDenominator  = np.array([self.size,
                                          self.size,
                                          self.size])
             self.LOCAL_COMM_WORLD.Reduce((displacement_function(
-                                    Point(self.pointMoniX,self.pointMoniY,self.pointMoniZ))),
+                                    Point(self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()))),
                                     pointMoniDispSum,op=MPI.SUM,root=0)
             pointMoniDisp = np.divide(pointMoniDispSum,tempDenominator)
 
@@ -1456,7 +1193,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                          self.size,
                                          self.size])
             self.LOCAL_COMM_WORLD.Reduce((displacement_function(
-                                    Point(self.pointMoniXb,self.pointMoniYb,self.pointMoniZb))),
+                                    Point(self.pointMoniXb(),self.pointMoniYb(),self.pointMoniZb()))),
                                     pointMoniDispSum_b,op=MPI.SUM,root=0)
             pointMoniDisp_b = np.divide(pointMoniDispSum_b,tempDenominator_b)
 
@@ -1500,32 +1237,32 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                         VectorFunctionSpace,
                         displacement_function):
         # Export post-processing files
-        if ((self.rank == 0) and self.iDebug):
+        if ((self.rank == 0) and self.iDebug()):
             print ("\n")
             print ("{FENICS} time steps: ", Current_Time_Step,
-                    " output_interval: ", self.output_interval,
-                    " %: ", (Current_Time_Step % self.output_interval))
+                    " output_interval: ", self.output_interval(),
+                    " %: ", (Current_Time_Step % self.output_interval()))
 
-        if (Current_Time_Step % self.output_interval) == 0:
+        if (Current_Time_Step % self.output_interval()) == 0:
             if self.rank == 0:
                 print ("\n")
                 print ("{FENICS} Export files at ", current_time, " [s] ...   ", end="", flush=True)
 
             # Compute stress
-            Vsig = TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc)
+            Vsig = TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc())
             sig = Function(Vsig, name="Stress")
-            if self.iNonLinearMethod:
+            if self.iNonLinearMethod():
                 sig.assign(project(self.Piola_Kirchhoff_sec(
                             displacement_function,self.E,grid_dimension),
-                            Vsig, solver_type=self.prjsolver,
-                            form_compiler_parameters={"cpp_optimize": self.cppOptimize,
-                            "representation": self.compRepresentation}))
+                            Vsig, solver_type=self.prjsolver(),
+                            form_compiler_parameters={"cpp_optimize": self.cppOptimize(),
+                            "representation": self.compRepresentation()}))
             else:
                 sig.assign(project(self.Piola_Kirchhoff_sec(
                             displacement_function,self.epsilon,grid_dimension),
-                            Vsig, solver_type=self.prjsolver,
-                            form_compiler_parameters={"cpp_optimize": self.cppOptimize,
-                            "representation": self.compRepresentation}))
+                            Vsig, solver_type=self.prjsolver(),
+                            form_compiler_parameters={"cpp_optimize": self.cppOptimize(),
+                            "representation": self.compRepresentation()}))
             # Save stress solution to file
             sig.rename('Piola Kirchhoff sec Stress', 'stress')
             self.stress_file << (sig, float(current_time))
@@ -1538,9 +1275,9 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
             traction = Function(VectorFunctionSpace, name="Traction")
             traction.assign(project(self.tF_apply,
                                     VectorFunctionSpace,
-                                    solver_type=self.prjsolver,
-                                    form_compiler_parameters={"cpp_optimize": self.cppOptimize,
-                                    "representation": self.compRepresentation}))
+                                    solver_type=self.prjsolver(),
+                                    form_compiler_parameters={"cpp_optimize": self.cppOptimize(),
+                                    "representation": self.compRepresentation()}))
             # Save traction solution to file
             traction.rename('traction', 'trac')
             self.traction_file << (traction, float(current_time))
@@ -1600,7 +1337,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
                                            u0mck,
                                            a0mck,
                                            dmck):
-        if self.iContinueRun:
+        if self.iContinueRun():
             hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
             hdf5checkpointDataInTemp.read(d0mck, "/d0mck/vector_0")
             hdf5checkpointDataInTemp.read(u0mck, "/u0mck/vector_0")
@@ -1638,7 +1375,7 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         del hdf5checkpointDataOut
 
     def Load_Functions_Continue_Run_Nonlinear(self, u0d0, ud, sigma_s):
-        if self.iContinueRun:
+        if self.iContinueRun():
             hdf5checkpointDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/checkpointData.h5", "r")
             hdf5checkpointDataInTemp.read(u0d0, "/u0d0/vector_0")
             hdf5checkpointDataInTemp.read(ud, "/ud/vector_0")
@@ -1675,12 +1412,12 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #===========================================
 
         # Folder directory
-        if self.iAbspath:
-            self.outputFolderPath = os.path.abspath(self.outputFolderName)
-            self.inputFolderPath = os.path.abspath(self.inputFolderName)
+        if self.iAbspath():
+            self.outputFolderPath = os.path.abspath(self.outputFolderName())
+            self.inputFolderPath = os.path.abspath(self.inputFolderName())
         else:
-            self.outputFolderPath = self.outputFolderName
-            self.inputFolderPath = self.inputFolderName
+            self.outputFolderPath = self.outputFolderName()
+            self.inputFolderPath = self.inputFolderName()
 
         #===========================================
         #%% Print log information
@@ -1705,9 +1442,9 @@ class StructureFSISolver(structureFSISolver.cfgPrsFn.readData,
         #%% Call solvers
         #===========================================
 
-        if self.solving_method == 'STVK':
+        if self.solving_method() == 'STVK':
             self.hyperElasticSolve()
-        elif self.solving_method == 'MCK':
+        elif self.solving_method() == 'MCK':
             self.linearElasticSolve()
         else:
             sys.exit("{FENICS} Error, solving method not recognised")
