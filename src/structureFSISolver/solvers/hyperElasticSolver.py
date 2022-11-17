@@ -24,7 +24,7 @@
 
     *********************************************************************
 
-    @file structureFSISolver.py
+    @file hyperElastic.py
 
     @author W. Liu
 

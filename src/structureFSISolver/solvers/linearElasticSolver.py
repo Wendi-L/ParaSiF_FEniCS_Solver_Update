@@ -24,7 +24,7 @@
 
     *********************************************************************
 
-    @file structureFSISolver.py
+    @file linearElastic.py
 
     @author W. Liu
 

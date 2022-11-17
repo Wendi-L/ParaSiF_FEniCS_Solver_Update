@@ -24,14 +24,14 @@
     
     *********************************************************************
     
-    @file cfgPrsFns.py
+    @file lameParm.py
     
     @author W. Liu
     
     @brief This is a part of the Parallel Partitioned Multi-physical Simu-
     lation Framework.
 
-    Dundant init file of the structure code.
+    Lame parameters file of the structure code.
     Located in the src/CSM/FEniCS/V2019.1.0/structureFSISolver sub-folder
 """
 
@@ -42,7 +42,14 @@
 
 class lameParm:
 
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #%% Define Lame parameters
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     def mu_s (self):
     # Define the Lamé's second parameter(shear modulus)
         return (self.E_s()/(2.0*(1.0 + self.nu_s())))
 
+    # Define the Lamé's first parameter
+    def lamda_s (self):
+        return (2.0*(self.mu_s())*self.nu_s()/(1.0-2.0*self.nu_s()))
