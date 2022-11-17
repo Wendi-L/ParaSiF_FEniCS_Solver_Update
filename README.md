@@ -2,7 +2,7 @@
 
 ## Updates
 
-17th October 2022: Start working on code upgrade in FEniCS-X branch.
+17th November 2022: Start working on code upgrade in FEniCS-X branch.
 
 17th November 2022: Done with initial code clean-up/optimisation in FEniCS-v2019 branch.
 
