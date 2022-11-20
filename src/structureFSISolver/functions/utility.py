@@ -148,12 +148,15 @@ class utility:
                                     0.0 *self.Z_direction_vector())
             self.tF_apply = self.tF_magnitude
 
-    def Traction_Assign(self, xyz_fetch, dofs_fetch_list, t_sub_it, n_steps):
+    def Traction_Assign(self, xyz_fetch, dofs_fetch_list, t_sub_it, n_steps, t):
         # Assign traction forces at present time step
         if self.iNonUniTraction():
             if len(xyz_fetch)!=0:
                 # Execute only when there are DoFs need to exchange data in this rank.
-                self.MUI_Fetch(xyz_fetch, dofs_fetch_list, t_sub_it)
+                if self.iMUICoupling():
+                    self.MUI_Fetch(xyz_fetch, dofs_fetch_list, t_sub_it)
+                else:
+                    self.Traction_DoF_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, t)
             if (self.iMUIFetchValue()) and (not ((self.iContinueRun()) and (n_steps == 1))):
                 # Apply traction components. These calls do parallel communication
                 self.tF_apply.vector().set_local(self.tF_apply_vec)
@@ -178,5 +181,43 @@ class utility:
                 self.tF_magnitude.assign(Constant((0.0)))
             if self.rank == 0:
                 print ("Done")
+
+    def Traction_DoF_Assign(self, dofs_to_xyz, dofs_fetch_list, total_Sub_Iteration, t):
+        totForceX = 0.0
+        totForceY = 0.0
+        totForceZ = 0.0
+        temp_vec_function_temp = self.tF_apply_vec
+
+        for i, p in enumerate(dofs_fetch_list):
+            if (t <= self.sForExtEndTime()):
+                if self.iConstantSForExt():
+                    self.tF_apply_vec[0::3][p] = (self.sForExtX()) / len(dofs_fetch_list)
+                    self.tF_apply_vec[1::3][p] = (self.sForExtY()) / len(dofs_fetch_list)
+                    self.tF_apply_vec[2::3][p] = (self.sForExtZ()) / len(dofs_fetch_list)
+                else:
+                    self.tF_apply_vec[0::3][p] = (t / self.sForExtEndTime()) * (self.sForExtX()) / len(dofs_fetch_list)
+                    self.tF_apply_vec[1::3][p] = (t / self.sForExtEndTime()) * (self.sForExtY()) / len(dofs_fetch_list)
+                    self.tF_apply_vec[2::3][p] = (t / self.sForExtEndTime()) * (self.sForExtZ()) / len(dofs_fetch_list)
+            else:
+                if self.iConstantSForExt():
+                    self.tF_apply_vec[0::3][p] = (0.0) / len(dofs_fetch_list)
+                    self.tF_apply_vec[1::3][p] = (0.0) / len(dofs_fetch_list)
+                    self.tF_apply_vec[2::3][p] = (0.0) / len(dofs_fetch_list)
+                else:
+                    self.tF_apply_vec[0::3][p] = (0.0) * (self.sForExtX()) / len(dofs_fetch_list)
+                    self.tF_apply_vec[1::3][p] = (0.0) * (self.sForExtY()) / len(dofs_fetch_list)
+                    self.tF_apply_vec[2::3][p] = (0.0) * (self.sForExtZ()) / len(dofs_fetch_list)
+
+            totForceX += self.tF_apply_vec[0::3][p]
+            totForceY += self.tF_apply_vec[1::3][p]
+            totForceZ += self.tF_apply_vec[2::3][p]
+
+            self.tF_apply_vec[0::3][p] /= self.areaf_vec[p]
+            self.tF_apply_vec[1::3][p] /= self.areaf_vec[p]
+            self.tF_apply_vec[2::3][p] /= self.areaf_vec[p]
+
+        if self.iDebug():
+            print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ,
+                    "; at iteration: ", total_Sub_Iteration, " at rank: ", self.rank)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#

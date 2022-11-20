@@ -247,6 +247,9 @@ class readData:
     def sForExtEndTime (self):
         # Surface external forces end time [s]
         return float(self.cfg['EXTFORCE']['sForExtEndTime'])
+    def iConstantSForExt (self):
+        # F-Linear increment of external surface forces; T-Constant external surface forces.
+        return self.cfg['EXTFORCE'].getboolean('iConstantSForExt')
 
         #===========================================
         #%% Time marching parameter input
