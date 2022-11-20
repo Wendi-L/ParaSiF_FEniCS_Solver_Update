@@ -41,6 +41,7 @@
 #_________________________________________________________________________________________
 import sys
 import mui4py
+from mpi4py import MPI
 import petsc4py
 import os
 

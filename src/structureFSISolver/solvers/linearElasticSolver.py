@@ -279,7 +279,7 @@ class linearElastic:
                     print ("{FENICS} Sub-iteration Number: ", i_sub_it, " Total sub-iterations to now: ", t_sub_it)
 
                 # Fetch and assign traction forces at present time step
-                self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps)
+                self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps, t)
 
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
 
@@ -353,6 +353,7 @@ class linearElastic:
         #===============================================
 
         # Wait for the other solver
-        self.ifaces3d["threeDInterface0"].barrier(t_sub_it)
+        if self.iMUICoupling():
+            self.ifaces3d["threeDInterface0"].barrier(t_sub_it)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
