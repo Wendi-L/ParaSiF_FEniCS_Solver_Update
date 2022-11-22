@@ -44,7 +44,7 @@
 #%% Import packages
 #_________________________________________________________________________________________
 
-from dolfin import *
+from dolfinx import *
 import os
 import numpy as np
 from mpi4py import MPI
@@ -72,7 +72,7 @@ class hyperElastic:
 
         mesh = self.Mesh_Generation()
         gdim = self.Get_Grid_Dimension(mesh)
-        N    = self.Get_Face_Narmal(mesh)
+        N    = self.Get_Face_Normal(mesh)
 
         #===========================================
         #%% Define coefficients
@@ -99,9 +99,9 @@ class hyperElastic:
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
 
-        V_ele     =     VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc()) # Displacement & Velocity Vector element
+        V_ele     =     ufl.VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc()) # Displacement & Velocity Vector element
 
-        Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc())            # Function space with updated mesh
+        Q         =     FunctionSpace(mesh, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
         VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
         V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc())
         T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc())      # Define nth order structure function spaces

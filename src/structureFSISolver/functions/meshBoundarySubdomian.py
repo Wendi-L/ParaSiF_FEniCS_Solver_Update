@@ -39,7 +39,7 @@
 #
 #%% Import packages
 #_________________________________________________________________________________________
-from dolfin import *
+from dolfinx import *
 
 
 class meshBoundarySubdomian:
@@ -49,90 +49,40 @@ class meshBoundarySubdomian:
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def Mesh_Generation(self):
-        if self.iContinueRun():
-            # Restart simulation
-            if self.iMeshLoad():
-                # Load mesh from file
-                if self.iLoadXML():
-                    # Load mesh from XML file
-                    if self.rank == 0: print ("{FENICS} Loading XML mesh ...   ")
-                    mesh = Mesh(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/Structure_FEniCS.xml")
-                    if self.rank == 0: print ("{FENICS} Done with loading XML mesh")
-                else:
-                    # Load mesh from HDF5 file
-                    if self.rank == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
-                    # commit off due to the hanging in FEniCS-v2019.1.0
-                    #mesh = Mesh()
-                    # generate a dummy mesh and overwrite it by the HDF5 read-in data.
-                    mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(0, 0, 0),
-                       Point(1, 1, 1),
-                       10, 10, 10)
-                    hdfInTemp = HDF5File(mesh.mpi_comm(), self.inputFolderPath + "/checkpointData.h5", "r")
-                    hdfInTemp.read(mesh, "/mesh", False)
-                    hdfInTemp.close()
-                    del hdfInTemp
-                    if self.rank == 0: print ("{FENICS} Done with loading HDF5 mesh")
-            else:
-                # Generate mesh
-                if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
-                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX(), self.OBeamY(), self.OBeamZ()),
-                       Point((self.OBeamX()+self.XBeam()), (self.OBeamY()+self.YBeam()), (self.OBeamZ()+self.ZBeam())),
-                       self.XMesh(), self.YMesh(), self.ZMesh())
-                if self.rank == 0: print ("{FENICS} Done with generating mesh")
+        # Restart simulation
+        if self.iMeshLoad():
+            # Load mesh from XDMF file
+            if self.rank == 0: print ("{FENICS} Loading XDMF mesh ...   ")
+            xdmfContinueRunMeshLoad = io.XDMFFile(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/Structure_FEniCS.xdmf", "r")
+            mesh = xdmfContinueRunMeshLoad.read_mesh()
+            if self.rank == 0: print ("{FENICS} Done with loading XDMF mesh")
         else:
-            # Simulation from zero
-            if self.iMeshLoad():
-                # Load mesh from file
-                if self.iLoadXML():
-                    if self.rank == 0: print ("{FENICS} Loading XML mesh ...   ")
-                    mesh = Mesh(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/Structure_FEniCS.xml")
-                    if self.rank == 0: print ("{FENICS} Done with loading XML mesh")
-                else:
-                    if self.rank == 0: print ("{FENICS} Loading HDF5 mesh ...   ")
-                    # commit off due to the hanging in FEniCS-v2019.1.0
-                    #mesh = Mesh()
-                    # generate a dummy mesh and overwrite it by the HDF5 read-in data.
-                    mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(0, 0, 0),
-                       Point(1, 1, 1),
-                       10, 10, 10)
-                    hdfInTemp = HDF5File(mesh.mpi_comm(), self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
-                    hdfInTemp.read(mesh, "/mesh", False)
-                    hdfInTemp.close()
-                    del hdfInTemp
-                    if self.rank == 0: print ("{FENICS} Done with loading HDF5 mesh")
-            else:
-                # Generate mesh
-                if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
-                mesh = BoxMesh(self.LOCAL_COMM_WORLD, Point(self.OBeamX(), self.OBeamY(), self.OBeamZ()),
-                       Point((self.OBeamX()+self.XBeam()), (self.OBeamY()+self.YBeam()), (self.OBeamZ()+self.ZBeam())),
-                       self.XMesh(), self.YMesh(), self.ZMesh())
-                if self.rank == 0: print ("{FENICS} Done with generating mesh")
+            # Generate mesh
+            if self.rank == 0: print ("{FENICS} Generating mesh ...   ")
+            mesh = mesh.create_box(self.LOCAL_COMM_WORLD,
+                                   [[self.OBeamX(), self.OBeamY(), self.OBeamZ()],
+                                   [(self.OBeamX()+self.XBeam()),
+                                   (self.OBeamY()+self.YBeam()),
+                                   (self.OBeamZ()+self.ZBeam())]],
+                                   [self.XMesh(), self.YMesh(), self.ZMesh()],
+                                   mesh.CellType.hexahedron)
+            if self.rank == 0: print ("{FENICS} Done with generating mesh")
 
-        if self.iHDF5FileExport() and self.iHDF5MeshExport():
-            if self.rank == 0: print ("{FENICS} Exporting HDF5 mesh ...   ", end="", flush=True)
-            hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "w")
-            hdfOutTemp.write(mesh, "/mesh")
-            hdfOutTemp.close()
-            del hdfOutTemp
-            if self.rank == 0: print ("Done")
-
-        if self.iInteractiveMeshShow():
-            if self.rank == 0: print ("{FENICS} Interactive Mesh Show ...", end="", flush=True)
-            import matplotlib.pyplot as plt
-            plt.figure()
-            p = plot(mesh, title = "Mesh plot")
-            plt.show()
+        if self.iXDMFFileExport() and self.iXDMFMeshExport() and (not self.iMeshLoad()):
+            if self.rank == 0: print ("{FENICS} Exporting XDMF mesh ...   ", end="", flush=True)
+            xdmfMeshExport = io.XDMFFile(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/Structure_FEniCS.xdmf",, "w")
+            xdmfMeshExport.write_mesh(mesh)
             if self.rank == 0: print ("Done")
 
         return mesh
 
     def Get_Grid_Dimension(self, mesh):
         # Geometry dimensions
-        grid_dimension = mesh.geometry().dim()
+        grid_dimension = mesh.topology.dim
         return grid_dimension
 
-    def Get_Face_Narmal(self, mesh):
-        # Face normal vector
+    def Get_Face_Normal(self, mesh):
+        # Face normal vector !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         face_narmal = FacetNormal(mesh)
         return face_narmal
 

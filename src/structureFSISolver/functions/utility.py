@@ -39,7 +39,7 @@
 #
 #%% Import packages
 #_________________________________________________________________________________________
-from dolfin import *
+from dolfinx import *
 
 class utility:
 

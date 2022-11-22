@@ -44,7 +44,7 @@
 #%% Import packages
 #_________________________________________________________________________________________
 
-from dolfin import *
+from dolfinx import *
 from mpi4py import MPI
 import configparser
 import math

@@ -44,7 +44,7 @@
 #%% Import packages
 #_________________________________________________________________________________________
 
-from dolfin import *
+from dolfinx import *
 import os
 import numpy as np
 from mpi4py import MPI
@@ -72,7 +72,6 @@ class linearElastic:
 
         mesh = self.Mesh_Generation()
         gdim = self.Get_Grid_Dimension(mesh)
-        N    = self.Get_Face_Narmal(mesh)
 
         #===========================================
         #%% Define coefficients
@@ -98,8 +97,8 @@ class linearElastic:
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
-        Q         =     FunctionSpace(mesh, "Lagrange", self.deg_fun_spc())            # Function space with updated mesh
-        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc())
+        Q         =     FunctionSpace(mesh, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
+        V         =     VectorFunctionSpace(mesh, ("Lagrange", self.deg_fun_spc()))
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 

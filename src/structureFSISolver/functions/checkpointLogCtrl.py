@@ -41,7 +41,7 @@
 #_________________________________________________________________________________________
 import datetime
 import socket
-from dolfin import *
+from dolfinx import *
 import numpy as np
 from mpi4py import MPI
 
