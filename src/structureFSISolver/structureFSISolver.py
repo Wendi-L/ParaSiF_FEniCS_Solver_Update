@@ -93,9 +93,7 @@ class StructureFSISolver(structureFSISolver.functions.cfgPrsFn.readData,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def __init__(self,
                  Configure,
-                 FixedSubdomain,
-                 FlexSubdomain,
-                 SymmetrySubdomain,
+                 SubDomains,
                  DirichletBoundaryConditions):
 
         #===========================================
@@ -104,12 +102,8 @@ class StructureFSISolver(structureFSISolver.functions.cfgPrsFn.readData,
 
         # Obtain configure file
         self.cfg = Configure
-        # Obtain fixed sub-domain instances
-        self.fixedSDomain = FixedSubdomain
-        # Obtain flex sub-domain instances
-        self.flexSDomain = FlexSubdomain
-        # Obtain symmetry sub-domain instances
-        self.symmetrySDomain = SymmetrySubdomain
+        # Obtain sub-domain instances
+        self.subDomains = SubDomains
         # Obtain dirichlet boundary condition instances
         self.dirichletBCs = DirichletBoundaryConditions
 

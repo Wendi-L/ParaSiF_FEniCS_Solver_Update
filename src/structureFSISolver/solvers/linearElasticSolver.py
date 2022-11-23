@@ -70,8 +70,8 @@ class linearElastic:
         #%% Solid Mesh input/generation
         #===========================================
 
-        mesh = self.Mesh_Generation()
-        gdim = self.Get_Grid_Dimension(mesh)
+        domain = self.Mesh_Generation()
+        gdim   = self.Get_Grid_Dimension(domain)
 
         #===========================================
         #%% Define coefficients
@@ -97,8 +97,8 @@ class linearElastic:
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
-        Q         =     FunctionSpace(mesh, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
-        V         =     VectorFunctionSpace(mesh, ("Lagrange", self.deg_fun_spc()))
+        Q         =     FunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
+        V         =     VectorFunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -109,18 +109,18 @@ class linearElastic:
         if self.rank == 0: print ("{FENICS} Creating functions, test functions and trail functions ...   ", end="", flush=True)
 
         # Trial functions
-        ddmck  = TrialFunction(V)        # Trial function for displacement by MCK solving method
+        ddmck  = ufl.TrialFunction(V)        # Trial function for displacement by MCK solving method
 
         # Test functions
-        chi      = TestFunction(V)           # Test function for displacement by MCK solving method
+        chi      = ufl.TestFunction(V)           # Test function for displacement by MCK solving method
 
         # Functions at present time step
-        dmck = Function(V)              # Function for displacement by MCK solving method
+        dmck = fem.Function(V)              # Function for displacement by MCK solving method
 
         # Functions at previous time step
-        d0mck  = Function(V)             # Function for displacement by MCK solving method
-        u0mck  = Function(V)             # Function for velocity by MCK solving method
-        a0mck  = Function(V)             # Function for acceleration by MCK solving method
+        d0mck  = fem.Function(V)             # Function for displacement by MCK solving method
+        u0mck  = fem.Function(V)             # Function for velocity by MCK solving method
+        a0mck  = fem.Function(V)             # Function for acceleration by MCK solving method
 
         self.Load_Functions_Continue_Run_Linear(d0mck,u0mck,a0mck,dmck)
 
@@ -133,26 +133,35 @@ class linearElastic:
         self.Traction_Define(V)
 
         #===========================================
+        #%% Create facet to cell connectivity
+        #===========================================
+
+        tdim = domain.topology.dim
+        fdim = tdim - 1
+        domain.topology.create_connectivity(fdim, tdim)
+        boundary_facets = mesh.exterior_facet_indices(domain.topology)
+
+        #===========================================
         #%% Define SubDomains and boundaries
         #===========================================
 
-        boundaries = self.Boundaries_Generation_Fixed_Flex_Sym(mesh, gdim, V)
+        self.Boundaries_Generation_Fixed_Flex_Sym(domain, V)
 
-        ds = self.Get_ds(mesh, boundaries)
+        ds = self.Get_ds(domain)
 
         #===========================================
         #%% Define boundary conditions
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating 3D boundary conditions ...   ", end="", flush=True)
-        bc1 = self.dirichletBCs.DirichletBCs(V,boundaries,1)
+        bc1 = self.dirichletBCs.DirichletBCs(V,self.fixeddofs)
         bcs = [bc1]
         if self.rank == 0: print ("Done")
 
         #===========================================
         #%% Define DOFs and Coordinates mapping
         #===========================================  
-
+        #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         dofs_fetch_list = self.dofs_list(boundaries, Q, 2)
 
         xyz_fetch = self.xyz_np(dofs_fetch_list, Q, gdim)
@@ -164,13 +173,13 @@ class linearElastic:
         #===========================================
         #%% Define facet areas
         #===========================================
-
+        #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         self.facets_area_define(mesh, Q, boundaries, dofs_fetch_list, gdim)
 
         #===========================================
         #%% Prepare post-process files
         #===========================================
-
+        # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         self.Create_Post_Process_Files()
 
         #===========================================
@@ -181,7 +190,7 @@ class linearElastic:
 
         if self.rank == 0: print ("{FENICS} Defining variational FORM functions ...   ", end="", flush=True)
         # Define the traction terms of the structure variational form
-        tF = dot(chi, self.tF_apply)
+        tF = ufl.dot(chi, self.tF_apply)
 
         Form_s_Update_Acce = self.AMCK (ddmck, d0mck, u0mck, a0mck, beta_gam)
         Form_s_Update_velo = self.UMCK (Form_s_Update_Acce, u0mck, a0mck, gamma_gam)
@@ -189,17 +198,21 @@ class linearElastic:
         Form_s_Ga_Acce = self.Generalized_Alpha_Weights(Form_s_Update_Acce,a0mck,alpha_m_gam)
         Form_s_Ga_velo = self.Generalized_Alpha_Weights(Form_s_Update_velo,u0mck,alpha_f_gam)
         Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,alpha_f_gam)
-        Form_s_M_Matrix = self.rho_s() * inner(Form_s_Ga_Acce, chi) * dx
-        Form_s_M_for_C_Matrix = self.rho_s() * inner(Form_s_Ga_velo, chi) * dx
-        Form_s_K_Matrix = inner(self.elastic_stress(Form_s_Ga_disp,gdim), sym(grad(chi))) * dx
-        Form_s_K_for_C_Matrix = inner(self.elastic_stress(Form_s_Ga_velo,gdim), sym(grad(chi))) * dx
+        Form_s_M_Matrix = self.rho_s() * ufl.inner(Form_s_Ga_Acce, chi) * ufl.dx
+        Form_s_M_for_C_Matrix = self.rho_s() * ufl.inner(Form_s_Ga_velo, chi) * ufl.dx
+        Form_s_K_Matrix = ufl.inner(self.elastic_stress(Form_s_Ga_disp,gdim), ufl.sym(grad(chi))) * ufl.dx
+        Form_s_K_for_C_Matrix = ufl.inner(self.elastic_stress(Form_s_Ga_velo,gdim), ufl.sym(grad(chi))) * ufl.dx
         Form_s_C_Matrix = alpha_rdc * Form_s_M_for_C_Matrix + beta_rdc * Form_s_K_for_C_Matrix
         Form_s_F_Ext = tF * ds(2)
 
         Form_s = Form_s_M_Matrix + Form_s_C_Matrix + Form_s_K_Matrix - Form_s_F_Ext
 
-        Bilinear_Form = lhs(Form_s)
-        Linear_Form   = rhs(Form_s)
+        Bilinear_Form = fem.form(ufl.lhs(Form_s))
+        Linear_Form   = fem.form(ufl.rhs(Form_s))
+
+        Bilinear_Assemble = fem.petsc.assemble_matrix(Bilinear_Form, bcs=bcs)
+        Bilinear_Assemble.assemble()
+        Linear_Assemble = fem.petsc.create_vector(Linear_Form)
 
         if self.rank == 0: print ("Done")
 
@@ -208,34 +221,29 @@ class linearElastic:
         #===========================================
 
         if self.linear_solver() == 'LU':
-            Bilinear_Assemble, Linear_Assemble = assemble_system(Bilinear_Form, Linear_Form, bcs)
-            solver = LUSolver(Bilinear_Assemble, "mumps")
-            solver.parameters["symmetric"] = True
+
+            solver = PETSc.KSP().create(domain.comm)
+            solver.setOperators(Bilinear_Assemble)
+            solver.setType(PETSc.KSP.Type.PREONLY)
+            solver.getPC().setType(PETSc.PC.Type.LU)
 
         elif self.linear_solver() == 'LinearVariational':
-            problem = LinearVariationalProblem(Bilinear_Form, Linear_Form, dmck, bcs)
-            solver = LinearVariationalSolver(problem)
-            # Set linear solver parameters
-            solver.parameters["linear_solver"] = self.prbsolver()
-            solver.parameters["preconditioner"] = self.prbpreconditioner()
-            solver.parameters["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance()
-            solver.parameters["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance()
-            solver.parameters["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations()
-            solver.parameters["krylov_solver"]["monitor_convergence"] = self.monitor_convergence()
-            solver.parameters["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess()
+
+            problem = LinearProblem(Bilinear_Form, Linear_Form, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+
         else:
             sys.exit("{FENICS} Error, linear solver value not recognized")
 
         #===========================================
         #%% Setup checkpoint data
         #===========================================
-
+        # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         self.Checkpoint_Output_Linear((t-self.dt()), mesh, d0mck, u0mck, a0mck, dmck, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
         #===========================================
-
+        # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_fetch, t_step)
 
         #===========================================
@@ -283,18 +291,20 @@ class linearElastic:
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
 
                     # Assemble linear form
-                    Linear_Assemble = assemble(Linear_Form)
-                    [bc.apply(Linear_Assemble) for bc in bcs]
+                    b = assemble_vector(Linear_Form)
+                    apply_lifting(b, [Bilinear_Form], bcs=[bcs])
+                    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+                    fem.petsc.set_bc(b, bcs)
                     # Solving the structure functions inside the time loop
-                    solver.solve()
+                    uh = problem.solve()
 
-                    force_X = dot(self.tF_apply, self.X_direction_vector())*ds(2)
-                    force_Y = dot(self.tF_apply, self.Y_direction_vector())*ds(2)
-                    force_Z = dot(self.tF_apply, self.Z_direction_vector())*ds(2)
+                    force_X = ufl.dot(self.tF_apply, self.X_direction_vector())*ds(2)
+                    force_Y = ufl.dot(self.tF_apply, self.Y_direction_vector())*ds(2)
+                    force_Z = ufl.dot(self.tF_apply, self.Z_direction_vector())*ds(2)
 
-                    f_X_a = assemble(force_X)
-                    f_Y_a = assemble(force_Y)
-                    f_Z_a = assemble(force_Z)
+                    f_X_a = assemble_scalar(force_X)
+                    f_Y_a = assemble_scalar(force_Y)
+                    f_Z_a = assemble_scalar(force_Z)
 
                     print ("{FENICS} Total Force_X on structure: ", f_X_a, " at self.rank ", self.rank)
                     print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at self.rank ", self.rank)
@@ -304,9 +314,11 @@ class linearElastic:
                     pass
 
                 # Compute and print the displacement of monitored point
+                # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
                 self.print_Disp(dmck)
 
                 # MUI Push internal points and commit current steps
+                # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
                 if (self.iMUICoupling()):
                     if (len(xyz_push)!=0):
                         self.MUI_Push(xyz_push, dofs_push_list, dmck, t_sub_it)
@@ -319,16 +331,18 @@ class linearElastic:
                 i_sub_it += 1
 
             # Mesh motion
+            # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
             self.Move_Mesh(V, dmck, d0mck, mesh)
 
             # Data output
+            #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
             if (not (self.iQuiet())):
                 self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, dmck)
                 self.Export_Disp_txt(dmck)
                 self.Checkpoint_Output_Linear(t, mesh, d0mck, u0mck, a0mck, dmck, False)
 
             # Function spaces time marching
-
+            #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
             amck = self.AMCK (dmck.vector(), d0mck.vector(), u0mck.vector(), a0mck.vector(), beta_gam)
             umck = self.UMCK (amck, u0mck.vector(), a0mck.vector(), gamma_gam)
 

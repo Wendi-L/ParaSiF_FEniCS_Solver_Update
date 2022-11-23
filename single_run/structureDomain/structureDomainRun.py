@@ -57,9 +57,7 @@ config.read('./structureFSISetup/structureInputPara.ini')
 #_________________________________________________________________________________________
 
 # Create sub-domain instances
-fixed = structureFSISetup.structureSubDomain.Fixed()
-flex = structureFSISetup.structureSubDomain.Flex()
-symmetry = structureFSISetup.structureSubDomain.Symmetry()
+subDomains = structureFSISetup.structureSubDomain.SubDomains()
 # Create boundary condition instances
 BCs = structureFSISetup.structureBCS.boundaryConditions()
 
@@ -68,7 +66,7 @@ BCs = structureFSISetup.structureBCS.boundaryConditions()
 #%% Create solver instances
 #_________________________________________________________________________________________
 
-solver = structureFSISolver.structureFSISolver.StructureFSISolver(config, fixed, flex, symmetry, BCs)
+solver = structureFSISolver.structureFSISolver.StructureFSISolver(config, subDomains, BCs)
 
 #_________________________________________________________________________________________
 #

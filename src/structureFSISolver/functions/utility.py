@@ -40,6 +40,7 @@
 #%% Import packages
 #_________________________________________________________________________________________
 from dolfinx import *
+import numpy as np
 
 class utility:
 
@@ -78,19 +79,20 @@ class utility:
 
     def I(self, grid_dimension):
         # Define the Identity matrix
-        return (Identity(grid_dimension))
+        return (ufl.Identity(grid_dimension))
 
     def F_(self, displacement_function, grid_dimension):
         # Define the deformation gradient
-        return (self.I(grid_dimension) + nabla_grad(displacement_function))
+        return (self.I(grid_dimension) + ufl.nabla_grad(displacement_function))
 
     def J_(self, displacement_function, grid_dimension):
         # Define the determinant of the deformation gradient
-        return det(self.F_(displacement_function,grid_dimension))
+        return ufl.determinant(self.F_(displacement_function,grid_dimension))
+        # return np.linalg.det(self.F_(displacement_function,grid_dimension))
 
     def C(self, displacement_function, grid_dimension):
         # Define the right Cauchy-Green strain tensor
-        return ((self.F_(displacement_function, grid_dimension).T) *
+        return (ufl.transpose(self.F_(displacement_function, grid_dimension)) *
                 self.F_(displacement_function, grid_dimension))
 
     def E(self, displacement_function, grid_dimension):
@@ -99,13 +101,13 @@ class utility:
 
     def epsilon(self, displacement_function, grid_dimension):
         # Define the linear Lagrangian Green strain tensor
-        return (0.5 * (nabla_grad(displacement_function) + (nabla_grad(displacement_function).T)))
+        return (0.5 * (ufl.nabla_grad(displacement_function) + ufl.transpose(ufl.nabla_grad(displacement_function))))
 
     def Piola_Kirchhoff_sec(self, displacement_function, strain_tensor, grid_dimension):
         # Define the Second Piola-Kirchhoff stress tensor by the constitutive law
         #   of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation).
         #   Valid for large deformations but small strain.
-        return (self.lamda_s() * tr(strain_tensor(displacement_function, grid_dimension)) *
+        return (self.lamda_s() * ufl.tr(strain_tensor(displacement_function, grid_dimension)) *
                 self.I(grid_dimension) + 2.0 * self.mu_s() *
                 strain_tensor(displacement_function, grid_dimension))
 
@@ -114,7 +116,7 @@ class utility:
         return ((1 / self.J_(displacement_function, grid_dimension)) *
                 (self.F_(displacement_function, grid_dimension)) *
                 (self.Piola_Kirchhoff_sec(displacement_function, strain_tensor,grid_dimension)) *
-                (self.F_(displacement_function, grid_dimension).T))
+                ufl.transpose(self.F_(displacement_function, grid_dimension)))
 
     def Piola_Kirchhoff_fst(self, displacement_function, grid_dimension):
         # Define the First Piola-Kirchhoff stress tensor by the constitutive law
@@ -122,24 +124,25 @@ class utility:
         #   Valid for large deformations but small strain.
         return (self.J_(displacement_function, grid_dimension) *
                 self.cauchy_stress(displacement_function, self.E,grid_dimension) *
-                inv(self.F_(displacement_function, grid_dimension).T))
+                ufl.transpose(ufl.inv(self.F_(displacement_function, grid_dimension))))
 
     def Hooke_stress(self, displacement_function, grid_dimension):
         # Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation).
         #   Valid for small-scale deformations only.
         return (self.J_(displacement_function, grid_dimension) *
                 self.cauchy_stress(displacement_function, self.epsilon, grid_dimension) *
-                inv(self.F_(displacement_function, grid_dimension).T))
+                ufl.transpose(ufl.inv(self.F_(displacement_function, grid_dimension))))
 
     def elastic_stress(self, displacement_function, grid_dimension):
         # Define the elastic stress tensor
-        return (2.0 * self.mu_s() * sym(grad(displacement_function)) +
-                self.lamda_s() * tr(sym(grad(displacement_function))) * self.I(grid_dimension))
+        return (2.0 * self.mu_s() * ufl.sym(grad(displacement_function)) +
+                self.lamda_s() * ufl.tr(ufl.sym(grad(displacement_function))) * self.I(grid_dimension))
 
     def Traction_Define(self, VectorFunctionSpace):
+        # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         if self.iNonUniTraction():
             if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
-            self.tF_apply = Function(VectorFunctionSpace)
+            self.tF_apply = fem.Function(VectorFunctionSpace)
             self.tF_apply_vec = self.tF_apply.vector().get_local()
         else:
             if self.rank == 0: print ("{FENICS} Uniform traction applied")
