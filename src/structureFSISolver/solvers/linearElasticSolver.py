@@ -220,19 +220,7 @@ class linearElastic:
         #%% Initialize solver
         #===========================================
 
-        if self.linear_solver() == 'LU':
-
-            solver = PETSc.KSP().create(domain.comm)
-            solver.setOperators(Bilinear_Assemble)
-            solver.setType(PETSc.KSP.Type.PREONLY)
-            solver.getPC().setType(PETSc.PC.Type.LU)
-
-        elif self.linear_solver() == 'LinearVariational':
-
-            problem = LinearProblem(Bilinear_Form, Linear_Form, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
-        else:
-            sys.exit("{FENICS} Error, linear solver value not recognized")
+        problem = LinearProblem(Bilinear_Form, Linear_Form, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
         #===========================================
         #%% Setup checkpoint data
@@ -286,15 +274,16 @@ class linearElastic:
                     print ("{FENICS} Sub-iteration Number: ", i_sub_it, " Total sub-iterations to now: ", t_sub_it)
 
                 # Fetch and assign traction forces at present time step
+                # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
                 self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps, t)
 
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
 
                     # Assemble linear form
-                    b = assemble_vector(Linear_Form)
-                    apply_lifting(b, [Bilinear_Form], bcs=[bcs])
-                    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-                    fem.petsc.set_bc(b, bcs)
+                    b = assemble_vector(Linear_Assemble, Linear_Form)
+                    apply_lifting(Linear_Assemble, [Bilinear_Form], [[bcs]])
+                    Linear_Assemble.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
+                    fem.petsc.set_bc(Linear_Assemble, [bcs])
                     # Solving the structure functions inside the time loop
                     uh = problem.solve()
 
@@ -343,12 +332,12 @@ class linearElastic:
 
             # Function spaces time marching
             #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-            amck = self.AMCK (dmck.vector(), d0mck.vector(), u0mck.vector(), a0mck.vector(), beta_gam)
-            umck = self.UMCK (amck, u0mck.vector(), a0mck.vector(), gamma_gam)
+            amck = self.AMCK (dmck.x.array, d0mck.x.array, u0mck.x.array, a0mck.x.array, beta_gam)
+            umck = self.UMCK (amck, u0mck.x.array, a0mck.x.array, gamma_gam)
 
-            a0mck.vector()[:] = amck
-            u0mck.vector()[:] = umck
-            d0mck.vector()[:] = dmck.vector()
+            a0mck.x.array[:] = amck
+            u0mck.x.array[:] = umck
+            d0mck.x.array[:] = dmck.x.array
 
             # Sub-iterator counter reset
             i_sub_it = 1
