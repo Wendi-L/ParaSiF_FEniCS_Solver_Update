@@ -52,9 +52,9 @@ class meshMotion:
                   displacement_function,
                   displacement_function_previous,
                   mesh):
-        dOffset = Function(VectorFunctionSpace)
+        dOffset = fem.Function(VectorFunctionSpace)
         # Calculate offset of the displacement
-        dOffset.vector()[:] = displacement_function.vector().get_local() - \
+        dOffset.x.array[:] = displacement_function.vector().get_local() - \
                               displacement_function_previous.vector().get_local()
         # Move the mesh by ALE function
         ALE.move(mesh, dOffset)
