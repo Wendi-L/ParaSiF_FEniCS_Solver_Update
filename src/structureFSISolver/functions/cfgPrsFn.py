@@ -365,18 +365,18 @@ class readData:
     def iNonLinearMethod (self):
         # F-Linear Hooke's law; T-Non-linear St. Vernant-Kirchhoff material model.
         return self.cfg['CALMODE'].getboolean('iNonLinearMethod')
-    def iHDF5FileExport (self):
+    def iXDMFFileExport (self):
         # F-The HDF5 File Export function closed; T-The HDF5 File Export function opened.
-        return self.cfg['CALMODE'].getboolean('iHDF5FileExport')
+        return self.cfg['CALMODE'].getboolean('iXDMFFileExport')
     def iLoadXML (self):
         # F-Load mesh from HDF5 file; T-Load mesh from XML file (when iMeshLoad = T).
         return self.cfg['CALMODE'].getboolean('iLoadXML')
     def iInteractiveMeshShow (self):
         # F-Do not show the generated mesh; T-Show the generated mesh interactively.
         return self.cfg['CALMODE'].getboolean('iInteractiveMeshShow')
-    def iHDF5MeshExport (self):
+    def iXDMFMeshExport (self):
         # F-The HDF5 Mesh Export function closed; T-The HDF5 Mesh Export function opened (when iHDF5FileExport = T).
-        return self.cfg['CALMODE'].getboolean('iHDF5MeshExport')
+        return self.cfg['CALMODE'].getboolean('iXDMFMeshExport')
     def iHDF5SubdomainsExport (self):
         # F-The HDF5 Subdomains Export function closed; T-The HDF5 Subdomains Export function opened (when iHDF5FileExport = T).
         return self.cfg['CALMODE'].getboolean('iHDF5SubdomainsExport')

@@ -41,6 +41,7 @@
 #_________________________________________________________________________________________
 from dolfinx import *
 import numpy as np
+import ufl
 
 class utility:
 
@@ -135,15 +136,15 @@ class utility:
 
     def elastic_stress(self, displacement_function, grid_dimension):
         # Define the elastic stress tensor
-        return (2.0 * self.mu_s() * ufl.sym(grad(displacement_function)) +
-                self.lamda_s() * ufl.tr(ufl.sym(grad(displacement_function))) * self.I(grid_dimension))
+        return (2.0 * self.mu_s() * ufl.sym(ufl.grad(displacement_function)) +
+                self.lamda_s() * ufl.tr(ufl.sym(ufl.grad(displacement_function))) * self.I(grid_dimension))
 
     def Traction_Define(self, VectorFunctionSpace):
         # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         if self.iNonUniTraction():
             if self.rank == 0: print ("{FENICS} Non-uniform traction applied")
             self.tF_apply = fem.Function(VectorFunctionSpace)
-            self.tF_apply_vec = self.tF_apply.vector().get_local()
+            self.tF_apply_vec = self.tF_apply.x.array
         else:
             if self.rank == 0: print ("{FENICS} Uniform traction applied")
             self.tF_magnitude = Constant(0.0 *self.X_direction_vector() +

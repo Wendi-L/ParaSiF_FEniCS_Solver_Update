@@ -38,7 +38,7 @@ __license__ = "All rights reserved"
 #%% Import packages
 #_________________________________________________________________________________________
 
-from dolfin import *
+from dolfinx import *
 import configparser
 import structureFSISetup
 import structureFSISolver

@@ -48,6 +48,8 @@ from dolfinx import *
 import os
 import numpy as np
 from mpi4py import MPI
+from petsc4py.PETSc import ScalarType
+import ufl
 import structureFSISolver
 
 class linearElastic:
@@ -82,23 +84,23 @@ class linearElastic:
         t_sub_it = 0
 
         # Rayleigh damping coefficients
-        alpha_rdc = Constant(self.alpha_rdc())
-        beta_rdc  = Constant(self.beta_rdc())
+        alpha_rdc = fem.Constant(domain, self.alpha_rdc())
+        beta_rdc  = fem.Constant(domain, self.beta_rdc())
 
         # Generalized-alpha method parameters
         # alpha_m_gam >= alpha_f_gam >= 0.5 for a better performance
-        alpha_m_gam = Constant(self.alpha_m_gam())
-        alpha_f_gam = Constant(self.alpha_f_gam())
-        gamma_gam   = Constant((1./2.) + alpha_m_gam - alpha_f_gam)
-        beta_gam    = Constant((1./4.) * (gamma_gam + (1./2.))**2)
+        alpha_m_gam = fem.Constant(domain, self.alpha_m_gam())
+        alpha_f_gam = fem.Constant(domain, self.alpha_f_gam())
+        gamma_gam   = (1./2.) + alpha_m_gam - alpha_f_gam
+        beta_gam    = (1./4.) * (gamma_gam + (1./2.))**2
 
         #===========================================
         #%% Define function spaces
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
-        Q         =     FunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
-        V         =     VectorFunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))
+        Q         =     fem.FunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
+        V         =     fem.VectorFunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -162,25 +164,25 @@ class linearElastic:
         #%% Define DOFs and Coordinates mapping
         #===========================================  
         #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        dofs_fetch_list = self.dofs_list(boundaries, Q, 2)
+        #dofs_fetch_list = self.dofs_list(boundaries, Q, 2)
 
-        xyz_fetch = self.xyz_np(dofs_fetch_list, Q, gdim)
+        #xyz_fetch = self.xyz_np(dofs_fetch_list, Q, gdim)
 
-        dofs_push_list = self.dofs_list(boundaries, Q, 2)
+        #dofs_push_list = self.dofs_list(boundaries, Q, 2)
 
-        xyz_push = self.xyz_np(dofs_push_list, Q, gdim)
+        #xyz_push = self.xyz_np(dofs_push_list, Q, gdim)
 
         #===========================================
         #%% Define facet areas
         #===========================================
         #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        self.facets_area_define(mesh, Q, boundaries, dofs_fetch_list, gdim)
+        #self.facets_area_define(mesh, Q, boundaries, dofs_fetch_list, gdim)
 
         #===========================================
         #%% Prepare post-process files
         #===========================================
         # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        self.Create_Post_Process_Files()
+        #self.Create_Post_Process_Files()
 
         #===========================================
         #%% Define the variational FORM
@@ -200,8 +202,8 @@ class linearElastic:
         Form_s_Ga_disp = self.Generalized_Alpha_Weights(ddmck,d0mck,alpha_f_gam)
         Form_s_M_Matrix = self.rho_s() * ufl.inner(Form_s_Ga_Acce, chi) * ufl.dx
         Form_s_M_for_C_Matrix = self.rho_s() * ufl.inner(Form_s_Ga_velo, chi) * ufl.dx
-        Form_s_K_Matrix = ufl.inner(self.elastic_stress(Form_s_Ga_disp,gdim), ufl.sym(grad(chi))) * ufl.dx
-        Form_s_K_for_C_Matrix = ufl.inner(self.elastic_stress(Form_s_Ga_velo,gdim), ufl.sym(grad(chi))) * ufl.dx
+        Form_s_K_Matrix = ufl.inner(self.elastic_stress(Form_s_Ga_disp,gdim), ufl.sym(ufl.grad(chi))) * ufl.dx
+        Form_s_K_for_C_Matrix = ufl.inner(self.elastic_stress(Form_s_Ga_velo,gdim), ufl.sym(ufl.grad(chi))) * ufl.dx
         Form_s_C_Matrix = alpha_rdc * Form_s_M_for_C_Matrix + beta_rdc * Form_s_K_for_C_Matrix
         Form_s_F_Ext = tF * ds(2)
 
@@ -220,7 +222,7 @@ class linearElastic:
         #%% Initialize solver
         #===========================================
 
-        problem = LinearProblem(Bilinear_Form, Linear_Form, bcs=bcs, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+        problem = fem.petsc.LinearProblem(Bilinear_Form, Linear_Form, bcs=[bcs], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
         #===========================================
         #%% Setup checkpoint data

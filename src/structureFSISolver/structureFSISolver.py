@@ -149,8 +149,8 @@ class StructureFSISolver(structureFSISolver.functions.cfgPrsFn.readData,
         #===========================================
         #%% Set form compiler options
         #===========================================
-
-        self.Set_Compiler_Options()
+        #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
+        #self.Set_Compiler_Options()
 
         #===========================================
         #%% Time marching parameters define

@@ -40,7 +40,7 @@
 #%% Import packages
 #_________________________________________________________________________________________
 from dolfinx import *
-
+import ufl
 
 class meshBoundarySubdomian:
 
@@ -65,12 +65,12 @@ class meshBoundarySubdomian:
                                    (self.OBeamY()+self.YBeam()),
                                    (self.OBeamZ()+self.ZBeam())]],
                                    [self.XMesh(), self.YMesh(), self.ZMesh()],
-                                   CellType.tetrahedron, GhostMode.shared_facet)
+                                   mesh.CellType.tetrahedron, mesh.GhostMode.shared_facet)
             if self.rank == 0: print ("{FENICS} Done with generating mesh")
 
         if self.iXDMFFileExport() and self.iXDMFMeshExport() and (not self.iMeshLoad()):
             if self.rank == 0: print ("{FENICS} Exporting XDMF mesh ...   ", end="", flush=True)
-            xdmfMeshExport = io.XDMFFile(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/Structure_FEniCS.xdmf",, "w")
+            xdmfMeshExport = io.XDMFFile(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/Structure_FEniCS.xdmf", "w")
             xdmfMeshExport.write_mesh(domain)
             if self.rank == 0: print ("Done")
 
@@ -108,7 +108,7 @@ class meshBoundarySubdomian:
 
             if self.rank == 0: print ("Done")
 
-        if self.iHDF5FileExport() and self.iHDF5SubdomainsExport():
+        if self.iXDMFFileExport() and self.iHDF5SubdomainsExport():
             if self.rank == 0: print ("{FENICS} Exporting facets ...   ", end="", flush=True) 
             if self.rank == 0: print ("Error, not implemented yet")
             if self.rank == 0: print ("Done")
@@ -122,9 +122,9 @@ class meshBoundarySubdomian:
         else:
             if self.rank == 0: print ("{FENICS} Creating boundaries ...   ", end="", flush=True)
 
-            self.fixedmt = meshtags(domain, fdim, fixed_facets, 1)
-            self.flexmt = meshtags(domain, fdim, flex_facets, 2)
-            self.symmetrymt = meshtags(domain, fdim, symmetry_facets, 3)
+            self.fixedmt = mesh.meshtags(domain, fdim, fixed_facets, 1)
+            self.flexmt = mesh.meshtags(domain, fdim, flex_facets, 2)
+            self.symmetrymt = mesh.meshtags(domain, fdim, symmetry_facets, 3)
 
             self.fixeddofs = fem.locate_dofs_topological(VectorFunctionSpace, fdim, fixed_facets)
             self.flexdofs = fem.locate_dofs_topological(VectorFunctionSpace, fdim, flex_facets)
@@ -132,7 +132,7 @@ class meshBoundarySubdomian:
 
             if self.rank == 0: print ("Done")
 
-        if self.iHDF5FileExport() and self.iHDF5BoundariesExport():
+        if self.iXDMFFileExport() and self.iHDF5BoundariesExport():
             if self.rank == 0: print ("{FENICS} Exporting HDF5 boundaries ...   ", end="", flush=True)
             if self.rank == 0: print ("Error, not implemented yet")
             if self.rank == 0: print ("Done")
@@ -140,7 +140,7 @@ class meshBoundarySubdomian:
         if self.rank == 0: 
             print ("\n")
             print ("{FENICS} Structure Mesh Info: ")
-            print ("{FENICS} (geometry dimension, Dofs): ",VectorFunctionSpace.shape)
+            #print ("{FENICS} (geometry dimension, Dofs): ",VectorFunctionSpace.shape)
             print ("{FENICS} Cells:", domain.topology.index_map(domain.topology.dim).size_local)
             print ("\n")
 
