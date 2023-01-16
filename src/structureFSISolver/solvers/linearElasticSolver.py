@@ -234,13 +234,13 @@ class linearElastic:
         #%% Setup checkpoint data
         #===========================================
         # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        self.Checkpoint_Output_Linear((t-self.dt()), mesh, d0mck, u0mck, a0mck, dmck, False)
+        #self.Checkpoint_Output_Linear((t-self.dt()), mesh, d0mck, u0mck, a0mck, dmck, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
         #===========================================
         # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_fetch, t_step)
+        #self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_fetch, t_step)
 
         #===========================================
         #%% Define time loops
@@ -283,7 +283,7 @@ class linearElastic:
 
                 # Fetch and assign traction forces at present time step
                 # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-                self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps, t)
+                #self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps, t)
 
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
                     # Update the right hand side reusing the initial vector
