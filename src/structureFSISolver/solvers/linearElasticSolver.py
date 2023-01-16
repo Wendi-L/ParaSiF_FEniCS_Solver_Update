@@ -165,19 +165,16 @@ class linearElastic:
         #%% Define DOFs and Coordinates mapping
         #===========================================  
         #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        #dofs_fetch_list = self.dofs_list(boundaries, Q, 2)
 
-        #xyz_fetch = self.xyz_np(dofs_fetch_list, Q, gdim)
+        xyz_fetch = self.xyz_np(self.flexdofs, Q, gdim)
 
-        #dofs_push_list = self.dofs_list(boundaries, Q, 2)
-
-        #xyz_push = self.xyz_np(dofs_push_list, Q, gdim)
+        xyz_push = self.xyz_np(self.flexdofs, Q, gdim)
 
         #===========================================
         #%% Define facet areas
         #===========================================
         #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        #self.facets_area_define(mesh, Q, boundaries, dofs_fetch_list, gdim)
+        #self.facets_area_define(mesh, Q, self.flexdofs, gdim)
 
         #===========================================
         #%% Prepare post-process files
@@ -240,7 +237,7 @@ class linearElastic:
         #%% Define MUI samplers and commit ZERO step
         #===========================================
         # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        #self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_fetch, t_step)
+        self.MUI_Sampler_Define(Q, gdim, self.flexdofs, self.flexdofs, xyz_fetch, t_step)
 
         #===========================================
         #%% Define time loops
@@ -283,7 +280,7 @@ class linearElastic:
 
                 # Fetch and assign traction forces at present time step
                 # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-                #self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps, t)
+                self.Traction_Assign(xyz_fetch, self.flexdofs, t_sub_it, n_steps, t)
 
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
                     # Update the right hand side reusing the initial vector

@@ -52,12 +52,11 @@ class facetAreas:
     def facets_area_list_calculation(self,
                                      mesh,
                                      FunctionSpace,
-                                     boundary,
                                      dofs_fetch_list,
                                      dimension):
         areatotal = 0.0
         areatotal_local = 0.0
-        cell2dofs = FunctionSpace.dofmap().cell_dofs
+        #cell2dofs = FunctionSpace.dofmap().cell_dofs
         ones = np.array([1,1,1])
 
         dpc_help_number = 0
@@ -67,7 +66,6 @@ class facetAreas:
         dofs_Per_Cell=3+dpc_help_number+(self.deg_fun_spc()-1)
 
         for f in facets(mesh):
-            if boundary[f.index()] == 2:
                 x_array = np.array([])
                 y_array = np.array([])
                 z_array = np.array([])
@@ -87,7 +85,8 @@ class facetAreas:
                 det3=np.linalg.det(row3)
                 area = 0.5*math.sqrt(det1*det1 + det2*det2 + det3*det3)*self.areaListFactor()
                 for c in cells(f):
-                    c_dofs = cell2dofs(c.index())
+                    #c_dofs = cell2dofs(c.index())
+                    c_dofs=3
                     d_list=[]
                     d_num = 0
                     for i, p in enumerate(c_dofs):
@@ -108,12 +107,11 @@ class facetAreas:
     def facets_area_define(self,
                            mesh,
                            Q,
-                           boundaries,
                            dofs_fetch_list,
                            gdim):
             # Define function for facet area
-            self.areaf= Function(Q)
-            self.areaf_vec = self.areaf.vector().get_local()
+            self.areaf= fem.Function(Q)
+            #self.areaf_vec = self.areaf.vector().get_local()
 
             if self.iLoadAreaList():
                 hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
@@ -122,16 +120,16 @@ class facetAreas:
             else:
                 if self.rank == 0: print ("{FENICS} facet area calculating")
                 # Calculate function for facet area
-                self.facets_area_list_calculation(mesh, Q, boundaries, dofs_fetch_list, gdim)
+                self.facets_area_list_calculation(mesh, Q, dofs_fetch_list, gdim)
                 # Apply the facet area vectors
-                self.areaf.vector().set_local(self.areaf_vec)
-                self.areaf.vector().apply("insert")
+                #self.areaf.vector().set_local(self.areaf_vec)
+                #self.areaf.vector().apply("insert")
                 # Facet area vectors I/O
-                if (self.iHDF5FileExport()) and (self.iHDF5MeshExport()):
-                    hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
-                    hdfOutTemp.write(self.areaf, "/areaf")
-                    hdfOutTemp.close()
-                else:
-                    pass
+                # if (self.iHDF5FileExport()) and (self.iHDF5MeshExport()):
+                #     hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")
+                #     hdfOutTemp.write(self.areaf, "/areaf")
+                #     hdfOutTemp.close()
+                # else:
+                #     pass
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#

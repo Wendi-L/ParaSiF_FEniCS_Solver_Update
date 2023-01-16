@@ -163,8 +163,9 @@ class utility:
                     self.Traction_DoF_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, t)
             if (self.iMUIFetchValue()) and (not ((self.iContinueRun()) and (n_steps == 1))):
                 # Apply traction components. These calls do parallel communication
-                self.tF_apply.vector().set_local(self.tF_apply_vec)
-                self.tF_apply.vector().apply("insert")
+                # self.tF_apply.vector().set_local(self.tF_apply_vec)
+                # self.tF_apply.vector().apply("insert")
+                self.tF_apply.x.array[:] = self.tF_apply_vec
             else:
                 # Do not apply the fetched value, i.e. one-way coupling
                 pass

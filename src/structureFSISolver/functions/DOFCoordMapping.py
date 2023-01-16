@@ -62,7 +62,7 @@ class DOFCoordMapping:
 
     def dofs_to_xyz(self, FunctionSpace, dimension):
         # Convert dofs to coordinates
-        return FunctionSpace.tabulate_dof_coordinates().reshape((-1, dimension))
+        return FunctionSpace.tabulate_dof_coordinates()[:, 0]
 
     def dofs_list(self, MeshFunction, FunctionSpace, boundary):
         return list(self.get_subdomain_dofs(MeshFunction, FunctionSpace, boundary))
