@@ -215,6 +215,7 @@ class linearElastic:
         Bilinear_Assemble = fem.petsc.assemble_matrix(Bilinear_Form, bcs=bcs)
         Bilinear_Assemble.assemble()
         Linear_Assemble = fem.petsc.create_vector(Linear_Form)
+        uh = fem.Function(V)
 
         if self.rank == 0: print ("Done")
 
@@ -222,7 +223,12 @@ class linearElastic:
         #%% Initialize solver
         #===========================================
 
-        problem = fem.petsc.LinearProblem(Bilinear_Form, Linear_Form, bcs=[bcs], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+        #problem = fem.petsc.LinearProblem(Bilinear_Form, Linear_Form, bcs=[bcs], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
+
+        solver = PETSc.KSP().create(domain.comm)
+        solver.setOperators(Bilinear_Assemble)
+        solver.setType(PETSc.KSP.Type.PREONLY)
+        solver.getPC().setType(PETSc.PC.Type.LU)
 
         #===========================================
         #%% Setup checkpoint data
@@ -280,14 +286,18 @@ class linearElastic:
                 self.Traction_Assign(xyz_fetch, dofs_fetch_list, t_sub_it, n_steps, t)
 
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
+                    # Update the right hand side reusing the initial vector
+                    # with Linear_Assemble.localForm() as loc_b:
+                    #     loc_b.set(0)
 
                     # Assemble linear form
-                    b = assemble_vector(Linear_Assemble, Linear_Form)
-                    apply_lifting(Linear_Assemble, [Bilinear_Form], [[bcs]])
+                    fem.petsc.assemble_vector(Linear_Assemble, Linear_Form)
+                    fem.petsc.apply_lifting(Linear_Assemble, [Bilinear_Form], [[bcs]])
                     Linear_Assemble.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
                     fem.petsc.set_bc(Linear_Assemble, [bcs])
                     # Solving the structure functions inside the time loop
-                    uh = problem.solve()
+                    solver.solve(Linear_Assemble, uh.vector)
+                    uh.x.scatter_forward()
 
                     force_X = ufl.dot(self.tF_apply, self.X_direction_vector())*ds(2)
                     force_Y = ufl.dot(self.tF_apply, self.Y_direction_vector())*ds(2)
