@@ -48,6 +48,7 @@ from dolfinx import *
 import os
 import numpy as np
 from mpi4py import MPI
+from petsc4py import PETSc
 from petsc4py.PETSc import ScalarType
 import ufl
 import structureFSISolver
@@ -215,7 +216,6 @@ class linearElastic:
         Bilinear_Assemble = fem.petsc.assemble_matrix(Bilinear_Form, bcs=bcs)
         Bilinear_Assemble.assemble()
         Linear_Assemble = fem.petsc.create_vector(Linear_Form)
-        uh = fem.Function(V)
 
         if self.rank == 0: print ("Done")
 
@@ -287,8 +287,8 @@ class linearElastic:
 
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
                     # Update the right hand side reusing the initial vector
-                    # with Linear_Assemble.localForm() as loc_b:
-                    #     loc_b.set(0)
+                    with Linear_Assemble.localForm() as loc_b:
+                         loc_b.set(0)
 
                     # Assemble linear form
                     fem.petsc.assemble_vector(Linear_Assemble, Linear_Form)
@@ -296,8 +296,8 @@ class linearElastic:
                     Linear_Assemble.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
                     fem.petsc.set_bc(Linear_Assemble, [bcs])
                     # Solving the structure functions inside the time loop
-                    solver.solve(Linear_Assemble, uh.vector)
-                    uh.x.scatter_forward()
+                    solver.solve(Linear_Assemble, dmck.vector)
+                    dmck.x.scatter_forward()
 
                     force_X = ufl.dot(self.tF_apply, self.X_direction_vector())*ds(2)
                     force_Y = ufl.dot(self.tF_apply, self.Y_direction_vector())*ds(2)
