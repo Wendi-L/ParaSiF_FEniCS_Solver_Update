@@ -4,7 +4,7 @@ CPP	= mpic++
 CC	= mpicc
 CPPFLAGS	= -std=c++11 -O3
 CFLAGS	= 
-CPP_HEADER_PATH	= -I${HOME}/working/apps/MUI/MUI-1.2
+CPP_HEADER_PATH	= -I${PWD}/../../thirdParty/MUI
 C_HEADER_PATH	=
 CPP_LAB_PATH = 
 C_LAB_PATH = 

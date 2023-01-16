@@ -3,8 +3,8 @@
 # Run from this directory
 cd ${0%/*} || exit 1
 
-export PYTHONPATH=$HOME/working/FEniCS_X_transfer/GitHub_repo/src:$PYTHONPATH
-export PYTHONPATH=$HOME/working/apps/MUI/MUI-1.2/wrappers/Python:$PYTHONPATH
+export PYTHONPATH=${PWD}../src:$PYTHONPATH
+export PYTHONPATH=${PWD}../thirdParty/MUI/wrappers/Python:$PYTHONPATH
 
 domainFluid=${PWD}/dummyOF
 domainStructure=${PWD}/structureDomain
