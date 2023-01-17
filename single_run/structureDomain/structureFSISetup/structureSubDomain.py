@@ -61,15 +61,12 @@ ZBeamtemp=float(config['GEOMETRY']['ZBeam'])
 
 class SubDomains:
     def Fixed (self , x ):
-        tol = 0.001
-        return np.isclose(x[0], (OBeamXtemp + tol))
+        return np.isclose(x[0], (OBeamXtemp))
 
     def Flex (self , x ):
-        tol = 0.001
-        return np.isclose(x[0], (OBeamXtemp + XBeamtemp - tol))
+        return np.isclose(x[0], (OBeamXtemp + XBeamtemp))
 
     def Symmetry (self , x ):
-        tol = 0.001
-        return np.logical_or(np.logical_or(np.isclose(x[2], (OBeamZtemp + ZBeamtemp - tol)), np.isclose(x[2], (OBeamZtemp + tol))), np.logical_or(np.isclose(x[1], (OBeamYtemp + tol)), np.isclose(x[1], (OBeamYtemp + YBeamtemp - tol))))
+        return np.logical_or(np.logical_or(np.isclose(x[2], (OBeamZtemp + ZBeamtemp)), np.isclose(x[2], (OBeamZtemp))), np.logical_or(np.isclose(x[1], (OBeamYtemp)), np.isclose(x[1], (OBeamYtemp + YBeamtemp))))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
