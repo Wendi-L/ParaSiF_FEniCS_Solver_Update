@@ -42,6 +42,7 @@
 import datetime
 import socket
 from dolfinx import *
+from dolfinx.io import XDMFFile
 import numpy as np
 from mpi4py import MPI
 
@@ -113,7 +114,7 @@ class checkpointLogCtrl:
                                         self.size,
                                         self.size])
         self.LOCAL_COMM_WORLD.Reduce((displacement_function(
-                                    Point(self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()))),
+                                    points(self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()))),
                                     d_DispSum,op=MPI.SUM,root=0)
         d_Disp = np.divide(d_DispSum,d_tempDenominator)
         if self.rank == 0:
@@ -171,7 +172,7 @@ class checkpointLogCtrl:
                     ftxt_dispZb.write("\n")
                     ftxt_dispZb.close
 
-    def Export_Disp_vtk(self,
+    def Export_Disp_xdmf(self,
                         Current_Time_Step,
                         current_time,
                         mesh,
@@ -190,39 +191,25 @@ class checkpointLogCtrl:
                 print ("\n")
                 print ("{FENICS} Export files at ", current_time, " [s] ...   ", end="", flush=True)
 
-            # Compute stress
-            Vsig = TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc())
-            sig = Function(Vsig, name="Stress")
-            if self.iNonLinearMethod():
-                sig.assign(project(self.Piola_Kirchhoff_sec(
-                            displacement_function,self.E,grid_dimension),
-                            Vsig, solver_type=self.prjsolver(),
-                            form_compiler_parameters={"cpp_optimize": self.cppOptimize(),
-                            "representation": self.compRepresentation()}))
-            else:
-                sig.assign(project(self.Piola_Kirchhoff_sec(
-                            displacement_function,self.epsilon,grid_dimension),
-                            Vsig, solver_type=self.prjsolver(),
-                            form_compiler_parameters={"cpp_optimize": self.cppOptimize(),
-                            "representation": self.compRepresentation()}))
-            # Save stress solution to file
-            sig.rename('Piola Kirchhoff sec Stress', 'stress')
-            self.stress_file << (sig, float(current_time))
+            # # Compute stress
+            # Vsig = fem.FunctionSpace(mesh, ("Lagrange", self.deg_fun_spc()))
+            # sig = fem.Function(Vsig, name="Stress")
+            # sigma_dev = self.sigma(displacement_function,grid_dimension) - (1 / 3) * ufl.tr(self.sigma(displacement_function, grid_dimension)) * ufl.Identity(len(displacement_function))
+            # sigma_vm = ufl.sqrt((3 / 2) * inner(sigma_dev, sigma_dev))
+            # stress_expr = fem.Expression(sigma_vm, Vsig.element.interpolation_points())
+            # sig.interpolate(stress_expr)
+            #
+            # # Save stress solution to file
+            # self.stress_file.write_function(sig, current_time)
 
             # Save displacement solution to file
-            displacement_function.rename('Displacement', 'disp')
-            self.disp_file << (displacement_function, float(current_time))
+            self.disp_file.write_function(displacement_function, current_time)
 
             # Compute traction
-            traction = Function(VectorFunctionSpace, name="Traction")
-            traction.assign(project(self.tF_apply,
-                                    VectorFunctionSpace,
-                                    solver_type=self.prjsolver(),
-                                    form_compiler_parameters={"cpp_optimize": self.cppOptimize(),
-                                    "representation": self.compRepresentation()}))
+            traction = fem.Function(VectorFunctionSpace, name="Traction")
+            traction.interpolate(self.tF_apply)
             # Save traction solution to file
-            traction.rename('traction', 'trac')
-            self.traction_file << (traction, float(current_time))
+            self.traction_file.write_function(traction, current_time)
             if self.rank == 0: print ("Done")
         else:
             pass
@@ -236,11 +223,14 @@ class checkpointLogCtrl:
             print ("\n")
             print ("{FENICS} ********** STRUCTURAL-ELASTICITY SIMULATION COMPLETED **********")
 
-    def Create_Post_Process_Files(self):
+    def Create_Post_Process_Files(self, mesh):
         if self.rank == 0: print ("{FENICS} Preparing post-process files ...   ", end="", flush=True)
-        self.disp_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/displacement.pvd")
-        self.stress_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/stress.pvd")
-        self.traction_file = File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/surface_traction_structure.pvd")
+        self.disp_file=XDMFFile(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/displacement.xdmf", "w")
+        self.disp_file.write_mesh(mesh)
+        self.stress_file=XDMFFile(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/stress.xdmf", "w")
+        self.stress_file.write_mesh(mesh)
+        self.traction_file=XDMFFile(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/surface_traction_structure.xdmf", "w")
+        self.traction_file.write_mesh(mesh)
         if self.rank == 0: print ("Done")
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

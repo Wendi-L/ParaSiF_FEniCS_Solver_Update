@@ -105,6 +105,10 @@ class utility:
         # Define the linear Lagrangian Green strain tensor
         return (0.5 * (ufl.nabla_grad(displacement_function) + ufl.transpose(ufl.nabla_grad(displacement_function))))
 
+    def sigma(self, displacement_function, grid_dimension):
+        # Define the linear Lagrangian Green strain tensor
+        return (self.lamda_s * ufl.tr(ufl.sym(ufl.grad(displacement_function))) * ufl.Identity(len(displacement_function)) + 2*self.mu_s*self.epsilon(displacement_function, grid_dimension))
+
     def Piola_Kirchhoff_sec(self, displacement_function, strain_tensor, grid_dimension):
         # Define the Second Piola-Kirchhoff stress tensor by the constitutive law
         #   of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation).
