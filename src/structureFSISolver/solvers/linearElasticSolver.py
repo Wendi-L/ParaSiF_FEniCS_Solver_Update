@@ -330,14 +330,14 @@ class linearElastic:
 
             # Mesh motion
             # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-            self.Move_Mesh(V, dmck, d0mck, mesh)
+            #self.Move_Mesh(V, dmck, d0mck, mesh)
 
             # Data output
             #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-            if (not (self.iQuiet())):
-                self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, dmck)
-                self.Export_Disp_txt(dmck)
-                self.Checkpoint_Output_Linear(t, mesh, d0mck, u0mck, a0mck, dmck, False)
+            # if (not (self.iQuiet())):
+            #     self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, dmck)
+            #     self.Export_Disp_txt(dmck)
+            #     self.Checkpoint_Output_Linear(t, mesh, d0mck, u0mck, a0mck, dmck, False)
 
             # Function spaces time marching
             #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
