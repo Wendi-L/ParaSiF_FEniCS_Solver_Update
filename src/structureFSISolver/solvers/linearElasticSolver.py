@@ -289,31 +289,31 @@ class linearElastic:
 
                     # Assemble linear form
                     fem.petsc.assemble_vector(Linear_Assemble, Linear_Form)
-                    fem.petsc.apply_lifting(Linear_Assemble, [Bilinear_Form], [[bcs]])
+                    #fem.petsc.apply_lifting(Linear_Assemble, [Bilinear_Form], [[bcs]], x0=[dmck.vector], scale=1)
                     Linear_Assemble.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
-                    fem.petsc.set_bc(Linear_Assemble, [bcs])
+                    #fem.petsc.set_bc(Linear_Assemble, [bcs])
                     # Solving the structure functions inside the time loop
                     solver.solve(Linear_Assemble, dmck.vector)
                     dmck.x.scatter_forward()
 
-                    force_X = ufl.dot(self.tF_apply, self.X_direction_vector())*ds(2)
-                    force_Y = ufl.dot(self.tF_apply, self.Y_direction_vector())*ds(2)
-                    force_Z = ufl.dot(self.tF_apply, self.Z_direction_vector())*ds(2)
+                    #force_X = ufl.dot(self.tF_apply, self.X_direction_vector())*ds(2)
+                    #force_Y = ufl.dot(self.tF_apply, self.Y_direction_vector())*ds(2)
+                    #force_Z = ufl.dot(self.tF_apply, self.Z_direction_vector())*ds(2)
 
-                    f_X_a = assemble_scalar(force_X)
-                    f_Y_a = assemble_scalar(force_Y)
-                    f_Z_a = assemble_scalar(force_Z)
+                    #f_X_a = assemble_scalar(force_X)
+                    #f_Y_a = assemble_scalar(force_Y)
+                    #f_Z_a = assemble_scalar(force_Z)
 
-                    print ("{FENICS} Total Force_X on structure: ", f_X_a, " at self.rank ", self.rank)
-                    print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at self.rank ", self.rank)
-                    print ("{FENICS} Total Force_Z on structure: ", f_Z_a, " at self.rank ", self.rank)
+                    #print ("{FENICS} Total Force_X on structure: ", f_X_a, " at self.rank ", self.rank)
+                    #print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at self.rank ", self.rank)
+                    #print ("{FENICS} Total Force_Z on structure: ", f_Z_a, " at self.rank ", self.rank)
 
                 else:
                     pass
 
                 # Compute and print the displacement of monitored point
                 # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-                self.print_Disp(dmck)
+                #self.print_Disp(dmck)
 
                 # MUI Push internal points and commit current steps
                 # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
