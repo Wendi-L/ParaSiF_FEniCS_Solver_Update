@@ -289,9 +289,9 @@ class linearElastic:
 
                     # Assemble linear form
                     fem.petsc.assemble_vector(Linear_Assemble, Linear_Form)
-                    fem.petsc.apply_lifting(Linear_Assemble, [Bilinear_Form], [[bcs]], x0=[dmck.vector], scale=1)
+                    fem.petsc.apply_lifting(Linear_Assemble, [Bilinear_Form], [bcs], x0=[dmck.vector], scale=1)
                     Linear_Assemble.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
-                    fem.petsc.set_bc(Linear_Assemble, [bcs])
+                    fem.petsc.set_bc(Linear_Assemble, bcs)
                     # Solving the structure functions inside the time loop
                     solver.solve(Linear_Assemble, dmck.vector)
                     dmck.x.scatter_forward()

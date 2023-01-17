@@ -39,7 +39,8 @@
 #
 #%% Import packages
 #_________________________________________________________________________________________
-from dolfinx import *
+from dolfinx import fem
+# from dolfinx.fem import Constant
 import numpy as np
 import ufl
 
@@ -51,13 +52,13 @@ class utility:
 
     def X_direction_vector(self):
         # Directional vector in x-axis direction
-       return np.array([1.0, 0.0, 0.0])
+       return ufl.as_vector([1.0, 0.0, 0.0])
     def Y_direction_vector(self):
         # Directional vector in y-axis direction
-       return np.array([0.0, 1.0, 0.0])
+       return ufl.as_vector([0.0, 1.0, 0.0])
     def Z_direction_vector(self):
         # Directional vector in z-axis direction
-       return np.array([0.0, 0.0, 1.0])
+       return ufl.as_vector([0.0, 0.0, 1.0])
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Solid gravitational/body forces define
