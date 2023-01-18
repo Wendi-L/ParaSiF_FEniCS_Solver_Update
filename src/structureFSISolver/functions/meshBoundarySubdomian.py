@@ -40,6 +40,7 @@
 #%% Import packages
 #_________________________________________________________________________________________
 from dolfinx import *
+import numpy as np
 import ufl
 
 class meshBoundarySubdomian:
@@ -130,6 +131,11 @@ class meshBoundarySubdomian:
             self.flexdofs = fem.locate_dofs_topological(VectorFunctionSpace, fdim, flex_facets)
             self.symmetrydofs = fem.locate_dofs_topological(VectorFunctionSpace, fdim, symmetry_facets)
 
+            marked_facets = np.hstack([fixed_facets, flex_facets,symmetry_facets])
+            marked_values = np.hstack([np.full_like(fixed_facets, 1), np.full_like(flex_facets, 2), np.full_like(symmetry_facets, 3)])
+            sorted_facets = np.argsort(marked_facets)
+            self.facet_tag = mesh.meshtags(domain, fdim, marked_facets[sorted_facets], marked_values[sorted_facets])
+
             if self.rank == 0: print ("Done")
 
         if self.iXDMFFileExport() and self.iHDF5BoundariesExport():
@@ -145,5 +151,9 @@ class meshBoundarySubdomian:
             print ("\n")
 
     def Get_ds(self, domain):
-        return ufl.Measure("ds", domain=domain)
+        metadata = {"quadrature_degree": 4}
+        return ufl.Measure('ds', domain=domain, subdomain_data=self.facet_tag, metadata=metadata)
 
+    def Get_dx(self, domain):
+        metadata = {"quadrature_degree": 4}
+        return ufl.Measure("dx", domain=domain, metadata=metadata)
