@@ -171,6 +171,8 @@ class utility:
                 # self.tF_apply.vector().set_local(self.tF_apply_vec)
                 # self.tF_apply.vector().apply("insert")
                 self.tF_apply.x.array[:] = self.tF_apply_vec
+                self.tF_apply.x.scatter_forward()
+
             else:
                 # Do not apply the fetched value, i.e. one-way coupling
                 pass
