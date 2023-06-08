@@ -9,7 +9,7 @@ export PYTHONPATH=${PWD}/../thirdParty/MUI/wrappers/Python:$PYTHONPATH
 domainStructure=${PWD}/structureDomain
 
 # Ranks set to each domain
-numProcsStructure=1
+numProcsStructure=3
 
 solverStructure=structureDomainRun.py
 
