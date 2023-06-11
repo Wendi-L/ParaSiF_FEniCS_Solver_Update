@@ -65,6 +65,9 @@ class readData:
     def iMUIFetchMany (self):
         # F-Use normal fetch function; T-Use fetch_many function.
         return self.cfg['MUI'].getboolean('iMUIFetchMany')
+    def iMUIFetchMode (self):
+        # Select of fetch mode of MUI (integer)
+        return int(self.cfg['MUI']['iMUIFetchMode'])
     def iLoadAreaList (self):
         # F-The mesh is not evenly spaced; T-The mesh is evenly spaced.
         return self.cfg['MUI'].getboolean('iLoadAreaList')
@@ -74,6 +77,9 @@ class readData:
     def iMUIPushMany (self):
         # F-Use normal push function; T-Use push_many function.
         return self.cfg['MUI'].getboolean('iMUIPushMany')
+    def iMUIPushMode (self):
+        # Select of push mode of MUI (integer)
+        return int(self.cfg['MUI']['iMUIPushMode'])
     def iPushX (self):
         # F-Not push X; T-Push X.
         return self.cfg['MUI'].getboolean('iPushX')

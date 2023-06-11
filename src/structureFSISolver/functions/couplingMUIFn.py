@@ -93,7 +93,9 @@ class couplingMUIFn:
                            grid_dimension,
                            dofs_fetch_list,
                            dofs_push_list,
+                           xyz_push,
                            xyz_fetch,
+                           dmck,
                            Total_Time_Steps):
 
         if self.iMUICoupling():
@@ -234,90 +236,96 @@ class couplingMUIFn:
             # Spatial/temporal samplers
             if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
 
-            fileAddress=self.outputFolderName() + '/RBFMatrix/' + str(self.rank)
-            os.makedirs(fileAddress)
-
-            if (self.iReadMatrix()):
-                print ("{FENICS} Reading RBF matrix from ", self.rank)
-                sourcefileAddress=self.inputFolderName() + '/RBFMatrix'
-
-                # search line number of the pointID
-                numberOfFolders = 0
-                with open(sourcefileAddress +'/partitionSize.dat', 'r') as f_psr:
-                    print ("{FENICS} open partitionSize from ", self.rank)
-                    for line in f_psr:
-                        numberOfFolders = int(line)
-                f_psr.close()
-                print ("{FENICS} Number of RBF subfolders: ", numberOfFolders, " from ", self.rank)
-
-                numberOfCols=-99
-                for i, point_IDs in enumerate(point3dGlobalID):
-                    # search line number of the pointID
-                    iFolder=0
-                    while iFolder < numberOfFolders:
-                        line_number = -1
-                        result_line_number = -99
-                        result_folder_number = -99
-                        with open(sourcefileAddress+'/'+str(iFolder)+'/pointID.dat', 'r') as f_pid:
-                            for line in f_pid:
-                                line_number += 1
-                                if str(point_IDs) in line:
-                                    result_line_number = line_number
-                                    result_folder_number = iFolder
-                                    break
-                        f_pid.close()
-                        iFolder += 1
-                        if (result_folder_number >= 0):
-                            break
-
-                    if (result_line_number < 0):
-                        print ("{** FENICS ERROR **} Cannot find Point ID: ", point_ID, " in file")
-                    # Get the line in H matrix and copy to local file
-                    with open(sourcefileAddress+'/'+str(result_folder_number)+'/Hmatrix.dat', 'r') as f_h:
-                        for i, line in enumerate(f_h):
-                            if i == (result_line_number+6):
-                                with open(fileAddress+'/Hmatrix.dat', 'a') as f_h_result:
-                                    if line[-1] == '\n':
-                                        f_h_result.write(line)
-                                    else:
-                                        f_h_result.write(line+'\n')
-                                    if (numberOfCols<0):
-                                        numberOfCols=len(line.split(","))
-                                f_h_result.close()
-                            elif i > (result_line_number+6):
-                                break
-                    f_h.close()
-
-                with open(fileAddress+'/matrixSize.dat', 'w') as f_size:
-                    f_size.write(str(numberOfCols)+","+str(len(point3dGlobalID))+",0,0,"+str(len(point3dGlobalID))+","+str(numberOfCols))
-                f_size.close()
-
-            else:
-                if self.rank == 0:
-                    with open(self.outputFolderName() + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
-                        f_ps.write("%i\n" % self.size)
-
             # Best practice suggestion: for a better performance on the RBF method, always switch on the smoothFunc when structure Dofs are more than
             #                           fluid points; Tune the rMUIFetcher to receive a reasonable totForce_Fetch value; Tune the areaListFactor to
             #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
+            if self.iMUIFetchMode == 0:
+                fileAddress=self.outputFolderName() + '/RBFMatrix/' + str(self.rank)
+                os.makedirs(fileAddress)
+
+                if (self.iReadMatrix()):
+                    print ("{FENICS} Reading RBF matrix from ", self.rank)
+                    sourcefileAddress=self.inputFolderName() + '/RBFMatrix'
+
+                    # search line number of the pointID
+                    numberOfFolders = 0
+                    with open(sourcefileAddress +'/partitionSize.dat', 'r') as f_psr:
+                        print ("{FENICS} open partitionSize from ", self.rank)
+                        for line in f_psr:
+                            numberOfFolders = int(line)
+                    f_psr.close()
+                    print ("{FENICS} Number of RBF subfolders: ", numberOfFolders, " from ", self.rank)
+
+                    numberOfCols=-99
+                    for i, point_IDs in enumerate(point3dGlobalID):
+                        # search line number of the pointID
+                        iFolder=0
+                        while iFolder < numberOfFolders:
+                            line_number = -1
+                            result_line_number = -99
+                            result_folder_number = -99
+                            with open(sourcefileAddress+'/'+str(iFolder)+'/pointID.dat', 'r') as f_pid:
+                                for line in f_pid:
+                                    line_number += 1
+                                    if str(point_IDs) in line:
+                                        result_line_number = line_number
+                                        result_folder_number = iFolder
+                                        break
+                            f_pid.close()
+                            iFolder += 1
+                            if (result_folder_number >= 0):
+                                break
+
+                        if (result_line_number < 0):
+                            print ("{** FENICS ERROR **} Cannot find Point ID: ", point_ID, " in file")
+                        # Get the line in H matrix and copy to local file
+                        with open(sourcefileAddress+'/'+str(result_folder_number)+'/Hmatrix.dat', 'r') as f_h:
+                            for i, line in enumerate(f_h):
+                                if i == (result_line_number+6):
+                                    with open(fileAddress+'/Hmatrix.dat', 'a') as f_h_result:
+                                        if line[-1] == '\n':
+                                            f_h_result.write(line)
+                                        else:
+                                            f_h_result.write(line+'\n')
+                                        if (numberOfCols<0):
+                                            numberOfCols=len(line.split(","))
+                                    f_h_result.close()
+                                elif i > (result_line_number+6):
+                                    break
+                        f_h.close()
+
+                    with open(fileAddress+'/matrixSize.dat', 'w') as f_size:
+                        f_size.write(str(numberOfCols)+","+str(len(point3dGlobalID))+",0,0,"+str(len(point3dGlobalID))+","+str(numberOfCols))
+                    f_size.close()
+
+                else:
+                    if self.rank == 0:
+                        with open(self.outputFolderName() + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
+                            f_ps.write("%i\n" % self.size)
+
+                self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher(),
+                                                   point3dList,
+                                                   self.basisFunc(),
+                                                   self.iConservative(),
+                                                   self.iPolynomial(),
+                                                   self.iSmoothFunc(),
+                                                   self.iReadMatrix(),
+                                                   fileAddress,
+                                                   self.cutoffRBF())
+
+                with open(fileAddress+'/pointID.dat', 'w') as f_pid:
+                    for pid in point3dGlobalID:
+                        f_pid.write("%i\n" % pid)
+
+            elif self.iMUIFetchMode == 1:
+                self.s_sampler = mui4py.SamplerExact()
+            else:
+                self.s_sampler = mui4py.SamplerPseudoNearestNeighbor(self.rMUIFetcher())
+
             self.t_sampler = mui4py.ChronoSamplerExact()
 
-            self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher(),
-                                               point3dList,
-                                               self.basisFunc(),
-                                               self.iConservative(),
-                                               self.iPolynomial(),
-                                               self.iSmoothFunc(),
-                                               self.iReadMatrix(),
-                                               fileAddress,
-                                               self.cutoffRBF())
-
-            with open(fileAddress+'/pointID.dat', 'w') as f_pid:
-                for pid in point3dGlobalID:
-                    f_pid.write("%i\n" % pid)
-
             # Commit ZERO step
-            self.ifaces3d["threeDInterface0"].commit(0)
+            self.MUI_Push(xyz_push, dofs_push_list, dmck, 0)
             if self.rank == 0: print ("{FENICS} Commit ZERO step")
         else:
             pass
@@ -470,7 +478,7 @@ class couplingMUIFn:
         if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
-        if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
+        if (((total_Sub_Iteration-self.forgetTStepsMUI()) > 0) and (self.forgetTStepsMUI != 0)):
             a = self.ifaces3d["threeDInterface0"].\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
             self.ifaces3d["threeDInterface0"].\
@@ -485,7 +493,7 @@ class couplingMUIFn:
         if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
-        if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
+        if (((total_Sub_Iteration-self.forgetTStepsMUI()) > 0) and (self.forgetTStepsMUI != 0)):
             a = self.ifaces3d["threeDInterface0"].\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
             self.ifaces3d["threeDInterface0"].\

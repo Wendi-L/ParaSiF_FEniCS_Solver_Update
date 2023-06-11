@@ -237,7 +237,7 @@ class linearElastic:
         #%% Define MUI samplers and commit ZERO step
         #===========================================
 
-        self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_fetch, t_step)
+        self.MUI_Sampler_Define(Q, gdim, dofs_fetch_list, dofs_push_list, xyz_push, xyz_fetch, dmck, t_step)
 
         #===========================================
         #%% Define time loops
