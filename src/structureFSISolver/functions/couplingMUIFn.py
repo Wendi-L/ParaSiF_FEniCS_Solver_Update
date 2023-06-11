@@ -478,7 +478,7 @@ class couplingMUIFn:
         if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
-        if (((total_Sub_Iteration-self.forgetTStepsMUI()) > 0) and (self.forgetTStepsMUI != 0)):
+        if (((total_Sub_Iteration-self.forgetTStepsMUI()) > 0) and (self.forgetTStepsMUI() != 0)):
             a = self.ifaces3d["threeDInterface0"].\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
             self.ifaces3d["threeDInterface0"].\
@@ -493,7 +493,7 @@ class couplingMUIFn:
         if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
-        if (((total_Sub_Iteration-self.forgetTStepsMUI()) > 0) and (self.forgetTStepsMUI != 0)):
+        if (((total_Sub_Iteration-self.forgetTStepsMUI()) > 0) and (self.forgetTStepsMUI() != 0)):
             a = self.ifaces3d["threeDInterface0"].\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
             self.ifaces3d["threeDInterface0"].\
