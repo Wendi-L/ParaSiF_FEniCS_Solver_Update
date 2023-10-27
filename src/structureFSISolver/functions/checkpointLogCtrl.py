@@ -178,6 +178,7 @@ class checkpointLogCtrl:
                         mesh,
                         grid_dimension,
                         VectorFunctionSpace,
+                        VectorFunctionSpace1,
                         displacement_function):
         # Export post-processing files
         if ((self.rank == 0) and self.iDebug()):
@@ -203,10 +204,12 @@ class checkpointLogCtrl:
             # self.stress_file.write_function(sig, current_time)
 
             # Save displacement solution to file
-            self.disp_file.write_function(displacement_function, current_time)
+            displacement_function1 = fem.Function(VectorFunctionSpace1)              # Function for displacement by MCK solving method
+            displacement_function1.interpolate(displacement_function)
+            self.disp_file.write_function(displacement_function1, current_time)
 
             # Compute traction
-            traction = fem.Function(VectorFunctionSpace, name="Traction")
+            traction = fem.Function(VectorFunctionSpace1, name="Traction")
             traction.interpolate(self.tF_apply)
             # Save traction solution to file
             self.traction_file.write_function(traction, current_time)

@@ -102,6 +102,7 @@ class linearElastic:
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
         Q         =     fem.FunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
         V         =     fem.VectorFunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))
+        V1        =     fem.VectorFunctionSpace(domain, ("Lagrange", 1))
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -337,7 +338,7 @@ class linearElastic:
             # Data output
             #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
             if (not (self.iQuiet())):
-                self.Export_Disp_xdmf(n_steps, t, domain, gdim, V, dmck)
+                self.Export_Disp_xdmf(n_steps, t, domain, gdim, V, V1, dmck)
                 #self.Export_Disp_txt(dmck)
                 #self.Checkpoint_Output_Linear(t, mesh, d0mck, u0mck, a0mck, dmck, False)
 
