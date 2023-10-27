@@ -45,6 +45,8 @@
 #_________________________________________________________________________________________
 
 from dolfinx import *
+from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
+                               set_bc)
 import os
 import numpy as np
 from mpi4py import MPI

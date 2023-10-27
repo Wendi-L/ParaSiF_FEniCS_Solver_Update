@@ -40,6 +40,8 @@
 #%% Import packages
 #_________________________________________________________________________________________
 from dolfinx import *
+from dolfinx.mesh import (CellType, GhostMode, create_box,
+                          locate_entities_boundary)
 import numpy as np
 import ufl
 
@@ -66,7 +68,7 @@ class meshBoundarySubdomian:
                                    (self.OBeamY()+self.YBeam()),
                                    (self.OBeamZ()+self.ZBeam())]],
                                    [self.XMesh(), self.YMesh(), self.ZMesh()],
-                                   mesh.CellType.tetrahedron, mesh.GhostMode.shared_facet)
+                                   mesh.CellType.tetrahedron, ghost_mode=GhostMode.shared_facet)
             if self.rank == 0: print ("{FENICS} Done with generating mesh")
 
         if self.iXDMFFileExport() and self.iXDMFMeshExport() and (not self.iMeshLoad()):
