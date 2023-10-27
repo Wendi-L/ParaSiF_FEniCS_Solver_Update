@@ -1,0 +1,73 @@
+############################################
+# Multiscale Universal Interface Changelog #
+############################################
+
+[21 August 2023, 2.0+]
+  - Fixed bugs related to memory leak of Aitken coupling algorithm
+  - Add residual calculation and output function on Fixed Relaxation coupling algorithm
+
+[01 August 2023, 2.0]
+  - Refactor code base into new directory structure
+  - Add new coupling algorithms
+  - Rename "chrono" filters to "temporal" to avoid conflation with STL and other projects
+  - Change API so functions that take two time_type values take a new iterator_type value instead
+  - Update C and Fortran wrappers
+  - Refactor Python wrapper for smaller footprint and CMake based build
+  - Update top-level CMake for refactored Python wrapper and directory structure
+  - Add standalone linear algebra capability mui::linalg
+  - Update RBF filter to utilise new mui::linalg package
+  - Add parallel capability to RBF filter
+  - Remove Eigen dependency and USE_RBF compile time parameter
+
+[05 October 2022, 1.2.4]
+  - Refactor RBF filter
+  - Generalise capability of RBF filter so partitioned approach available for both conservative and consistent forms
+  - Optimise RBF matrix generation
+  - Fix CMake bug around use of languages other than C++
+
+[13 September 2022, 1.2.3]
+  - Add multiple uniface helper function (create_uniface) to Fortran wrapper 
+  - Add mod file generation to Fortran wrapper build systems (CMake and Makefile)
+  - Add creation of static libraries for Fortran and C wrappers to CMake build system
+
+[20 April 2022, 1.2.2]
+  - Improved endianness detection and implementation (in particular for Apple platforms)
+
+[25 February 2022, 1.2.1]
+  - Performance improvements (in particular with large peer numbers).
+  - Add new parameters to RBF filter API.
+  - Update C/Fortran/Python wrapper to reflect new RBF API.
+  - Update mui4py version system to reflect the main library.
+
+[16 December 2021, 1.2]
+  - Complete C/Fortran/Python wrappers (minor ommisions listed as ToDo list in local README.md files for each).
+  - Top-level CMake now complete for all components.
+  - Directory restructure to make more logical.
+  - A number of bug fixes.
+  - Addition of global synchronisation mechanism to Smart Send.
+
+[07 October 2021, 1.1.3]
+  - Top-level CMake build system redesign.
+  - Bug fixes and compilation warnings removal for RBF filter.
+
+[27 August 2021, 1.1.2]
+  - A complete C wrapper is included and new Fortran framework in place.
+  - The create_uniface() function now outputs a std::vector of uniface objects in the same order they were input, rather than hash-value order.
+  - A number of small bug fixes.
+
+[02 August 2021, 1.1.1]
+  - Reverse MPI bugfix from 1.1 and implement new fix.
+
+[19 March 2021, 1.1]
+  - RBF spatial filter:
+    - New Wendland basis functions.
+    - New Shepard smoothing function.
+    - Bug fixes for problems involving small sample sizes.
+  - Single and double time entries available for all functions that rely on a time stamp.
+  - Ability to disable debug output as part of config.
+  - Fixes within Python wrapper.
+  - Performance and bug fixes.
+  - Important MPI bugfix.
+
+[31 January 2020, 1.0]
+  - Initial release.
