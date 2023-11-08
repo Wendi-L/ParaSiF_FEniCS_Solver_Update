@@ -107,18 +107,29 @@ class checkpointLogCtrl:
             print ("{FENICS} Numbers of sub-iterations: ", self.num_sub_iteration(), " [-]")
             print ("\n")
 
-    def print_Disp (self, displacement_function):
+    def print_Disp (self, msh, displacement_function):
         # Compute and print the displacement of monitored point
-        d_DispSum = np.zeros(3)
-        d_tempDenominator  = np.array([ self.size,
-                                        self.size,
-                                        self.size])
-        self.LOCAL_COMM_WORLD.Reduce((displacement_function(
-                                    points(self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()))),
-                                    d_DispSum,op=MPI.SUM,root=0)
-        d_Disp = np.divide(d_DispSum,d_tempDenominator)
-        if self.rank == 0:
-            print ("{FENICS} Monitored point deflection [m]: ", d_Disp)
+        # Create bounding box for function evaluation
+        bb_tree = geometry.bb_tree(msh, 2)
+
+        # Check against standard table value
+        p = np.array([self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()], dtype=np.float64)
+        cell_candidates = geometry.compute_collisions_points(bb_tree, p)
+        cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+
+        displacement_function.x.scatter_forward()
+        if len(cells) > 0:
+            value = displacement_function.eval(p, cells[0])
+            d_DispSum = np.zeros(3)
+            d_tempDenominator  = np.array([ self.size,
+                                            self.size,
+                                            self.size])
+            self.LOCAL_COMM_WORLD.Reduce((displacement_function.eval(p, cells[0])),
+                                        d_DispSum,op=MPI.SUM,root=0)
+            d_Disp = np.divide(d_DispSum,d_tempDenominator)
+
+            if self.rank == 0:
+                print ("{FENICS} Monitored point deflection [m]: ", d_Disp)
 
     def Export_Disp_txt(self, displacement_function):
         if self.iExporttxt():

@@ -223,8 +223,6 @@ class linearElastic:
         #%% Initialize solver
         #===========================================
 
-        #problem = fem.petsc.LinearProblem(Bilinear_Form, Linear_Form, bcs=[bcs], petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
-
         solver = PETSc.KSP().create(domain.comm)
         solver.setOperators(Bilinear_Assemble)
         solver.setType(PETSc.KSP.Type.PREONLY)
@@ -317,8 +315,7 @@ class linearElastic:
                     pass
 
                 # Compute and print the displacement of monitored point
-                # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-                #self.print_Disp(dmck)
+                self.print_Disp(domain,dmck)
 
                 # MUI Push internal points and commit current steps
                 # !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
