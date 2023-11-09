@@ -56,7 +56,7 @@ class facetAreas:
                                      dimension):
         areatotal = 0.0
         areatotal_local = 0.0
-        #cell2dofs = FunctionSpace.dofmap().cell_dofs
+        cell2dofs = FunctionSpace.dofmap.cell_dofs
         ones = np.array([1,1,1])
 
         dpc_help_number = 0
@@ -112,18 +112,22 @@ class facetAreas:
             # Define function for facet area
             self.areaf= fem.Function(Q)
             #self.areaf_vec = self.areaf.vector().get_local()
+            self.areaf_vec = self.areaf.x.array
 
             if self.iLoadAreaList():
-                hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
-                hdf5meshAreaDataInTemp.read(self.areaf, "/areaf/vector_0")
-                hdf5meshAreaDataInTemp.close()
+                # hdf5meshAreaDataInTemp = HDF5File(self.LOCAL_COMM_WORLD, self.inputFolderPath + "/mesh_boundary_and_values.h5", "r")
+                # hdf5meshAreaDataInTemp.read(self.areaf, "/areaf/vector_0")
+                # hdf5meshAreaDataInTemp.close()
+                pass
             else:
                 if self.rank == 0: print ("{FENICS} facet area calculating")
                 # Calculate function for facet area
                 self.facets_area_list_calculation(mesh, Q, dofs_fetch_list, gdim)
                 # Apply the facet area vectors
-                #self.areaf.vector().set_local(self.areaf_vec)
-                #self.areaf.vector().apply("insert")
+                # self.areaf.vector().set_local(self.areaf_vec)
+                # self.areaf.vector().apply("insert")
+                self.areaf.x.array[:] = self.areaf_vec
+                self.areaf.x.scatter_forward()
                 # Facet area vectors I/O
                 # if (self.iHDF5FileExport()) and (self.iHDF5MeshExport()):
                 #     hdfOutTemp = HDF5File(self.LOCAL_COMM_WORLD, self.outputFolderPath + "/mesh_boundary_and_values.h5", "a")

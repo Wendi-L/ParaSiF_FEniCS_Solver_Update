@@ -177,7 +177,7 @@ class linearElastic:
         #%% Define facet areas
         #===========================================
         #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        #self.facets_area_define(mesh, Q, self.flexdofs, gdim)
+        self.facets_area_define(mesh, Q, self.flexdofs, gdim)
 
         #===========================================
         #%% Prepare post-process files
