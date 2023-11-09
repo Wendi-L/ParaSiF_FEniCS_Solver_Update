@@ -116,10 +116,8 @@ class checkpointLogCtrl:
         p = np.array([self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()], dtype=np.float64)
         cell_candidates = geometry.compute_collisions_points(bb_tree, p)
         cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
-
         displacement_function.x.scatter_forward()
         if len(cells) > 0:
-            value = displacement_function.eval(p, cells[0])
             d_DispSum = np.zeros(3)
             d_tempDenominator  = np.array([ self.size,
                                             self.size,
@@ -131,57 +129,61 @@ class checkpointLogCtrl:
             if self.rank == 0:
                 print ("{FENICS} Monitored point deflection [m]: ", d_Disp)
 
-    def Export_Disp_txt(self, displacement_function):
+    def Export_Disp_txt(self, msh, displacement_function):
         if self.iExporttxt():
-            pointMoniDispSum = np.zeros(3)
-            tempDenominator  = np.array([self.size,
-                                         self.size,
-                                         self.size])
-            self.LOCAL_COMM_WORLD.Reduce((displacement_function(
-                                    Point(self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()))),
-                                    pointMoniDispSum,op=MPI.SUM,root=0)
-            pointMoniDisp = np.divide(pointMoniDispSum,tempDenominator)
+            # Create bounding box for function evaluation
+            bb_tree = geometry.bb_tree(msh, 2)
 
-            pointMoniDispSum_b = np.zeros(3)
-            tempDenominator_b  = np.array([self.size,
-                                         self.size,
-                                         self.size])
-            self.LOCAL_COMM_WORLD.Reduce((displacement_function(
-                                    Point(self.pointMoniXb(),self.pointMoniYb(),self.pointMoniZb()))),
-                                    pointMoniDispSum_b,op=MPI.SUM,root=0)
-            pointMoniDisp_b = np.divide(pointMoniDispSum_b,tempDenominator_b)
+            # Check against standard table value
+            p = np.array([self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()], dtype=np.float64)
+            pb = np.array([self.pointMoniXb(),self.pointMoniYb(),self.pointMoniZb()], dtype=np.float64)
+            cell_candidates = geometry.compute_collisions_points(bb_tree, p)
+            cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+            displacement_function.x.scatter_forward()
+            if len(cells) > 0:
+                pointMoniDispSum = np.zeros(3)
+                pointMoniDispSumb = np.zeros(3)
+                tempDenominator  = np.array([ self.size,
+                                                self.size,
+                                                self.size])
+                self.LOCAL_COMM_WORLD.Reduce((displacement_function.eval(p, cells[0])),
+                                            pointMoniDispSum,op=MPI.SUM,root=0)
+                self.LOCAL_COMM_WORLD.Reduce((displacement_function.eval(pb, cells[0])),
+                                            pointMoniDispSumb,op=MPI.SUM,root=0)
+                pointMoniDisp = np.divide(pointMoniDispSum,tempDenominator)
+                pointMoniDispb = np.divide(pointMoniDispSumb,tempDenominator)
 
-            for irank in range(self.size):
-                if self.rank == irank:
-                    ftxt_dispX = open(self.outputFolderPath + "/tip-displacementX_" + str(irank)+ ".txt", "a")
-                    ftxt_dispX.write(str(pointMoniDisp[0]))
-                    ftxt_dispX.write("\n")
-                    ftxt_dispX.close
+                for irank in range(self.size):
+                    if self.rank == irank:
+                        ftxt_dispX = open(self.outputFolderPath + "/tip-displacementX_" + str(irank)+ ".txt", "a")
+                        ftxt_dispX.write(str(pointMoniDisp[0]))
+                        ftxt_dispX.write("\n")
+                        ftxt_dispX.close
 
-                    ftxt_dispY = open(self.outputFolderPath + "/tip-displacementY_" + str(irank)+ ".txt", "a")
-                    ftxt_dispY.write(str(pointMoniDisp[1]))
-                    ftxt_dispY.write("\n")
-                    ftxt_dispY.close
+                        ftxt_dispY = open(self.outputFolderPath + "/tip-displacementY_" + str(irank)+ ".txt", "a")
+                        ftxt_dispY.write(str(pointMoniDisp[1]))
+                        ftxt_dispY.write("\n")
+                        ftxt_dispY.close
 
-                    ftxt_dispZ = open(self.outputFolderPath + "/tip-displacementZ_" + str(irank)+ ".txt", "a")
-                    ftxt_dispZ.write(str(pointMoniDisp[2]))
-                    ftxt_dispZ.write("\n")
-                    ftxt_dispZ.close
+                        ftxt_dispZ = open(self.outputFolderPath + "/tip-displacementZ_" + str(irank)+ ".txt", "a")
+                        ftxt_dispZ.write(str(pointMoniDisp[2]))
+                        ftxt_dispZ.write("\n")
+                        ftxt_dispZ.close
 
-                    ftxt_dispXb = open(self.outputFolderPath + "/tip-displacementXb_" + str(irank)+ ".txt", "a")
-                    ftxt_dispXb.write(str(pointMoniDisp_b[0]))
-                    ftxt_dispXb.write("\n")
-                    ftxt_dispXb.close
+                        ftxt_dispXb = open(self.outputFolderPath + "/tip-displacementXb_" + str(irank)+ ".txt", "a")
+                        ftxt_dispXb.write(str(pointMoniDispb[0]))
+                        ftxt_dispXb.write("\n")
+                        ftxt_dispXb.close
 
-                    ftxt_dispYb = open(self.outputFolderPath + "/tip-displacementYb_" + str(irank)+ ".txt", "a")
-                    ftxt_dispYb.write(str(pointMoniDisp_b[1]))
-                    ftxt_dispYb.write("\n")
-                    ftxt_dispYb.close
+                        ftxt_dispYb = open(self.outputFolderPath + "/tip-displacementYb_" + str(irank)+ ".txt", "a")
+                        ftxt_dispYb.write(str(pointMoniDispb[1]))
+                        ftxt_dispYb.write("\n")
+                        ftxt_dispYb.close
 
-                    ftxt_dispZb = open(self.outputFolderPath + "/tip-displacementZb_" + str(irank)+ ".txt", "a")
-                    ftxt_dispZb.write(str(pointMoniDisp_b[2]))
-                    ftxt_dispZb.write("\n")
-                    ftxt_dispZb.close
+                        ftxt_dispZb = open(self.outputFolderPath + "/tip-displacementZb_" + str(irank)+ ".txt", "a")
+                        ftxt_dispZb.write(str(pointMoniDispb[2]))
+                        ftxt_dispZb.write("\n")
+                        ftxt_dispZb.close
 
     def Export_Disp_xdmf(self,
                         Current_Time_Step,
