@@ -21,3 +21,6 @@ thirdParty/MUI/cmake/
 thirdParty/MUI/wrappers/Python/.eggs/
 thirdParty/MUI/wrappers/Python/build/
 thirdParty/MUI/wrappers/Python/mui4py.egg-info/
+
+# Log file
+*.log
