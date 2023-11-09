@@ -338,7 +338,7 @@ class linearElastic:
             #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
             if (not (self.iQuiet())):
                 self.Export_Disp_xdmf(n_steps, t, domain, gdim, V, V1, dmck)
-                #self.Export_Disp_txt(dmck)
+                self.Export_Disp_txt(domain,dmck)
                 #self.Checkpoint_Output_Linear(t, mesh, d0mck, u0mck, a0mck, dmck, False)
 
             # Function spaces time marching
