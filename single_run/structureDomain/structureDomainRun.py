@@ -90,7 +90,7 @@ yBench = []
 xCpp = []
 yCpp = []
 
-for i in np.arange(0.1, 100.1, 0.1):
+for i in np.arange(0.1, 50.0, 0.1):
   x.append(i)
 for line in open('structureResults/tip-displacementY_0.txt', 'r'):
     lines = [i for i in line.split()]

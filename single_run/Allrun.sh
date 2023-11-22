@@ -9,13 +9,13 @@ export PYTHONPATH=${PWD}/../thirdParty/MUI/wrappers/Python:$PYTHONPATH
 domainStructure=${PWD}/structureDomain
 
 # Ranks set to each domain
-numProcsStructure=3
+numProcsStructure=1
 
 solverStructure=structureDomainRun.py
 
 
 # parallel run
-mpirun -np ${numProcsStructure} -wdir ${domainStructure} python3 -m mpi4py ${solverStructure}
+mpirun -np ${numProcsStructure} -wdir ${domainStructure} python3 -m mpi4py ${solverStructure} 2>&1 | tee output.log
 
 echo "Done"
 
