@@ -168,16 +168,19 @@ class linearElastic:
         #%% Define DOFs and Coordinates mapping
         #===========================================  
         #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
+        dofs_fetch_list = self.dofs_list(domain, V, 2)
 
-        xyz_fetch = self.xyz_np(self.flexdofs, Q, gdim)
+        dofs_push_list = self.dofs_list(domain, V, 2)
 
-        xyz_push = self.xyz_np(self.flexdofs, Q, gdim)
+        xyz_fetch = self.xyz_np(self.flexdofs, V, gdim)
+
+        xyz_push = self.xyz_np(self.flexdofs, V, gdim)
 
         #===========================================
         #%% Define facet areas
         #===========================================
         #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        self.facets_area_define(mesh, Q, self.flexdofs, gdim)
+        self.facets_area_define(domain, Q, self.flexdofs, gdim)
 
         #===========================================
         #%% Prepare post-process files
