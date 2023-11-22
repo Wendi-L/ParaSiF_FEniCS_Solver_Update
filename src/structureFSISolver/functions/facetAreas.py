@@ -40,67 +40,92 @@
 #%% Import packages
 #_________________________________________________________________________________________
 from dolfinx import *
+import ufl
+from ufl import (FacetArea)
 import numpy as np
 import math
+import scipy as sp
+from scipy import spatial as sp_spatial
+from scipy.spatial import Delaunay, ConvexHull
 
 class facetAreas:
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #%% Define facet areas
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    def calculate_area(self, p1, p2, p3):
+        # Heron's formula to calculate the area of a triangle
+        a = ((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2 + (p2[2] - p1[2])**2)**0.5
+        b = ((p3[0] - p2[0])**2 + (p3[1] - p2[1])**2 + (p3[2] - p2[2])**2)**0.5
+        c = ((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2 + (p1[2] - p3[2])**2)**0.5
+    
+        s = 0.5 * (a + b + c)
+        area = (s * (s - a) * (s - b) * (s - c))**0.5
+        return area
+
+    def calculate_distance(self, point1, point2):
+        return np.linalg.norm(point1 - point2)
+
+    def find_smallest_distance(self, points):
+        num_points = len(points)
+        
+        # Initialize the minimum distance to a large value
+        min_distance = float('inf')
+        
+        # Iterate through all pairs of points
+        for i in range(num_points - 1):
+            for j in range(i + 1, num_points):
+                distance = self.calculate_distance(points[i], points[j])
+                min_distance = min(min_distance, distance)
+    
+        return min_distance
 
     def facets_area_list_calculation(self,
-                                     mesh,
+                                     domain,
                                      FunctionSpace,
                                      dofs_fetch_list,
                                      dimension):
         areatotal = 0.0
-        areatotal_local = 0.0
-        cell2dofs = FunctionSpace.dofmap.cell_dofs
-        ones = np.array([1,1,1])
+        dofs2coord = FunctionSpace.tabulate_dof_coordinates()
+        boundary_facets = mesh.locate_entities_boundary(domain, dim=(domain.topology.dim-1), marker=self.subDomains.Flex)
 
-        dpc_help_number = 0
-        if (self.deg_fun_spc() != 1):
-            for i in range(2, self.deg_fun_spc()+1):
-                dpc_help_number += i
-        dofs_Per_Cell=3+dpc_help_number+(self.deg_fun_spc()-1)
-
-        for f in facets(mesh):
-                x_array = np.array([])
-                y_array = np.array([])
-                z_array = np.array([])
-
-                for vertices in f.entities(dimension-3):
-                # Currently, this calculation only supports triangular boundary mesh
-                    vertex_coor=Vertex(mesh, vertices).point()
-                    x_array = np.append(x_array, vertex_coor.x())
-                    y_array = np.append(y_array, vertex_coor.y())
-                    z_array = np.append(z_array, vertex_coor.z())
-
-                row1=np.array([x_array, y_array, ones])
-                row2=np.array([y_array, z_array, ones])
-                row3=np.array([z_array, x_array, ones])
-                det1=np.linalg.det(row1)
-                det2=np.linalg.det(row2)
-                det3=np.linalg.det(row3)
-                area = 0.5*math.sqrt(det1*det1 + det2*det2 + det3*det3)*self.areaListFactor()
-                for c in cells(f):
-                    #c_dofs = cell2dofs(c.index())
-                    c_dofs=3
-                    d_list=[]
-                    d_num = 0
-                    for i, p in enumerate(c_dofs):
-                        if p in dofs_fetch_list:
-                            d_list.append(p)
-                            d_num+=1
-                    if (len(d_list)!=0):
-                        for ii, pp in enumerate(d_list):
-                            # self.areaf_vec[pp] += area/d_num
-                            self.areaf_vec[pp] += area/dofs_Per_Cell
-
+        for i, p in enumerate(boundary_facets):
+            coord_list=[]
+            d_list=[]
+            area_list=[]
+            dofs = fem.locate_dofs_topological(V=FunctionSpace, entity_dim=(domain.topology.dim-1), entities=p)
+            ndofs = len(dofs)
+            print("Facet dofs at ", p, " = ", dofs)
+            for ii, pp in enumerate(dofs):
+                coord_list.append(dofs2coord[pp])
+            # Add a small perturbation to avoid collinearity issues
+            perturbation = 1e-6 * self.find_smallest_distance(coord_list)
+            perturbed_points = np.array(coord_list) + np.random.uniform(-perturbation, perturbation, size=np.array(coord_list).shape)
+            # Calculate the convex hull
+            hull = ConvexHull(perturbed_points)
+            # Calculate the total area
+            areaPdof = 0
+            for simplex in hull.simplices:
+                triangle = perturbed_points[simplex]
+                areaPdof += self.calculate_area(triangle[0], triangle[1], triangle[2])
+            areaPdof *= (0.5 * self.areaListFactor())
+            print("Facet total area ", areaPdof)
+            if (ndofs != 0):
+                areaPdof /= float(ndofs)
+            else:
+                areaPdof = 0.0
+            for ii, pp in enumerate(dofs):
+                if pp in dofs_fetch_list:
+                    d_list.append(pp)
+                    area_list.append(areaPdof)
+            if (len(d_list)!=0):
+                for iii, ppp in enumerate(d_list):
+                    self.areaf_vec[ppp] += area_list[iii]
+        
         for iii, ppp in enumerate(self.areaf_vec):
             areatotal += self.areaf_vec[iii]
-
+        
         if (self.rank == 0) and self.iDebug():
             print("Total area of MUI fetched surface= ", areatotal, " m^2")
 
