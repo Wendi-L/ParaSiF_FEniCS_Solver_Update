@@ -50,22 +50,12 @@ class DOFCoordMapping:
     #%% DOFs-Coordinates mapping function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def get_subdomain_dofs(self, MeshFunction, VectorFunctionSpace, boundary):
-        # Helper function to extract dofs from a subdomain.
-        # This is only done once if the mesh do not change.
-        # In this StructureFSISolver, we use this function 
-        #     to extract the dofs from the original mesh.
-        u = Function(VectorFunctionSpace)
-        bc = DirichletBC(VectorFunctionSpace, Constant(1.0), MeshFunction, boundary)
-        bc.apply(u.vector())
-        return np.where(u.vector()==1.0)[0]
-
     def dofs_to_xyz(self, FunctionSpace, dimension):
         # Convert dofs to coordinates
-        return FunctionSpace.tabulate_dof_coordinates()[:, 0]
+        return FunctionSpace.tabulate_dof_coordinates()
 
     def dofs_list(self, MeshFunction, FunctionSpace, boundary):
-        return list(self.get_subdomain_dofs(MeshFunction, FunctionSpace, boundary))
+        return list(self.flexdofs)
 
     def xyz_np(self, dofs_list, FunctionSpace, dimension):
         xyz_np = np.zeros((len(dofs_list), dimension))
