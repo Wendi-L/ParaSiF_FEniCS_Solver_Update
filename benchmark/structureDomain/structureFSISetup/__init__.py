@@ -38,9 +38,7 @@ __license__ = "All rights reserved"
 #%% Import packages
 #_________________________________________________________________________________________
 
-from structureFSISetup.structureSubDomain import Fixed
-from structureFSISetup.structureSubDomain import Flex
-from structureFSISetup.structureSubDomain import Symmetry
+from structureFSISetup.structureSubDomain import SubDomains
 from structureFSISetup.structureBCS import boundaryConditions
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
