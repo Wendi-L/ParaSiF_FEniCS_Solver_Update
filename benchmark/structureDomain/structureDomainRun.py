@@ -38,7 +38,7 @@ __license__ = "All rights reserved"
 #%% Import packages
 #_________________________________________________________________________________________
 
-from dolfin import *
+from dolfinx import *
 import configparser
 import structureFSISetup
 import structureFSISolver
@@ -57,9 +57,7 @@ config.read('./structureFSISetup/structureInputPara.ini')
 #_________________________________________________________________________________________
 
 # Create sub-domain instances
-fixed = structureFSISetup.structureSubDomain.Fixed()
-flex = structureFSISetup.structureSubDomain.Flex()
-symmetry = structureFSISetup.structureSubDomain.Symmetry()
+subDomains = structureFSISetup.structureSubDomain.SubDomains()
 # Create boundary condition instances
 BCs = structureFSISetup.structureBCS.boundaryConditions()
 
@@ -68,7 +66,7 @@ BCs = structureFSISetup.structureBCS.boundaryConditions()
 #%% Create solver instances
 #_________________________________________________________________________________________
 
-solver = structureFSISolver.structureFSISolver.StructureFSISolver(config, fixed, flex, symmetry, BCs)
+solver = structureFSISolver.structureFSISolver.StructureFSISolver(config, subDomains, BCs)
 
 #_________________________________________________________________________________________
 #
@@ -92,7 +90,7 @@ yBench = []
 xCpp = []
 yCpp = []
 
-for i in np.arange(0.1, 100.1, 0.1):
+for i in np.arange(0.1, 50.0, 0.1):
   x.append(i)
 for line in open('structureResults/tip-displacementY_0.txt', 'r'):
     lines = [i for i in line.split()]
@@ -103,17 +101,11 @@ for line in open('dataInput/Slone_et_al.txt', 'r'):
     xBench.append(float(lines[0]))
     yBench.append(float(lines[1]))
 
-for line in open('../dummyOF/dispCpp.txt', 'r'):
-    lines = [i for i in line.split()]
-    xCpp.append(float(lines[0]))
-    yCpp.append(float(lines[1]))
-
 plt.title("Y-Disp Compare")
 plt.xlabel('Time [s]')
 plt.ylabel('Y-Disp [m]')
 plt.plot(xBench, yBench, label = 'Slone et al. 2003', marker= 'o', linestyle='None', c = 'b')
 plt.plot(x, y, label = 'Present FEniCS Output', linestyle='-', c = 'g')
-plt.plot(xCpp, yCpp, label = 'Present C++ Receive', linestyle='--', c = 'r')
 plt.xticks(np.arange(0, 101, step=20))
 plt.yticks(np.arange(-0.15, 0.16, step=0.05))
 plt.legend(loc='upper right')
