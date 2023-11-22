@@ -38,7 +38,8 @@ __license__ = "All rights reserved"
 #%% Import packages
 #_________________________________________________________________________________________
 
-from dolfin import *
+from dolfinx import *
+import numpy as np
 
 #_________________________________________________________________________________________
 #
@@ -47,11 +48,14 @@ from dolfin import *
 
 class boundaryConditions:
     def DirichletMixedBCs(self, MixedVectorFunctionSpace, boundaries, marks):
+        #  !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
         bc1 = DirichletBC(MixedVectorFunctionSpace.sub(0), ((0.0,0.0,0.0)),boundaries, marks)
         bc2 = DirichletBC(MixedVectorFunctionSpace.sub(1), ((0.0,0.0,0.0)),boundaries, marks)
         return bc1, bc2
-    def DirichletBCs(self, VectorFunctionSpace, boundaries, marks):
-        bc3 = DirichletBC(VectorFunctionSpace, ((0.0,0.0,0.0)),boundaries, marks)
+    def DirichletBCs(self, VectorFunctionSpace, boundary_dofs):
+        bc3 = fem.dirichletbc(np.zeros(3),
+                              boundary_dofs,
+                              V=VectorFunctionSpace)
         return bc3
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
