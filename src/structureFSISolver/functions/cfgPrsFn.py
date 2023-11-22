@@ -92,9 +92,9 @@ class readData:
     def cutoffRBF (self):
         # RBF spatial sampler cutoff value (float)
         return float(self.cfg['MUI']['cutoffRBF'])
-    def iReadMatrix (self):
-        # F-The RBF matrix will write to file; T-The RBF matrix will read from file.
-        return self.cfg['MUI'].getboolean('iReadMatrix')
+    def iWriteMatrix (self):
+        # F-The RBF matrix will read from file; T-The RBF matrix will write to file.
+        return self.cfg['MUI'].getboolean('iWriteMatrix')
     def iPolynomial (self):
         # F-Switch off the RBF spatial sampler polynomial terms; T-Switch on the RBF spatial sampler polynomial terms.
         return self.cfg['MUI'].getboolean('iPolynomial')
@@ -104,6 +104,18 @@ class readData:
     def iSmoothFunc (self):
         # F-Switch off the RBF spatial sampler smooth function; T-Switch on the RBF spatial sampler smooth function.
         return self.cfg['MUI'].getboolean('iSmoothFunc')
+    def cgSolveTolRBF (self):
+        # RBF spatial sampler cg solver tol value (float)
+        return float(self.cfg['MUI']['cgSolveTolRBF'])
+    def cgMaxIterRBF (self):
+        # RBF spatial sampler cg solver maximum iterator (integer)
+        return int(self.cfg['MUI']['cgMaxIterRBF'])
+    def pouSizeRBF (self):
+        # RBF spatial sampler POU size (integer)
+        return int(self.cfg['MUI']['pouSizeRBF'])
+    def precondRBF (self):
+        # Select of pre-conditionore of the RBF spatial sampler (integer)
+        return int(self.cfg['MUI']['precondRBF'])
     def forgetTStepsMUI (self):
         # Numbers of time steps to forget for MUI push (integer)
         return int(self.cfg['MUI']['forgetTStepsMUI'])
