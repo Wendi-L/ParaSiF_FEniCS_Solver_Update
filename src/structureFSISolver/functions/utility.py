@@ -224,9 +224,9 @@ class utility:
             totForceY += self.tF_apply_vec[1::3][p]
             totForceZ += self.tF_apply_vec[2::3][p]
 
-            # self.tF_apply_vec[0::3][p] /= self.areaf_vec[p]
-            # self.tF_apply_vec[1::3][p] /= self.areaf_vec[p]
-            # self.tF_apply_vec[2::3][p] /= self.areaf_vec[p]
+            self.tF_apply_vec[0::3][p] /= self.areaf_vec[p]
+            self.tF_apply_vec[1::3][p] /= self.areaf_vec[p]
+            self.tF_apply_vec[2::3][p] /= self.areaf_vec[p]
 
         if self.iDebug():
             print ("{FENICS**} totForce Apply: ", totForceX, "; ",totForceY, "; ",totForceZ,
