@@ -34,8 +34,9 @@ __license__ = "All rights reserved"
 #%% Import packages
 #_________________________________________________________________________________________
 
-from dolfin import *
+from dolfinx import *
 import configparser
+import numpy as np
 
 #_________________________________________________________________________________________
 #
@@ -58,19 +59,14 @@ ZBeamtemp=float(config['GEOMETRY']['ZBeam'])
 #%% for defining parts of the boundaries and the interior of the domain
 #_________________________________________________________________________________________
 
-class Fixed( SubDomain ):
-    def inside (self , x, on_boundary ):
-        tol = DOLFIN_EPS
-        return near(x[0], (OBeamXtemp + tol))
+class SubDomains:
+    def Fixed (self , x ):
+        return np.isclose(x[0], (OBeamXtemp))
 
-class Flex( SubDomain ):
-    def inside (self , x, on_boundary ):
-        tol = DOLFIN_EPS
-        return near(x[0], (OBeamXtemp + XBeamtemp - tol)) 
+    def Flex (self , x ):
+        return np.isclose(x[0], (OBeamXtemp + XBeamtemp))
 
-class Symmetry( SubDomain ):
-    def inside (self , x, on_boundary ):
-        tol = DOLFIN_EPS
-        return near(x[2], (OBeamZtemp + ZBeamtemp - tol)) or near(x[2], (OBeamZtemp + tol)) or near(x[1], (OBeamYtemp + tol)) or near(x[1], (OBeamYtemp + YBeamtemp - tol))
+    def Symmetry (self , x ):
+        return np.logical_or(np.logical_or(np.isclose(x[2], (OBeamZtemp + ZBeamtemp)), np.isclose(x[2], (OBeamZtemp))), np.logical_or(np.isclose(x[1], (OBeamYtemp)), np.isclose(x[1], (OBeamYtemp + YBeamtemp))))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
