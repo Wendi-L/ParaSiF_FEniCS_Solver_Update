@@ -40,8 +40,8 @@
 #%% Import packages
 #_________________________________________________________________________________________
 import sys
-import mui4py
 from mpi4py import MPI
+import mui4py
 import petsc4py
 import os
 
@@ -54,7 +54,7 @@ class couplingMUIFn:
     def MUI_Init(self):
         if self.iMUICoupling():
             # App common world claims
-            self.LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
+            #self.LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
             # MUI parameters
             dimensionMUI = 3
             data_types = {"dispX": mui4py.FLOAT64,
@@ -67,9 +67,15 @@ class couplingMUIFn:
             domain = "structureDomain"
             config3d = mui4py.Config(dimensionMUI, mui4py.FLOAT64)
 
-            iface = ["threeDInterface0"]
-            self.ifaces3d = mui4py.create_unifaces(domain, iface, config3d)
-            self.ifaces3d["threeDInterface0"].set_data_types(data_types)
+            # iface = ["threeDInterface0"]
+            # self.ifaces3d = mui4py.create_unifaces(domain, iface, config3d)
+            # self.ifaces3d["threeDInterface0"].set_data_types(data_types)
+
+            URI = "mpi://structureDomain/threeDInterface0" 
+            self.iface = mui4py.Uniface(uri=URI, config=config3d) 
+            self.iface.set_data_types(data_types)
+            # App common world claims
+            self.LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
 
             # Necessary to avoid hangs at PETSc vector communication
             petsc4py.init(comm=self.LOCAL_COMM_WORLD)
@@ -143,7 +149,8 @@ class couplingMUIFn:
                                                 [send_max_X, send_max_Y, send_max_Z])
 
                 # Announce the MUI send span
-                self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration(), span_push, synchronised)
+                # self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration(), span_push, synchronised)
+                self.iface.announce_send_span(0, Total_Time_Steps*self.num_sub_iteration(), span_push, synchronised)
 
                 print("{FENICS} at rank: ", self.rank, " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
                 print("{FENICS} at rank: ", self.rank, " send_max_Y: ", send_max_Y, " send_min_Y: ", send_min_Y)
@@ -185,9 +192,12 @@ class couplingMUIFn:
                 if (dofs_to_xyz[p][2] > recv_max_Z):
                     recv_max_Z = dofs_to_xyz[p][2]
 
-                point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz[p][0],
-                                                                        dofs_to_xyz[p][1],
-                                                                        dofs_to_xyz[p][2]])
+                # point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz[p][0],
+                #                                                         dofs_to_xyz[p][1],
+                #                                                         dofs_to_xyz[p][2]])
+                point_fetch = self.iface.Point([dofs_to_xyz[p][0],
+                                            dofs_to_xyz[p][1],
+                                            dofs_to_xyz[p][2]])
 
                 point_ID = -999
                 for ii, pp in enumerate(xyz_fetch):
@@ -220,7 +230,8 @@ class couplingMUIFn:
                                                  [recv_max_X, recv_max_Y, recv_max_Z])
 
                 # Announce the MUI receive span
-                self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration()*10, span_fetch, synchronised)
+                # self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration()*10, span_fetch, synchronised)
+                self.iface.announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration()*10, span_fetch, synchronised)
 
                 print("{FENICS} at rank: ", self.rank, " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
                 print("{FENICS} at rank: ", self.rank, " recv_max_Y: ", recv_max_Y, " recv_min_Y: ", recv_min_Y)
@@ -234,10 +245,15 @@ class couplingMUIFn:
             # Spatial/temporal samplers
             if self.rank == 0: print ("{FENICS} Defining MUI samplers ...   ", end="", flush=True)
 
-            fileAddress=self.outputFolderName() + '/RBFMatrix/' + str(self.rank)
-            os.makedirs(fileAddress)
+            fileAddressLocalMake = self.outputFolderName() + '/RBFMatrix'
+            fileAddress=fileAddressLocalMake + '/' + str(self.rank)
+            os.makedirs(fileAddressLocalMake)
 
-            if (self.iReadMatrix()):
+            if (self.iWriteMatrix()):
+                if self.rank == 0:
+                    with open(fileAddressLocalMake+'/partitionSize.dat', 'w') as f_ps:
+                        f_ps.write("%i\n" % self.size)
+            else:    
                 print ("{FENICS} Reading RBF matrix from ", self.rank)
                 sourcefileAddress=self.inputFolderName() + '/RBFMatrix'
 
@@ -292,32 +308,32 @@ class couplingMUIFn:
                     f_size.write(str(numberOfCols)+","+str(len(point3dGlobalID))+",0,0,"+str(len(point3dGlobalID))+","+str(numberOfCols))
                 f_size.close()
 
-            else:
-                if self.rank == 0:
-                    with open(self.outputFolderName() + '/RBFMatrix'+'/partitionSize.dat', 'w') as f_ps:
-                        f_ps.write("%i\n" % self.size)
-
             # Best practice suggestion: for a better performance on the RBF method, always switch on the smoothFunc when structure Dofs are more than
             #                           fluid points; Tune the rMUIFetcher to receive a reasonable totForce_Fetch value; Tune the areaListFactor to
             #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
-            self.t_sampler = mui4py.ChronoSamplerExact()
-
+            self.t_sampler = mui4py.TemporalSamplerExact()
+# Problem creating RBF matrix folder here!!
             self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher(),
                                                point3dList,
                                                self.basisFunc(),
                                                self.iConservative(),
-                                               self.iPolynomial(),
                                                self.iSmoothFunc(),
-                                               self.iReadMatrix(),
-                                               fileAddress,
-                                               self.cutoffRBF())
+                                               self.iWriteMatrix(),
+                                               '',
+                                               self.cutoffRBF(),
+                                               self.cgSolveTolRBF(),
+                                               self.cgMaxIterRBF(),
+                                               self.pouSizeRBF(),
+                                               self.precondRBF(),
+                                               self.LOCAL_COMM_WORLD)
 
-            with open(fileAddress+'/pointID.dat', 'w') as f_pid:
+            with open(fileAddressLocalMake+'/pointID.dat', 'w') as f_pid:
                 for pid in point3dGlobalID:
                     f_pid.write("%i\n" % pid)
 
             # Commit ZERO step
-            self.ifaces3d["threeDInterface0"].commit(0)
+            # self.ifaces3d["threeDInterface0"].commit(0)
+            self.iface.commit(0)
             if self.rank == 0: print ("{FENICS} Commit ZERO step")
         else:
             pass
@@ -339,19 +355,37 @@ class couplingMUIFn:
 
         if (fetch_iteration >= 0):
             if self.iMUIFetchMany():
-                temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                # temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                #             fetch_many("forceX",
+                #                        dofs_to_xyz,
+                #                        fetch_iteration,
+                #                        self.s_sampler,
+                #                        self.t_sampler)
+                # temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                #             fetch_many("forceY",
+                #                        dofs_to_xyz,
+                #                        fetch_iteration,
+                #                        self.s_sampler,
+                #                        self.t_sampler)
+                # temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                #             fetch_many("forceZ",
+                #                        dofs_to_xyz,
+                #                        fetch_iteration,
+                #                        self.s_sampler,
+                #                        self.t_sampler)
+                temp_vec_function_temp[0::3][dofs_fetch_list] = self.iface.\
                             fetch_many("forceX",
                                        dofs_to_xyz,
                                        fetch_iteration,
                                        self.s_sampler,
                                        self.t_sampler)
-                temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                temp_vec_function_temp[1::3][dofs_fetch_list] = self.iface.\
                             fetch_many("forceY",
                                        dofs_to_xyz,
                                        fetch_iteration,
                                        self.s_sampler,
                                        self.t_sampler)
-                temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                temp_vec_function_temp[2::3][dofs_fetch_list] = self.iface.\
                             fetch_many("forceZ",
                                        dofs_to_xyz,
                                        fetch_iteration,
@@ -387,27 +421,52 @@ class couplingMUIFn:
             else:
                 if (fetch_iteration >= 0):
                     for i, p in enumerate(dofs_fetch_list):
-                        temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].\
+                        # temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].\
+                        #             fetch("forceX",
+                        #                   dofs_to_xyz[i],
+                        #                   fetch_iteration,
+                        #                   self.s_sampler,
+                        #                   self.t_sampler)
+                        #
+                        # temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].\
+                        #             fetch("forceY",
+                        #                   dofs_to_xyz[i],
+                        #                   fetch_iteration,
+                        #                   self.s_sampler,
+                        #                   self.t_sampler)
+                        #
+                        # temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].\
+                        #             fetch("forceZ",
+                        #                   dofs_to_xyz[i],
+                        #                   fetch_iteration,
+                        #                   self.s_sampler,
+                        #                   self.t_sampler)
+                        temp_vec_function_temp[0::3][p] = self.iface.\
                                     fetch("forceX",
                                           dofs_to_xyz[i],
                                           fetch_iteration,
                                           self.s_sampler,
                                           self.t_sampler)
 
-                        temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].\
+                        temp_vec_function_temp[1::3][p] = self.iface.\
                                     fetch("forceY",
                                           dofs_to_xyz[i],
                                           fetch_iteration,
                                           self.s_sampler,
                                           self.t_sampler)
 
-                        temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].\
+                        temp_vec_function_temp[2::3][p] = self.iface.\
                                     fetch("forceZ",
                                           dofs_to_xyz[i],
                                           fetch_iteration,
                                           self.s_sampler,
                                           self.t_sampler)
-
+                        # Debugging lines begin
+                        if((total_Sub_Iteration * 0.1) <= 7.0):
+                            temp_vec_function_temp[1::3][p] = -((total_Sub_Iteration * 0.1)/7.0) * 20
+                        else:
+                            temp_vec_function_temp[1::3][p] = 0.0
+                        # Debugging lines end
                         if self.iparallelFSICoupling():
                             self.tF_apply_vec[0::3][p] += (temp_vec_function_temp[0::3][p] - \
                                                            self.tF_apply_vec[0::3][p])*self.undRelxCpl()
@@ -433,62 +492,98 @@ class couplingMUIFn:
                                 "; at iteration: ", fetch_iteration, " at rank: ", self.rank)
 
     def MUI_Push(self, dofs_to_xyz, dofs_push, displacement_function, total_Sub_Iteration):
-        d_vec_x = displacement_function.vector().get_local()[0::3]
-        d_vec_y = displacement_function.vector().get_local()[1::3]
-        d_vec_z = displacement_function.vector().get_local()[2::3]
+        d_vec_x = displacement_function.x.array[0::3]
+        d_vec_y = displacement_function.x.array[1::3]
+        d_vec_z = displacement_function.x.array[2::3]
 
         if self.iMUIPushMany():
             if self.iPushX():
-                self.ifaces3d["threeDInterface0"].\
+            #     self.ifaces3d["threeDInterface0"].\
+            #                 push_many("dispX", dofs_to_xyz, (d_vec_x[dofs_push]))
+            # if self.iPushY():
+            #     self.ifaces3d["threeDInterface0"].\
+            #                 push_many("dispY", dofs_to_xyz, (d_vec_y[dofs_push]))
+            # if self.iPushZ():
+            #     self.ifaces3d["threeDInterface0"].\
+            #                 push_many("dispZ", dofs_to_xyz, (d_vec_z[dofs_push]))
+            #
+            # a = self.ifaces3d["threeDInterface0"].\
+            #                 commit(total_Sub_Iteration)
+                self.iface.\
                             push_many("dispX", dofs_to_xyz, (d_vec_x[dofs_push]))
             if self.iPushY():
-                self.ifaces3d["threeDInterface0"].\
+                self.iface.\
                             push_many("dispY", dofs_to_xyz, (d_vec_y[dofs_push]))
             if self.iPushZ():
-                self.ifaces3d["threeDInterface0"].\
+                self.iface.\
                             push_many("dispZ", dofs_to_xyz, (d_vec_z[dofs_push]))
 
-            a = self.ifaces3d["threeDInterface0"].\
+            a = self.iface.\
                             commit(total_Sub_Iteration)
         else:
+            # if self.iPushX():
+            #     for i, p in enumerate(dofs_push):
+            #         self.ifaces3d["threeDInterface0"].\
+            #                 push("dispX", dofs_to_xyz[i], (d_vec_x[p]))
+            # if self.iPushY():
+            #     for i, p in enumerate(dofs_push):
+            #         self.ifaces3d["threeDInterface0"].\
+            #                 push("dispY", dofs_to_xyz[i], (d_vec_y[p]))
+            # if self.iPushZ():
+            #     for i, p in enumerate(dofs_push):
+            #         self.ifaces3d["threeDInterface0"].\
+            #                 push("dispZ", dofs_to_xyz[i], (d_vec_z[p]))
+            #
+            # a = self.ifaces3d["threeDInterface0"].\
+            #                 commit(total_Sub_Iteration)
             if self.iPushX():
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].\
+                    self.iface.\
                             push("dispX", dofs_to_xyz[i], (d_vec_x[p]))
             if self.iPushY():
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].\
+                    self.iface.\
                             push("dispY", dofs_to_xyz[i], (d_vec_y[p]))
             if self.iPushZ():
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].\
+                    self.iface.\
                             push("dispZ", dofs_to_xyz[i], (d_vec_z[p]))
 
-            a = self.ifaces3d["threeDInterface0"].\
+            a = self.iface.\
                             commit(total_Sub_Iteration)
 
         if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
         if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
-            a = self.ifaces3d["threeDInterface0"].\
+            # a = self.ifaces3d["threeDInterface0"].\
+            #                 forget(total_Sub_Iteration-self.forgetTStepsMUI())
+            # self.ifaces3d["threeDInterface0"].\
+            #                 set_memory(self.forgetTStepsMUI())
+            a = self.iface.\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
-            self.ifaces3d["threeDInterface0"].\
+            self.iface.\
                             set_memory(self.forgetTStepsMUI())
             if (self.rank == 0) and self.iDebug():
                 print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI()))
 
     def MUI_Commit_only(self, total_Sub_Iteration):
-        a = self.ifaces3d["threeDInterface0"].\
+        # a = self.ifaces3d["threeDInterface0"].\
+        #                     commit(total_Sub_Iteration)
+        a = self.iface.\
                             commit(total_Sub_Iteration)
 
         if (self.rank == 0) and self.iDebug():
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
         if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
-            a = self.ifaces3d["threeDInterface0"].\
+            # a = self.ifaces3d["threeDInterface0"].\
+            #                 forget(total_Sub_Iteration-self.forgetTStepsMUI())
+            # self.ifaces3d["threeDInterface0"].\
+            #                 set_memory(self.forgetTStepsMUI())
+            a = self.iface.\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
-            self.ifaces3d["threeDInterface0"].\
+            self.iface.\
                             set_memory(self.forgetTStepsMUI())
             if (self.rank == 0) and self.iDebug():
                 print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI()))
