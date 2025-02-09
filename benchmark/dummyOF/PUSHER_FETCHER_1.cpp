@@ -5,12 +5,15 @@
  *      Author: Wendi Liu
  */
 
-#include "mui.h"
+#include "../../thirdParty/MUI/src/mui.h"
 #include <iostream>
 #include <fstream>
+#include "pusher_fetcher_config.h"
 
 int main(int argc, char ** argv) {
     using namespace mui;
+
+	MPI_Comm  world = mui::mpi_split_by_app();
 
     std::ofstream displacementOutFile("dispCpp.txt");
 
@@ -20,11 +23,9 @@ int main(int argc, char ** argv) {
 	std::string appName="threeDInterface0";
 
     interfaces.emplace_back(appName);
-	
-	MPI_Comm  world = mui::mpi_split_by_app();
 
     // Declare MUI objects using MUI configure file
-    auto ifs = mui::create_uniface<mui::config_3d>( domainName, interfaces );
+    auto ifs = mui::create_uniface<mui::pusher_fetcher_config>( domainName, interfaces );
 
     int rank, size;
     MPI_Comm_rank( world, &rank );
@@ -103,15 +104,15 @@ int main(int argc, char ** argv) {
 	}
 
    // annouce send span
-    geometry::box3d send_region( {local_x0, local_y0, local_z0}, {local_x1, local_y1, local_z1} );
-    geometry::box3d recv_region( {local_x2, local_y2, local_z2}, {local_x3, local_y3, local_z3} );
+    geometry::box<mui::pusher_fetcher_config> send_region( {local_x0, local_y0, local_z0}, {local_x1, local_y1, local_z1} );
+    geometry::box<mui::pusher_fetcher_config> recv_region( {local_x2, local_y2, local_z2}, {local_x3, local_y3, local_z3} );
     printf( "{PUSHER_FETCHER_1} send region for rank %d: %lf %lf %lf - %lf %lf %lf\n", rank, local_x0, local_y0, local_z0, local_x1, local_y1, local_z1 );
     ifs[0]->announce_send_span( 0, steps*10, send_region );
     ifs[0]->announce_recv_span( 0, steps*10, recv_region );
 
 	// define spatial and temporal samplers
-	sampler_pseudo_n2_linear3d<double> s1(r);
-	chrono_sampler_exact3d s2;
+	sampler_pseudo_n2_linear<mui::pusher_fetcher_config> s1(r);
+	temporal_sampler_exact<mui::pusher_fetcher_config> s2;
 
 	// commit ZERO step
 	ifs[0]->commit(0);
