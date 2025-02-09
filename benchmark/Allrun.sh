@@ -3,7 +3,7 @@
 # Run from this directory
 cd ${0%/*} || exit 1
 
-export PYTHONPATH=${PWD}../src:$PYTHONPATH
+export PYTHONPATH=${PWD}../../src:$PYTHONPATH
 export PYTHONPATH=${PWD}../thirdParty/MUI/wrappers/Python:$PYTHONPATH
 
 domainFluid=${PWD}/dummyOF
