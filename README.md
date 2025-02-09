@@ -2,6 +2,8 @@
 
 ## Updates
 
+09th February 2025: Updated code with FEniCSx-0.7.2 through Spack installation.
+
 16th January 2023: Include MUI and other third-party packages into this repo to make it self-contained and easy to install. Pathes have also been changed from absolute into relative.
 
 17th November 2022: Start working on code upgrade in FEniCS-X branch.
@@ -20,10 +22,10 @@ This is a working space on the mini-project of ParaSiF FEniCS solver update.
 
 It includes two parts:
 * Code clean-up/optimisation.
-This part aims to clean-up and optimise the ParaSiF FEniCS in terms of its ease of read for collebration and long term maintaince. It will based on FEniCS-v2019.1.0.
+This part aims to clean-up and optimise the ParaSiF FEniCS in terms of its ease of read for collaboration and long term maintenance. It will based on FEniCS-v2019.1.0.
 
 * FEniCS-v2019 -> FEniCS-X transfer.
-This part aims to transfer the code from FEniCS-v2019.1.0 to FEniCS-X-v0.5.1+, by using the updated APIs and new features in FEniCS-X.
+This part aims to transfer the code from FEniCS-v2019.1.0 to FEniCS-X-v0.7.2+, by using the updated APIs and new features in FEniCS-X.
 
 ## Branching Strategy
 
@@ -47,7 +49,7 @@ It contains the source code on the FEniCS elasticity solver.
 
 * thirdParty
 
-It containes the MUI code (v1.2 with some modifications on the Python wrapper to reduce the memory requirement during the compile stage) and dependencies of MUI (Eigen & pybind11).
+It contains the MUI code (v1.2 with some modifications on the Python wrapper to reduce the memory requirement during the compile stage) and dependencies of MUI (Eigen & pybind11).
 
 * single_run
 
@@ -69,11 +71,11 @@ It contains the input files of FEniCS solver, includes the main file (structureD
 
 ## Install
 
-The dependencies of this code are (correct version of) FEniCS and MUIv1.2.
+The dependencies of this code are (correct version of) FEniCS and MUIv2.0.
 
-* Step One: Install FEniCS (FEniCS v2019.1.0 for "FEniCS-v2019" branch and FEniCS-X v0.5.1 for "FEniCS-X" branch).
+* Step One: Install FEniCS (FEniCS v2019.1.0 for "FEniCS-v2019" branch and FEniCS-X v0.7.2 for "FEniCS-X" branch).
 
-Following FEniCS homepage (https://fenicsproject.org/) for the installation precedure.
+Following FEniCS homepage (https://fenicsproject.org/) for the installation procedure.
 
 * Step Two: Install MUI Python wrapper by (it may take 5-10 min to compile, depends on the performance of the machine):
 
