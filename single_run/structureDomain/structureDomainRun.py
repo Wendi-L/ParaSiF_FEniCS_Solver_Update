@@ -35,21 +35,61 @@ __license__ = "All rights reserved"
 
 #_________________________________________________________________________________________
 #
+#%% Import configure file
+#_________________________________________________________________________________________
+
+import configparser
+
+config = configparser.ConfigParser()
+config.read('./structureFSISetup/structureInputPara.ini')
+
+#_________________________________________________________________________________________
+#
+#%% If iMUICoupling, initialise MPI by mpi4py/MUI for parallelised computation
+#_________________________________________________________________________________________
+
+if config['MUI'].getboolean('iMUICoupling'):
+    import sys
+    from mpi4py import MPI
+    import mui4py
+    import petsc4py
+    import os
+
+    # App common world claims
+    LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
+    # MUI parameters
+    dimensionMUI = 3
+    data_types = {"dispX": mui4py.FLOAT64,
+                  "dispY": mui4py.FLOAT64,
+                  "dispZ": mui4py.FLOAT64,
+                  "forceX": mui4py.FLOAT64,
+                  "forceY": mui4py.FLOAT64,
+                  "forceZ": mui4py.FLOAT64}
+    # MUI interface creation
+    domain = "structureDomain"
+    config3d = mui4py.Config(dimensionMUI, mui4py.FLOAT64)
+
+    iface = ["threeDInterface0"]
+    ifaces3d = mui4py.create_unifaces(domain, iface, config3d)
+    ifaces3d["threeDInterface0"].set_data_types(data_types)
+
+    # Necessary to avoid hangs at PETSc vector communication
+    petsc4py.init(comm=LOCAL_COMM_WORLD)
+
+    # Define local communicator rank
+    rank = LOCAL_COMM_WORLD.Get_rank()
+
+    # Define local communicator size
+    size = LOCAL_COMM_WORLD.Get_size()
+
+#_________________________________________________________________________________________
+#
 #%% Import packages
 #_________________________________________________________________________________________
 
 from dolfinx import *
-import configparser
 import structureFSISetup
 import structureFSISolver
-
-#_________________________________________________________________________________________
-#
-#%% Import configure file
-#_________________________________________________________________________________________
-
-config = configparser.ConfigParser()
-config.read('./structureFSISetup/structureInputPara.ini')
 
 #_________________________________________________________________________________________
 #
@@ -73,7 +113,10 @@ solver = structureFSISolver.structureFSISolver.StructureFSISolver(config, subDom
 #%% Solving
 #_________________________________________________________________________________________
 
-solver.solve()
+if config['MUI'].getboolean('iMUICoupling'):
+    solver.solve(LOCAL_COMM_WORLD, ifaces3d)
+else:
+    solver.solve()
 
 #_________________________________________________________________________________________
 #
