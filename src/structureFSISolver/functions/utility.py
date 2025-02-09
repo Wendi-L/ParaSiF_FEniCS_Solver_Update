@@ -40,7 +40,7 @@
 #%% Import packages
 #_________________________________________________________________________________________
 from dolfinx import fem
-# from dolfinx.fem import Constant
+from dolfinx.fem import Constant
 import numpy as np
 import ufl
 

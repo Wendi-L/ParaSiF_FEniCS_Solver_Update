@@ -111,7 +111,7 @@ class StructureFSISolver(structureFSISolver.functions.cfgPrsFn.readData,
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def solve(self):
+    def solve(self, arg_COMM_WORLD=None, arg_ifaces3d=None):
         #===========================================
         #%% Setup the wall clock
         #===========================================
@@ -126,7 +126,10 @@ class StructureFSISolver(structureFSISolver.functions.cfgPrsFn.readData,
         #%%   parallelised computation
         #===========================================
 
-        self.MUI_Init()
+        if arg_COMM_WORLD is not None:
+            self.MUI_Init(arg_COMM_WORLD, arg_ifaces3d)
+        else:
+            self.MUI_Init()
 
         #===========================================
         #%% Set target folder
