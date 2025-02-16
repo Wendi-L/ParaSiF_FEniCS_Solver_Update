@@ -128,6 +128,6 @@ def get_io_type_str(typein):
 
 def safe_cast(value_type, value):
     if not isinstance(value, str):  # Only for numerics types
-        if not np.can_cast(value, value_type):
+        if not np.can_cast(np.dtype(type(value)).type(value), value_type):
             raise Exception("Value '{}' cannot be safely casted to type '{}'.".format(value, value_type.__name__))
     return value_type(value)
