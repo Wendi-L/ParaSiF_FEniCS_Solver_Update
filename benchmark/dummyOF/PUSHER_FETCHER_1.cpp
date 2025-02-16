@@ -144,11 +144,14 @@ int main(int argc, char ** argv) {
                             force_pushZ[i][j][k] = 0.;
                         }
 
-                        point3d locp( pp[i][j][k][0], pp[i][j][k][1], pp[i][j][k][2] );
-                        ifs[0]->push( name_pushX, locp, force_pushX[i][j][k] );
-                        ifs[0]->push( name_pushY, locp, force_pushY[i][j][k] );
-                        ifs[0]->push( name_pushZ, locp, force_pushZ[i][j][k] );
-                        total_force_Y += force_pushY[i][j][k];
+                        if (std::abs(pp[i][j][k][0] - 20.0) <= 0.00001 ){
+							point3d locp( pp[i][j][k][0], pp[i][j][k][1], pp[i][j][k][2] );
+							ifs[0]->push( name_pushX, locp, force_pushX[i][j][k] );
+							ifs[0]->push( name_pushY, locp, force_pushY[i][j][k] );
+							ifs[0]->push( name_pushZ, locp, force_pushZ[i][j][k] );
+							// std::cout << "!!{PUSHER_FETCHER_1} push point: " <<  locp[0] << ", " <<  locp[1] << ", "<<  locp[2] << std::endl;
+							total_force_Y += force_pushY[i][j][k];
+                        }
                     }
                 }
             }
