@@ -22,7 +22,7 @@ cd ..
 
 # parallel run
 mpirun -np ${numProcsFluid} -wdir ${domainFluid} ${solverFluid} -parallel -coupled :\
-       -np ${numProcsStructure} -wdir ${domainStructure} python3 -m mpi4py ${solverStructure}
+       -np ${numProcsStructure} -wdir ${domainStructure} python3 -m mpi4py ${solverStructure} 2>&1 | tee output.log
 
 echo "Done"
 
