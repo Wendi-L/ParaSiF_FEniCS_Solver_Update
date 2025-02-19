@@ -220,13 +220,13 @@ class couplingMUIFn:
                 point3dList.append(point_fetch)
                 point3dGlobalID.append(point_ID)
 # Debugging start
-            print("point3dList:")
-            for point in point3dList:
-                print(point)
+            #print("point3dList:")
+            #for point in point3dList:
+            #    print(point)
 
-            print("\npoint3dGlobalID:")
-            for point_ID in point3dGlobalID:
-                print(point_ID)
+            #print("\npoint3dGlobalID:")
+            #for point_ID in point3dGlobalID:
+            #    print(point_ID)
 # Debugging end
             if (recv_max_X < recv_min_X):
                 print("{** FENICS ERROR **} recv_max_X: ", recv_max_X, " smaller than recv_min_X: ", recv_min_X, " at rank: ", self.rank)
@@ -326,20 +326,20 @@ class couplingMUIFn:
             #                           ensure totForce_Fetch and Total_Force_on_structure are the same.
             self.t_sampler = mui4py.TemporalSamplerExact()
 # Problem creating RBF matrix folder here!!
-            self.s_sampler = mui4py.SamplerPseudoNearestNeighbor(self.rMUIFetcher())
-#            self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher(),
-#                                               point3dList,
-#                                               self.basisFunc(),
-#                                               self.iConservative(),
-#                                               self.iSmoothFunc(),
-#                                               self.iWriteMatrix(),
-#                                               '',
-#                                               self.cutoffRBF(),
-#                                               self.cgSolveTolRBF(),
-#                                               self.cgMaxIterRBF(),
-#                                               self.pouSizeRBF(),
-#                                               self.precondRBF(),
-#                                               self.LOCAL_COMM_WORLD)
+            #self.s_sampler = mui4py.SamplerPseudoNearestNeighbor(self.rMUIFetcher())
+            self.s_sampler = mui4py.SamplerRbf(self.rMUIFetcher(),
+                                               point3dList,
+                                               self.basisFunc(),
+                                               self.iConservative(),
+                                               self.iSmoothFunc(),
+                                               self.iWriteMatrix(),
+                                               '',
+                                               self.cutoffRBF(),
+                                               self.cgSolveTolRBF(),
+                                               self.cgMaxIterRBF(),
+                                               self.pouSizeRBF(),
+                                               self.precondRBF(),
+                                               self.LOCAL_COMM_WORLD)
 
             with open(fileAddressLocalMake+'/pointID.dat', 'w') as f_pid:
                 for pid in point3dGlobalID:
