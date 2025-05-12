@@ -115,7 +115,7 @@ class checkpointLogCtrl:
         # Check against standard table value
         p = np.array([self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()], dtype=np.float64)
         cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-        cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+        cells = geometry.compute_colliding_cells(msh, cell_candidates, p).array
         displacement_function.x.scatter_forward()
         if len(cells) > 0:
             d_DispSum = np.zeros(3)
@@ -138,7 +138,7 @@ class checkpointLogCtrl:
             p = np.array([self.pointMoniX(),self.pointMoniY(),self.pointMoniZ()], dtype=np.float64)
             pb = np.array([self.pointMoniXb(),self.pointMoniYb(),self.pointMoniZb()], dtype=np.float64)
             cell_candidates = geometry.compute_collisions_points(bb_tree, p)
-            cells = geometry.compute_colliding_cells(msh, cell_candidates, p)
+            cells = geometry.compute_colliding_cells(msh, cell_candidates, p).array
             displacement_function.x.scatter_forward()
             if len(cells) > 0:
                 pointMoniDispSum = np.zeros(3)

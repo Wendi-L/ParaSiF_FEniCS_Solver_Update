@@ -102,9 +102,9 @@ class linearElastic:
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
-        Q         =     fem.FunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
-        V         =     fem.VectorFunctionSpace(domain, ("Lagrange", self.deg_fun_spc()))
-        V1        =     fem.VectorFunctionSpace(domain, ("Lagrange", 1))
+        Q         =     fem.functionspace(domain, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
+        V         =     fem.functionspace(domain, ("Lagrange", self.deg_fun_spc(), (domain.geometry.dim, )))
+        V1        =     fem.functionspace(domain, ("Lagrange", 1, (domain.geometry.dim, )))
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -298,7 +298,7 @@ class linearElastic:
                     fem.petsc.set_bc(Linear_Assemble, bcs)
                     # Solving the structure functions inside the time loop
                     solver.setMonitor(lambda _, its, rnorm: print(f"Iteration: {its}, rel. residual: {rnorm}"))
-                    solver.solve(Linear_Assemble, dmck.vector)
+                    solver.solve(Linear_Assemble, dmck.x.petsc_vec)
                     solver.view()
                     dmck.x.scatter_forward()
 

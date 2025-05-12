@@ -94,7 +94,7 @@ class facetAreas:
             coord_list=[]
             d_list=[]
             area_list=[]
-            dofs = fem.locate_dofs_topological(V=FunctionSpace, entity_dim=(domain.topology.dim-1), entities=p)
+            dofs = fem.locate_dofs_topological(V=FunctionSpace, entity_dim=(domain.topology.dim-1), entities=np.array([p]))
             ndofs = len(dofs)
             print("Facet dofs at ", p, " = ", dofs)
             for ii, pp in enumerate(dofs):
