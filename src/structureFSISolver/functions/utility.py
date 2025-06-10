@@ -64,14 +64,14 @@ class utility:
     #%% Solid gravitational/body forces define
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def b_for (self):
+    def b_for (self, mesh):
         # Body external forces define [N/m^3]
-        b_for_ext = Constant((self.bForExtX(), self.bForExtY(), self.bForExtZ()))
+        b_for_ext = fem.Constant(mesh, (self.bForExtX(), self.bForExtY(), self.bForExtZ()))
         # Gravitational force define [N/m^3]
         if self.iGravForce():
-            g_force = Constant((0.0, (self.rho_s() * (-9.81)), 0.0))
+            g_force = fem.Constant(mesh, (0.0, (self.rho_s() * (-9.81)), 0.0))
         else:
-            g_force = Constant((0.0, (0.0 * (-9.81)), 0.0))
+            g_force = fem.Constant(mesh, (0.0, (0.0 * (-9.81)), 0.0))
         return (b_for_ext + g_force)
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,7 +89,7 @@ class utility:
 
     def J_(self, displacement_function, grid_dimension):
         # Define the determinant of the deformation gradient
-        return ufl.determinant(self.F_(displacement_function,grid_dimension))
+        return ufl.det(self.F_(displacement_function,grid_dimension))
         # return np.linalg.det(self.F_(displacement_function,grid_dimension))
 
     def C(self, displacement_function, grid_dimension):

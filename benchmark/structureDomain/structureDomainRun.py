@@ -56,7 +56,11 @@ if config['MUI'].getboolean('iMUICoupling'):
     import os
 
     # App common world claims
-    LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
+#    LOCAL_COMM_WORLD = mui4py.mpi_split_by_app(argc=0,
+#                                         argv=[],
+#                                         threadType=-1,
+#                                         thread_support=0,
+#                                         use_mpi_comm_split=True)
     # MUI parameters
     dimensionMUI = 3
     data_types = {"dispX": mui4py.FLOAT64,
@@ -69,9 +73,16 @@ if config['MUI'].getboolean('iMUICoupling'):
     domain = "structureDomain"
     config3d = mui4py.Config(dimensionMUI, mui4py.FLOAT64)
 
-    iface = ["threeDInterface0"]
-    ifaces3d = mui4py.create_unifaces(domain, iface, config3d)
-    ifaces3d["threeDInterface0"].set_data_types(data_types)
+#    iface = ["threeDInterface0"]
+#    ifaces3d = mui4py.create_unifaces(domain, iface, config3d)
+#    ifaces3d["threeDInterface0"].set_data_types(data_types)
+
+    URI = "mpi://structureDomain/threeDInterface0" 
+    iface3d = mui4py.Uniface(uri=URI, config=config3d) 
+    iface3d.set_data_types(data_types)
+
+    # App common world claims 
+    LOCAL_COMM_WORLD = mui4py.mpi_split_by_app()
 
     # Necessary to avoid hangs at PETSc vector communication
     petsc4py.init(comm=LOCAL_COMM_WORLD)
@@ -114,7 +125,7 @@ solver = structureFSISolver.structureFSISolver.StructureFSISolver(config, subDom
 #_________________________________________________________________________________________
 
 if config['MUI'].getboolean('iMUICoupling'):
-    solver.solve(LOCAL_COMM_WORLD, ifaces3d)
+    solver.solve(LOCAL_COMM_WORLD, iface3d)
 else:
     solver.solve()
 

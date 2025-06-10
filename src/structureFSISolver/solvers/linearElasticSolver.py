@@ -61,7 +61,7 @@ class linearElastic:
     #%% Main solver function
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def linearElasticSolve(self):
+    def linearElasticSolve(self, iface3d=None):
 
         #===========================================
         #%% Time marching parameters define
@@ -370,6 +370,7 @@ class linearElastic:
 
         # Wait for the other solver
         if self.iMUICoupling():
-            self.ifaces3d["threeDInterface0"].barrier(t_sub_it)
+            #self.ifaces3d["threeDInterface0"].barrier(t_sub_it)
+            iface3d.barrier(t_sub_it)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%  FILE END  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#

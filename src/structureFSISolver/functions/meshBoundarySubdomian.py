@@ -85,8 +85,7 @@ class meshBoundarySubdomian:
         return grid_dimension
 
     def Get_Face_Normal(self, domain):
-        # Face normal vector !! OUTDATED FUNCTION, NEED UPDATED TO FENICS-X !!
-        face_narmal = FacetNormal(domain)
+        face_narmal = ufl.FacetNormal(domain)
         return face_narmal
 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

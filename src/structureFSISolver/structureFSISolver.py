@@ -169,7 +169,10 @@ class StructureFSISolver(structureFSISolver.functions.cfgPrsFn.readData,
         if self.solving_method() == 'STVK':
             self.hyperElasticSolve()
         elif self.solving_method() == 'MCK':
-            self.linearElasticSolve()
+            if arg_ifaces3d is not None:
+                self.linearElasticSolve(arg_ifaces3d)
+            else:
+                self.linearElasticSolve()
         else:
             sys.exit("{FENICS} Error, solving method not recognised")
         #===========================================

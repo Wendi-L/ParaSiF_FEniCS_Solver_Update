@@ -154,7 +154,7 @@ class couplingMUIFn:
                                                 [send_max_X, send_max_Y, send_max_Z])
 
                 # Announce the MUI send span
-                self.ifaces3d["threeDInterface0"].announce_send_span(0, Total_Time_Steps*self.num_sub_iteration(), span_push, synchronised)
+                self.ifaces3d.announce_send_span(0, Total_Time_Steps*self.num_sub_iteration(), span_push, synchronised)
                 # self.iface.announce_send_span(0, Total_Time_Steps*self.num_sub_iteration(), span_push, synchronised)
 
                 print("{FENICS} at rank: ", self.rank, " send_max_X: ", send_max_X, " send_min_X: ", send_min_X)
@@ -163,7 +163,7 @@ class couplingMUIFn:
 
             else:
                 # Announce the MUI send span
-                #self.ifaces3d["threeDInterface0"].announce_send_disable()
+                #self.ifaces3d.announce_send_disable()
                 pass
 
             recv_min_X = sys.float_info.max
@@ -197,7 +197,7 @@ class couplingMUIFn:
                 if (dofs_to_xyz[p][2] > recv_max_Z):
                     recv_max_Z = dofs_to_xyz[p][2]
 
-                point_fetch = self.ifaces3d["threeDInterface0"].Point([dofs_to_xyz[p][0],
+                point_fetch = self.ifaces3d.Point([dofs_to_xyz[p][0],
                                                                         dofs_to_xyz[p][1],
                                                                         dofs_to_xyz[p][2]])
                 # point_fetch = self.iface.Point([dofs_to_xyz[p][0],
@@ -243,7 +243,7 @@ class couplingMUIFn:
                                                  [recv_max_X, recv_max_Y, recv_max_Z])
 
                 # Announce the MUI receive span
-                self.ifaces3d["threeDInterface0"].announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration()*10, span_fetch, synchronised)
+                self.ifaces3d.announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration()*10, span_fetch, synchronised)
                 # self.iface.announce_recv_span(0, Total_Time_Steps*self.num_sub_iteration()*10, span_fetch, synchronised)
 
                 print("{FENICS} at rank: ", self.rank, " recv_max_X: ", recv_max_X, " recv_min_X: ", recv_min_X)
@@ -252,7 +252,7 @@ class couplingMUIFn:
 
             else:
                 # Announce the MUI receive span
-                #self.ifaces3d["threeDInterface0"].announce_recv_disable()
+                #self.ifaces3d.announce_recv_disable()
                 pass
 
             # Spatial/temporal samplers
@@ -346,7 +346,7 @@ class couplingMUIFn:
                     f_pid.write("%i\n" % pid)
 
             # Commit ZERO step
-            self.ifaces3d["threeDInterface0"].commit(0)
+            self.ifaces3d.commit(0)
             # self.iface.commit(0)
             if self.rank == 0: print ("{FENICS} Commit ZERO step")
         else:
@@ -369,19 +369,19 @@ class couplingMUIFn:
 
         if (fetch_iteration >= 0):
             if self.iMUIFetchMany():
-                temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                temp_vec_function_temp[0::3][dofs_fetch_list] = self.ifaces3d.\
                             fetch_many("forceX",
                                        dofs_to_xyz,
                                        fetch_iteration,
                                        self.s_sampler,
                                        self.t_sampler)
-                temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                temp_vec_function_temp[1::3][dofs_fetch_list] = self.ifaces3d.\
                             fetch_many("forceY",
                                        dofs_to_xyz,
                                        fetch_iteration,
                                        self.s_sampler,
                                        self.t_sampler)
-                temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d["threeDInterface0"].\
+                temp_vec_function_temp[2::3][dofs_fetch_list] = self.ifaces3d.\
                             fetch_many("forceZ",
                                        dofs_to_xyz,
                                        fetch_iteration,
@@ -435,21 +435,21 @@ class couplingMUIFn:
             else:
                 if (fetch_iteration >= 0):
                     for i, p in enumerate(dofs_fetch_list):
-                        temp_vec_function_temp[0::3][p] = self.ifaces3d["threeDInterface0"].\
+                        temp_vec_function_temp[0::3][p] = self.ifaces3d.\
                                     fetch("forceX",
                                           dofs_to_xyz[i],
                                           fetch_iteration,
                                           self.s_sampler,
                                           self.t_sampler)
 
-                        temp_vec_function_temp[1::3][p] = self.ifaces3d["threeDInterface0"].\
+                        temp_vec_function_temp[1::3][p] = self.ifaces3d.\
                                     fetch("forceY",
                                           dofs_to_xyz[i],
                                           fetch_iteration,
                                           self.s_sampler,
                                           self.t_sampler)
 
-                        temp_vec_function_temp[2::3][p] = self.ifaces3d["threeDInterface0"].\
+                        temp_vec_function_temp[2::3][p] = self.ifaces3d.\
                                     fetch("forceZ",
                                           dofs_to_xyz[i],
                                           fetch_iteration,
@@ -512,16 +512,16 @@ class couplingMUIFn:
 
         if self.iMUIPushMany():
             if self.iPushX():
-                self.ifaces3d["threeDInterface0"].\
+                self.ifaces3d.\
                             push_many("dispX", dofs_to_xyz, (d_vec_x[dofs_push]))
             if self.iPushY():
-                self.ifaces3d["threeDInterface0"].\
+                self.ifaces3d.\
                             push_many("dispY", dofs_to_xyz, (d_vec_y[dofs_push]))
             if self.iPushZ():
-                self.ifaces3d["threeDInterface0"].\
+                self.ifaces3d.\
                             push_many("dispZ", dofs_to_xyz, (d_vec_z[dofs_push]))
 
-            a = self.ifaces3d["threeDInterface0"].\
+            a = self.ifaces3d.\
                             commit(total_Sub_Iteration)
             #     self.iface.\
             #                 push_many("dispX", dofs_to_xyz, (d_vec_x[dofs_push]))
@@ -537,18 +537,18 @@ class couplingMUIFn:
         else:
             if self.iPushX():
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].\
+                    self.ifaces3d.\
                             push("dispX", dofs_to_xyz[i], (d_vec_x[p]))
             if self.iPushY():
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].\
+                    self.ifaces3d.\
                             push("dispY", dofs_to_xyz[i], (d_vec_y[p]))
             if self.iPushZ():
                 for i, p in enumerate(dofs_push):
-                    self.ifaces3d["threeDInterface0"].\
+                    self.ifaces3d.\
                             push("dispZ", dofs_to_xyz[i], (d_vec_z[p]))
 
-            a = self.ifaces3d["threeDInterface0"].\
+            a = self.ifaces3d.\
                             commit(total_Sub_Iteration)
             # if self.iPushX():
             #     for i, p in enumerate(dofs_push):
@@ -570,9 +570,9 @@ class couplingMUIFn:
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
         if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
-            a = self.ifaces3d["threeDInterface0"].\
+            a = self.ifaces3d.\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
-            self.ifaces3d["threeDInterface0"].\
+            self.ifaces3d.\
                             set_memory(self.forgetTStepsMUI())
             # a = self.iface.\
             #                 forget(total_Sub_Iteration-self.forgetTStepsMUI())
@@ -582,7 +582,7 @@ class couplingMUIFn:
                 print ('{FENICS} MUI forget step: ',(total_Sub_Iteration-self.forgetTStepsMUI()))
 
     def MUI_Commit_only(self, total_Sub_Iteration):
-        a = self.ifaces3d["threeDInterface0"].\
+        a = self.ifaces3d.\
                             commit(total_Sub_Iteration)
         # a = self.iface.\
         #                     commit(total_Sub_Iteration)
@@ -591,9 +591,9 @@ class couplingMUIFn:
             print ('{FENICS} MUI commit step: ',total_Sub_Iteration)
 
         if ((total_Sub_Iteration-self.forgetTStepsMUI()) > 0):
-            a = self.ifaces3d["threeDInterface0"].\
+            a = self.ifaces3d.\
                             forget(total_Sub_Iteration-self.forgetTStepsMUI())
-            self.ifaces3d["threeDInterface0"].\
+            self.ifaces3d.\
                             set_memory(self.forgetTStepsMUI())
             # a = self.iface.\
             #                 forget(total_Sub_Iteration-self.forgetTStepsMUI())

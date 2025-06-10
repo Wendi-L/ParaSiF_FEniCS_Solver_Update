@@ -45,10 +45,12 @@
 #_________________________________________________________________________________________
 
 from dolfinx import *
+from dolfinx.nls.petsc import NewtonSolver
 import os
 import numpy as np
 from mpi4py import MPI
 import structureFSISolver
+import ufl
 
 class hyperElastic:
 
@@ -79,14 +81,14 @@ class hyperElastic:
         #===========================================
 
         # Time step constants
-        k = Constant(self.dt())
+        k = fem.Constant(mesh, self.dt())
 
         # Time lists
         times    = []
         t_sub_it = 0
 
         # One-step theta value
-        theta = Constant(self.thetaOS())
+        theta = fem.Constant(mesh, self.thetaOS())
 
         if self.rank == 0:
             print ("\n")
@@ -99,12 +101,13 @@ class hyperElastic:
 
         if self.rank == 0: print ("{FENICS} Creating function spaces ...   ")
 
-        V_ele     =     ufl.VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc()) # Displacement & Velocity Vector element
+#        V_ele     =     ufl.VectorElement("Lagrange", mesh.ufl_cell(), self.deg_fun_spc()) # Displacement & Velocity Vector element
 
-        Q         =     FunctionSpace(mesh, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
-        VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
-        V         =     VectorFunctionSpace(mesh, "Lagrange", self.deg_fun_spc())
-        T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc())      # Define nth order structure function spaces
+        Q         =     fem.functionspace(mesh, ("Lagrange", self.deg_fun_spc()))            # Function space with updated mesh
+#        VV        =     FunctionSpace(mesh, MixedElement([V_ele, V_ele]))            # Mixed (Velocity (w) & displacement (d)) function space
+        V         =     fem.functionspace(mesh, ("Lagrange", self.deg_fun_spc(), (mesh.geometry.dim, )))
+        V1         =     fem.functionspace(mesh, ("Lagrange", 1, (mesh.geometry.dim, )))
+#        T_s_space =     TensorFunctionSpace(mesh, 'Lagrange', self.deg_fun_spc())      # Define nth order structure function spaces
 
         if self.rank == 0: print ("{FENICS} Done with creating function spaces")
 
@@ -115,20 +118,25 @@ class hyperElastic:
         if self.rank == 0: print ("{FENICS} Creating functions, test functions and trail functions ...   ", end="", flush=True)
 
         # Test functions
-        psi, phi = TestFunctions(VV)    # Test functions for velocity and displacement
+#        psi, phi = TestFunctions(VV)    # Test functions for velocity and displacement
 
         # Functions at present time step
-        ud   = Function(VV)               # Functions for velocity and displacement
-        u, d = split(ud)                # Split velocity and displacement functions
+#        ud   = Function(VV)               # Functions for velocity and displacement
+#        u, d = split(ud)                # Split velocity and displacement functions
 
         # Functions at previous time step
-        u0d0   = Function(VV)             # Functions for velocity and displacement
-        u0, d0 = split(u0d0)            # Split velocity and displacement functions
+#        u0d0   = Function(VV)             # Functions for velocity and displacement
+#        u0, d0 = split(u0d0)            # Split velocity and displacement functions
 
         # Define structure traction
-        sigma_s = Function(T_s_space)   # Structure traction normal to structure
+#        sigma_s = Function(T_s_space)   # Structure traction normal to structure
 
-        self.Load_Functions_Continue_Run_Nonlinear(u0d0,ud,sigma_s)
+#        self.Load_Functions_Continue_Run_Nonlinear(u0d0,ud,sigma_s)
+        u = fem.Function(V, name="Displacement")
+        u0 = fem.Function(V, name="Displacement0")
+
+        v = ufl.TestFunction(V)
+        du = ufl.TrialFunction(V)
 
         if self.rank == 0: print ("Done")
 
@@ -142,42 +150,42 @@ class hyperElastic:
         #%% Define SubDomains and boundaries
         #===========================================
 
-        boundaries = self.Boundaries_Generation_Fixed_Flex_Sym(mesh, gdim, V)
+        self.Boundaries_Generation_Fixed_Flex_Sym(mesh, V)
 
-        ds = self.Get_ds(mesh, boundaries)
+        ds = self.Get_ds(mesh)
 
         #===========================================
         #%% Define boundary conditions
         #===========================================
 
         if self.rank == 0: print ("{FENICS} Creating 3D boundary conditions ...   ", end="", flush=True)
-        bc1,bc2 = self.dirichletBCs.DirichletMixedBCs(VV,boundaries,1)
-        bcs = [bc1,bc2]
+        bc1 = self.dirichletBCs.DirichletBCs(V,self.fixeddofs)
+        bcs = [bc1]
         if self.rank == 0: print ("Done")
 
         #===========================================
         #%% Define DOFs and Coordinates mapping
         #===========================================  
 
-        dofs_fetch_list = self.dofs_list(boundaries, Q, 2)
+        dofs_fetch_list = self.dofs_list(mesh, V, 2)
 
-        xyz_fetch = self.xyz_np(dofs_fetch_list, Q, gdim)
+        xyz_fetch = self.xyz_np(dofs_fetch_list, V, gdim)
 
-        dofs_push_list = self.dofs_list(boundaries, Q, 2)
+        dofs_push_list = self.dofs_list(mesh, V, 2)
 
-        xyz_push = self.xyz_np(dofs_push_list, Q, gdim)
+        xyz_push = self.xyz_np(dofs_push_list, V, gdim)
 
         #===========================================
         #%% Define facet areas
         #===========================================
 
-        self.facets_area_define(mesh, Q, boundaries, dofs_fetch_list, gdim)
+        self.facets_area_define(mesh, Q, self.flexdofs, gdim)
 
         #===========================================
         #%% Prepare post-process files
         #===========================================
 
-        self.Create_Post_Process_Files()
+        self.Create_Post_Process_Files(mesh)
 
         #===========================================
         #%% Define the variational FORM
@@ -188,41 +196,35 @@ class hyperElastic:
         if self.rank == 0: print ("{FENICS} Defining variational FORM and Jacobin functions ...   ", end="", flush=True)
 
         # Define the traction terms of the structure variational form
-        tF = dot(self.F_(d,gdim).T, self.tF_apply)
-        tF_ = dot(self.F_(d0,gdim).T, self.tF_apply)
+        tF = ufl.dot(self.F_(u,gdim).T, self.tF_apply)
+        tF_ = ufl.dot(self.F_(u0,gdim).T, self.tF_apply)
 
         # Define the transient terms of the structure variational form
-        Form_s_T = (1/k)*self.rho_s()*inner((u-u0), psi)*dx
-        Form_s_T += (1/k)*inner((d-d0), phi)*dx
+        Form_s_T = (1/k)*ufl.inner((u-u0), v)*ufl.dx
 
         # Define the stress terms and convection of the structure variational form
         if self.iNonLinearMethod():
             if self.rank == 0: print ("{FENICS} [Defining non-linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by the constitutive law of hyper-elastic St. Vernant-Kirchhoff material model (non-linear relation). Valid for large deformations but small strain] ...   ", end="", flush=True)
-            Form_s_SC = inner(theta * self.Piola_Kirchhoff_fst(d,gdim) + (1 - theta) *
-                        self.Piola_Kirchhoff_fst(d0,gdim), grad(psi)) * dx
-            Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
+            Form_s_SC = ufl.inner(theta * self.Piola_Kirchhoff_fst(u,gdim) + (1 - theta) *
+                        self.Piola_Kirchhoff_fst(u0,gdim), ufl.grad(v)) * ufl.dx
         else:
             if self.rank == 0: print ("{FENICS} [Defining linear stress-strain relation: Define the First Piola-Kirchhoff stress tensor by Hooke's law (linear relation). Valid for small-scale deformations only] ...   ", end="", flush=True)
-            Form_s_SC = inner(theta * self.Hooke_stress(d,gdim) + (1 - theta) *
-                        self.Hooke_stress(d0,gdim), grad(psi)) * dx
-            Form_s_SC -= inner(theta*u + (1-theta)*u0, phi ) * dx
+            Form_s_SC = ufl.inner(theta * self.Hooke_stress(u,gdim) + (1 - theta) *
+                        self.Hooke_stress(u0,gdim), ufl.grad(v)) * ufl.dx
 
         # Define the body forces and surface tractions terms of the structure variational form
-        Form_s_ET = -( theta * self.J_(d,gdim) * inner( (self.b_for()), psi ) +
-                    ( 1 - theta ) * self.J_(d0,gdim) * inner( (self.b_for()), psi ) ) * dx
-        Form_s_ET -= ( theta * self.J_(d,gdim) * inner( tF, psi ) +
-                    ( 1 - theta ) * self.J_(d0,gdim) * inner( tF_, psi ) ) * ds(2)
-        Form_s_ET -= ( theta * self.J_(d,gdim) * inner( inv(self.F_(d,gdim)) * sigma_s * N, psi )+
-                    ( 1 - theta ) * (self.J_(d0,gdim)) * inner(inv(self.F_(d0,gdim)) * sigma_s * N, psi )) * ds(2)
+        Form_s_ET = -( theta * self.J_(u,gdim) * ufl.inner( (self.b_for(mesh)), v ) +
+                    ( 1 - theta ) * self.J_(u0,gdim) * ufl.inner( (self.b_for(mesh)), v ) ) * ufl.dx
+        Form_s_ET -= ( theta * self.J_(u,gdim) * ufl.inner( tF, v ) +
+                    ( 1 - theta ) * self.J_(u0,gdim) * ufl.inner( tF_, v ) ) * ds(2)
+#        Form_s_ET -= ( theta * self.J_(u,gdim) * ufl.inner( ufl.inv(self.F_(u,gdim)) * sigma_s * N, v )+
+#                    ( 1 - theta ) * (self.J_(u0,gdim)) * ufl.inner(ufl.inv(self.F_(u0,gdim)) * sigma_s * N, v )) * ds(2)
 
         # Define the final form of the structure variational form
         Form_s = Form_s_T + Form_s_SC + Form_s_ET
 
-        # Make functional into a vector function
-        #Form_s = action(Form_s, ud)
-
         # Define Jacobin functions
-        Jaco = derivative(Form_s, ud)
+        Jaco = ufl.derivative(Form_s, u, du)
 
         if self.rank == 0: print ("Done")
 
@@ -230,47 +232,18 @@ class hyperElastic:
         #%% Initialize solver
         #===========================================
 
-        problem = NonlinearVariationalProblem(Form_s, ud, bcs=bcs, J=Jaco)
-        solver = NonlinearVariationalSolver(problem)
-
-        info(solver.parameters, False)
-        if self.nonlinear_solver() == "newton":
-            solver.parameters["nonlinear_solver"]= self.nonlinear_solver()
-            solver.parameters["newton_solver"]["absolute_tolerance"] = self.prbAbsolute_tolerance()
-            solver.parameters["newton_solver"]["relative_tolerance"] = self.prbRelative_tolerance()
-            solver.parameters["newton_solver"]["maximum_iterations"] = self.prbMaximum_iterations()
-            solver.parameters["newton_solver"]["relaxation_parameter"] = self.prbRelaxation_parameter()
-            solver.parameters["newton_solver"]["linear_solver"] = self.prbsolver()
-            solver.parameters["newton_solver"]["preconditioner"] = self.prbpreconditioner()
-            solver.parameters["newton_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance()
-            solver.parameters["newton_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance()
-            solver.parameters["newton_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations()
-            solver.parameters["newton_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence()
-            solver.parameters["newton_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess()
-            solver.parameters["newton_solver"]["krylov_solver"]['error_on_nonconvergence'] = self.error_on_nonconvergence()
-        elif self.nonlinear_solver() == "snes":
-            solver.parameters['nonlinear_solver'] = self.nonlinear_solver()
-            solver.parameters['snes_solver']['line_search'] = self.lineSearch()
-            solver.parameters['snes_solver']['linear_solver'] = self.prbsolver()
-            solver.parameters['snes_solver']['preconditioner'] = self.prbpreconditioner()
-            solver.parameters['snes_solver']['absolute_tolerance'] = self.prbAbsolute_tolerance()
-            solver.parameters['snes_solver']['relative_tolerance'] = self.prbRelative_tolerance()
-            solver.parameters['snes_solver']['maximum_iterations'] = self.prbMaximum_iterations()
-            solver.parameters['snes_solver']['report'] = self.show_report()
-            solver.parameters['snes_solver']['error_on_nonconvergence'] = self.error_on_nonconvergence()
-            solver.parameters["snes_solver"]["krylov_solver"]["absolute_tolerance"] = self.krylov_prbAbsolute_tolerance()
-            solver.parameters["snes_solver"]["krylov_solver"]["relative_tolerance"] = self.krylov_prbRelative_tolerance()
-            solver.parameters["snes_solver"]["krylov_solver"]["maximum_iterations"] = self.krylov_maximum_iterations()
-            solver.parameters["snes_solver"]["krylov_solver"]["monitor_convergence"] = self.monitor_convergence()
-            solver.parameters["snes_solver"]["krylov_solver"]["nonzero_initial_guess"] = self.nonzero_initial_guess()
-        else:
-            sys.exit("{FENICS} Error, nonlinear solver value not recognized")
+        problem = fem.petsc.NonlinearProblem(Form_s, u, bcs)
+        solver = NewtonSolver(mesh.comm, problem)
+        # Set Newton solver options
+        solver.atol = 1e-4
+        solver.rtol = 1e-4
+        solver.convergence_criterion = "incremental"
 
         #===========================================
         #%% Setup checkpoint data
         #===========================================
 
-        self.Checkpoint_Output_Nonlinear((t-self.dt()), mesh, u0d0, ud, sigma_s, False)
+        # self.Checkpoint_Output_Nonlinear((t-self.dt()), mesh, u0, u, sigma_s, False)
 
         #===========================================
         #%% Define MUI samplers and commit ZERO step
@@ -322,15 +295,22 @@ class hyperElastic:
 
                 if (not ((self.iContinueRun()) and (n_steps == 1))):
                     # Solving the structure functions inside the time loop
-                    solver.solve()
+                    num_its, converged = solver.solve(u)
+                    assert converged
 
-                    force_X = dot(tF, self.X_direction_vector())*ds(2)
-                    force_Y = dot(tF, self.Y_direction_vector())*ds(2)
-                    force_Z = dot(tF, self.Z_direction_vector())*ds(2)
+                    u.x.scatter_forward()  # updates ghost values for parallel computations
 
-                    f_X_a = assemble(force_X)
-                    f_Y_a = assemble(force_Y)
-                    f_Z_a = assemble(force_Z)
+                    print(
+                        f"Time step {n_steps}, Number of iterations {num_its}."
+                    )
+
+                    force_X = ufl.dot(tF, self.X_direction_vector())*ds(2)
+                    force_Y = ufl.dot(tF, self.Y_direction_vector())*ds(2)
+                    force_Z = ufl.dot(tF, self.Z_direction_vector())*ds(2)
+
+                    f_X_a = fem.assemble_scalar(fem.form(force_X))
+                    f_Y_a = fem.assemble_scalar(fem.form(force_Y))
+                    f_Z_a = fem.assemble_scalar(fem.form(force_Z))
 
                     print ("{FENICS} Total Force_X on structure: ", f_X_a, " at self.rank ", self.rank)
                     print ("{FENICS} Total Force_Y on structure: ", f_Y_a, " at self.rank ", self.rank)
@@ -339,16 +319,13 @@ class hyperElastic:
                 else:
                     pass
 
-                # Split function spaces
-                u,d = ud.split(True)
-
                 # Compute and print the displacement of monitored point
-                self.print_Disp(d)
+                self.print_Disp(mesh, u)
 
                 # MUI Push internal points and commit current steps
                 if (self.iMUICoupling()):
                     if (len(xyz_push)!=0):
-                        self.MUI_Push(xyz_push, dofs_push_list, d, t_sub_it)
+                        self.MUI_Push(xyz_push, dofs_push_list, u, t_sub_it)
                     else:
                         self.MUI_Commit_only(t_sub_it)
                 else:
@@ -357,21 +334,18 @@ class hyperElastic:
                 # Increment of sub-iterations
                 i_sub_it += 1
 
-            # Split function spaces
-            u,d = ud.split(True)
-            u0,d0 = u0d0.split(True)
-
             # Mesh motion
-            self.Move_Mesh(V, d, d0, mesh)
+            #self.Move_Mesh(V, d, d0, mesh)
 
             # Data output
             if (not (self.iQuiet())):
-                self.Export_Disp_vtk(n_steps, t, mesh, gdim, V, d)
-                self.Export_Disp_txt(d)
-                self.Checkpoint_Output_Nonlinear(t, mesh, u0d0, ud, sigma_s, False)
+                self.Export_Disp_xdmf(n_steps, t, mesh, gdim, V, V1, u)
+                self.Export_Disp_txt(mesh,u)
+                # self.Checkpoint_Output_Nonlinear(t, mesh, u0, u, False)
 
             # Assign the old function spaces
-            u0d0.assign(ud)
+            #u0.assign(u)
+            u0.x.array[:] = u.x.array
 
             # Sub-iterator counter reset
             i_sub_it = 1

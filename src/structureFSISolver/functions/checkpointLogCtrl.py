@@ -302,7 +302,6 @@ class checkpointLogCtrl:
                                     mesh,
                                     ud_Functions_previous,
                                     ud_Functions,
-                                    t_Function,
                                     File_Exists=True):
         if File_Exists:
             import os
@@ -316,7 +315,6 @@ class checkpointLogCtrl:
         hdf5checkpointDataOut.write(mesh, "/mesh")
         hdf5checkpointDataOut.write(ud_Functions_previous, "/u0d0", current_time)
         hdf5checkpointDataOut.write(ud_Functions, "/ud", current_time)
-        hdf5checkpointDataOut.write(t_Function, "/sigma_s", current_time)
         hdf5checkpointDataOut.write(self.areaf, "/areaf")
         hdf5checkpointDataOut.close()
         # Delete HDF5File object, closing file

@@ -13,19 +13,21 @@
 int main(int argc, char ** argv) {
     using namespace mui;
 
+    uniface<mui::pusher_fetcher_config> ifs( "mpi://PUSHER_FETCHER_1/threeDInterface0"  );
+    
     MPI_Comm  world = mui::mpi_split_by_app();
 
     std::ofstream displacementOutFile("dispCpp.txt");
 
     // Define the name of MUI interfaces
-    std::vector<std::string> interfaces;
-    std::string domainName="PUSHER_FETCHER_1";
-    std::string appName="threeDInterface0";
+//    std::vector<std::string> interfaces;
+//    std::string domainName="PUSHER_FETCHER_1";
+//    std::string appName="threeDInterface0";
 
-    interfaces.emplace_back(appName);
+//    interfaces.emplace_back(appName);
 
     // Declare MUI objects using MUI configure file
-    auto ifs = mui::create_uniface<mui::pusher_fetcher_config>( domainName, interfaces );
+//    auto ifs = mui::create_uniface<mui::pusher_fetcher_config>( domainName, interfaces );
 
     int rank, size;
     MPI_Comm_rank( world, &rank );
@@ -107,15 +109,15 @@ int main(int argc, char ** argv) {
     geometry::box<mui::pusher_fetcher_config> send_region( {local_x0, local_y0, local_z0}, {local_x1, local_y1, local_z1} );
     geometry::box<mui::pusher_fetcher_config> recv_region( {local_x2, local_y2, local_z2}, {local_x3, local_y3, local_z3} );
     printf( "{PUSHER_FETCHER_1} send region for rank %d: %lf %lf %lf - %lf %lf %lf\n", rank, local_x0, local_y0, local_z0, local_x1, local_y1, local_z1 );
-    ifs[0]->announce_send_span( 0, steps*10, send_region );
-    ifs[0]->announce_recv_span( 0, steps*10, recv_region );
+    ifs.announce_send_span( 0, steps*10, send_region );
+    ifs.announce_recv_span( 0, steps*10, recv_region );
 
     // define spatial and temporal samplers
     sampler_pseudo_n2_linear<mui::pusher_fetcher_config> s1(r);
     temporal_sampler_exact<mui::pusher_fetcher_config> s2;
 
     // commit ZERO step
-    ifs[0]->commit(0);
+    ifs.commit(0);
 
     // Begin time loops
     for ( int n = 1; n <= steps; ++n ) {
@@ -146,9 +148,9 @@ int main(int argc, char ** argv) {
 
                         if (std::abs(pp[i][j][k][0] - 20.0) <= 0.00001 ){
 							point3d locp( pp[i][j][k][0], pp[i][j][k][1], pp[i][j][k][2] );
-							ifs[0]->push( name_pushX, locp, force_pushX[i][j][k] );
-							ifs[0]->push( name_pushY, locp, force_pushY[i][j][k] );
-							ifs[0]->push( name_pushZ, locp, force_pushZ[i][j][k] );
+							ifs.push( name_pushX, locp, force_pushX[i][j][k] );
+							ifs.push( name_pushY, locp, force_pushY[i][j][k] );
+							ifs.push( name_pushZ, locp, force_pushZ[i][j][k] );
 							// std::cout << "!!{PUSHER_FETCHER_1} push point: " <<  locp[0] << ", " <<  locp[1] << ", "<<  locp[2] << std::endl;
 							total_force_Y += force_pushY[i][j][k];
                         }
@@ -156,22 +158,22 @@ int main(int argc, char ** argv) {
                 }
             }
             printf( "{PUSHER_FETCHER_1} total_force_Y: %lf at time: %f [s]\n", total_force_Y, (n*timeStepSize));
-            int sent = ifs[0]->commit( totalIter );
+            int sent = ifs.commit( totalIter );
             if ((totalIter-1)>=1){
                 // push data to the other solver
                 for ( int i = 0; i < Nx; ++i ) {
                     for ( int j = 0; j < Ny; ++j ) {
                         for ( int k = 0; k < Nz; ++k ) {
                             point3d locf( pf[i][j][k][0], pf[i][j][k][1], pf[i][j][k][2] );
-                            displacement_fetchX[i][j][k] = ifs[0]->fetch( name_fetchX, locf,
+                            displacement_fetchX[i][j][k] = ifs.fetch( name_fetchX, locf,
                                 (totalIter-1),
                                 s1,
                                 s2 );
-                            displacement_fetchY[i][j][k] = ifs[0]->fetch( name_fetchY, locf,
+                            displacement_fetchY[i][j][k] = ifs.fetch( name_fetchY, locf,
                                 (totalIter-1),
                                 s1,
                                 s2 );
-                            displacement_fetchZ[i][j][k] = ifs[0]->fetch( name_fetchZ, locf,
+                            displacement_fetchZ[i][j][k] = ifs.fetch( name_fetchZ, locf,
                                 (totalIter-1),
                                 s1,
                                 s2 );
