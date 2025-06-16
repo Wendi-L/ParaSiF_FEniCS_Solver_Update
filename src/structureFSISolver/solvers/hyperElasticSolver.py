@@ -217,8 +217,8 @@ class hyperElastic:
                     ( 1 - theta ) * self.J_(u0,gdim) * ufl.inner( (self.b_for(mesh)), v ) ) * ufl.dx
         Form_s_ET -= ( theta * self.J_(u,gdim) * ufl.inner( tF, v ) +
                     ( 1 - theta ) * self.J_(u0,gdim) * ufl.inner( tF_, v ) ) * ds(2)
-#        Form_s_ET -= ( theta * self.J_(u,gdim) * ufl.inner( ufl.inv(self.F_(u,gdim)) * sigma_s * N, v )+
-#                    ( 1 - theta ) * (self.J_(u0,gdim)) * ufl.inner(ufl.inv(self.F_(u0,gdim)) * sigma_s * N, v )) * ds(2)
+        Form_s_ET -= ( theta * self.J_(u,gdim) * ufl.inner( ufl.inv(self.F_(u,gdim)) * u, v )+
+                    ( 1 - theta ) * (self.J_(u0,gdim)) * ufl.inner(ufl.inv(self.F_(u0,gdim)) * u, v )) * ds(2)
 
         # Define the final form of the structure variational form
         Form_s = Form_s_T + Form_s_SC + Form_s_ET
