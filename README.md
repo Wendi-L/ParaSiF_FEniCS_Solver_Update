@@ -2,6 +2,8 @@
 
 ## Updates
 
+02nd October 2025: Merge this project into the [ParaSiF](https://github.com/ParaSiF/ParaSiF) official repository 
+
 09th February 2025: Updated code with FEniCSx-0.7.2 through Spack installation.
 
 16th January 2023: Include MUI and other third-party packages into this repo to make it self-contained and easy to install. Pathes have also been changed from absolute into relative.
