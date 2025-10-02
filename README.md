@@ -2,7 +2,7 @@
 
 ## Updates
 
-02nd October 2025: Merge this project into the [ParaSiF](https://github.com/ParaSiF/ParaSiF) official repository 
+02nd October 2025: Merge this project into the [ParaSiF](https://github.com/ParaSiF/ParaSiF) official repository. Future development will take place in the [ParaSiF](https://github.com/ParaSiF/ParaSiF) official repository.
 
 09th February 2025: Updated code with FEniCSx-0.7.2 through Spack installation.
 
